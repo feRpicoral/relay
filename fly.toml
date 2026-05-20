@@ -12,6 +12,10 @@ dockerfile = "Dockerfile"
 [deploy]
 strategy = "immediate"
 
+# LiveKit Cloud distributes inbound rooms across whichever workers are
+# connected, so we don't need a Fly HA pair. Deploy with `fly deploy --ha=false`
+# or set the count to 1 after the first deploy with `fly scale count 1`.
+
 [[vm]]
 cpu_kind = "shared"
 cpus = 1

@@ -2,6 +2,8 @@
 node_modules
 .pnp
 .pnp.*
+# This is a yarn 4 project; reject npm's lockfile to keep the toolchain honest.
+package-lock.json
 .yarn/*
 !.yarn/patches
 !.yarn/plugins

@@ -80,9 +80,11 @@
     "react-hook-form": "^7.76.0",
     "recharts": "^2.15.0",
     "resend": "^4.0.1",
+    "server-only": "^0.0.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "vercel": "^54.2.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
