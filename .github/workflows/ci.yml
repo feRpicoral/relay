@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: typecheck / lint / test / build
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXT_PUBLIC_SUPABASE_URL: https://ci.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+      ANTHROPIC_API_KEY: ci-anthropic-key
+      DEEPGRAM_API_KEY: ci-deepgram-key
+      CARTESIA_API_KEY: ci-cartesia-key
+      ELEVENLABS_API_KEY: ci-elevenlabs-key
+      LIVEKIT_API_KEY: ci-livekit-key
+      LIVEKIT_API_SECRET: ci-livekit-secret
+      LIVEKIT_URL: wss://ci.livekit.cloud
+      TWILIO_ACCOUNT_SID: ci-twilio-sid
+      TWILIO_AUTH_TOKEN: ci-twilio-token
+      CALCOM_CLIENT_ID: ci-calcom-client
+      CALCOM_CLIENT_SECRET: ci-calcom-secret
+      INNGEST_EVENT_KEY: ci-inngest-event
+      INNGEST_SIGNING_KEY: ci-inngest-signing
+      RESEND_API_KEY: ci-resend-key
+      WORKER_PUBLIC_URL: http://localhost:3001
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Generate Prisma client
+        run: yarn db:generate
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test
+
+      - name: Build
+        run: yarn build

@@ -1,0 +1,473 @@
+// =============================================================================
+// Relay — Prisma schema
+//
+// Multi-tenant voice AI receptionist. Every tenant table carries org_id which
+// is auto-injected by the `with-org` extension in `lib/db/with-org.ts`, and
+// further guarded by Postgres RLS policies in `prisma/sql/setup.sql`.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Identity & tenancy
+// -----------------------------------------------------------------------------
+
+model User {
+  id          String       @id @db.Uuid
+  email       String       @unique
+  name        String?
+  avatarUrl   String?      @map("avatar_url")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  memberships Membership[]
+  invites     Invite[]     @relation("InvitesCreated")
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model Organization {
+  id                String              @id @default(uuid()) @db.Uuid
+  name              String
+  slug              String              @unique
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  memberships       Membership[]
+  invites           Invite[]
+  agents            Agent[]
+  phoneNumbers      PhoneNumber[]
+  calls             Call[]
+  transcripts       Transcript[]
+  toolCalls         ToolCall[]
+  knowledgeDocs     KnowledgeDoc[]
+  calcomConnection  CalcomConnection?
+  campaigns         Campaign[]
+  campaignLeads     CampaignLead[]
+  campaignAttempts  CampaignAttempt[]
+  auditLogs         AuditLog[]
+  callEvents        CallEvent[]
+  callMetrics       CallMetric[]
+
+  @@map("organizations")
+}
+
+enum MembershipRole {
+  ADMIN
+  MEMBER
+}
+
+model Membership {
+  id           String         @id @default(uuid()) @db.Uuid
+  orgId        String         @map("org_id") @db.Uuid
+  userId       String         @map("user_id") @db.Uuid
+  role         MembershipRole @default(MEMBER)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  organization Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Invite {
+  id              String         @id @default(uuid()) @db.Uuid
+  orgId           String         @map("org_id") @db.Uuid
+  email           String
+  role            MembershipRole @default(MEMBER)
+  token           String         @unique
+  createdByUserId String         @map("created_by_user_id") @db.Uuid
+  acceptedAt      DateTime?      @map("accepted_at")
+  expiresAt       DateTime       @map("expires_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  organization    Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy       User           @relation("InvitesCreated", fields: [createdByUserId], references: [id])
+
+  @@unique([orgId, email])
+  @@index([token])
+  @@map("invites")
+}
+
+// -----------------------------------------------------------------------------
+// Voice agents
+// -----------------------------------------------------------------------------
+
+enum AgentLanguage {
+  PT_BR
+  EN_US
+  AUTO
+}
+
+enum TTSProvider {
+  CARTESIA
+  ELEVENLABS
+}
+
+model Agent {
+  id                String         @id @default(uuid()) @db.Uuid
+  orgId             String         @map("org_id") @db.Uuid
+  name              String
+  personaPrompt     String         @default("") @map("persona_prompt") @db.Text
+  greeting          String         @default("") @db.Text
+  language          AgentLanguage  @default(PT_BR)
+  ttsProvider       TTSProvider    @default(CARTESIA) @map("tts_provider")
+  voiceId           String         @map("voice_id")
+  fallbackTransferE164 String?     @map("fallback_transfer_e164")
+  businessHours     Json           @default("{}") @map("business_hours")
+  enabled           Boolean        @default(true)
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  organization      Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  phoneNumbers      PhoneNumber[]
+  knowledgeDocs     KnowledgeDoc[]
+  calls             Call[]
+  campaigns         Campaign[]
+
+  @@index([orgId])
+  @@map("agents")
+}
+
+model PhoneNumber {
+  id            String       @id @default(uuid()) @db.Uuid
+  orgId         String       @map("org_id") @db.Uuid
+  agentId       String?      @map("agent_id") @db.Uuid
+  e164          String       @unique
+  label         String?
+  twilioSid     String?      @unique @map("twilio_sid")
+  inbound       Boolean      @default(true)
+  outbound      Boolean      @default(true)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  agent         Agent?       @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  calls         Call[]
+
+  @@index([orgId])
+  @@map("phone_numbers")
+}
+
+model KnowledgeDoc {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @map("org_id") @db.Uuid
+  agentId      String       @map("agent_id") @db.Uuid
+  title        String
+  body         String       @db.Text
+  source       String?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  agent        Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@map("knowledge_docs")
+}
+
+// -----------------------------------------------------------------------------
+// Calls
+// -----------------------------------------------------------------------------
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  RINGING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NO_ANSWER
+  VOICEMAIL
+}
+
+enum CallOutcome {
+  SCHEDULED
+  QUALIFIED
+  TRANSFERRED
+  NOT_QUALIFIED
+  NO_ANSWER
+  OTHER
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  MIXED
+}
+
+model Call {
+  id              String         @id @default(uuid()) @db.Uuid
+  orgId           String         @map("org_id") @db.Uuid
+  agentId         String?        @map("agent_id") @db.Uuid
+  phoneNumberId   String?        @map("phone_number_id") @db.Uuid
+  callerE164      String         @map("caller_e164")
+  calleeE164      String         @map("callee_e164")
+  direction       CallDirection
+  status          CallStatus     @default(RINGING)
+  livekitRoomName String?        @unique @map("livekit_room_name")
+  twilioCallSid   String?        @unique @map("twilio_call_sid")
+  startedAt       DateTime       @default(now()) @map("started_at")
+  answeredAt      DateTime?      @map("answered_at")
+  endedAt         DateTime?      @map("ended_at")
+  durationMs      Int?           @map("duration_ms")
+
+  outcome         CallOutcome?
+  summary         String?        @db.Text
+  topics          String[]       @default([])
+  sentiment       Sentiment?
+  costCents       Int?           @map("cost_cents")
+  recordingUrl    String?        @map("recording_url")
+
+  processedAt     DateTime?      @map("processed_at")
+
+  organization    Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  agent           Agent?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  phoneNumber     PhoneNumber?   @relation(fields: [phoneNumberId], references: [id], onDelete: SetNull)
+  transcripts     Transcript[]
+  toolCalls       ToolCall[]
+  events          CallEvent[]
+  metrics         CallMetric[]
+  campaignAttempt CampaignAttempt?
+
+  @@index([orgId, startedAt(sort: Desc)])
+  @@index([orgId, status])
+  @@index([agentId, startedAt(sort: Desc)])
+  @@map("calls")
+}
+
+enum Speaker {
+  USER
+  AGENT
+  SYSTEM
+}
+
+model Transcript {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @map("org_id") @db.Uuid
+  callId       String       @map("call_id") @db.Uuid
+  speaker      Speaker
+  text         String       @db.Text
+  startMs      Int          @map("start_ms")
+  endMs        Int          @map("end_ms")
+  isFinal      Boolean      @default(false) @map("is_final")
+  confidence   Float?
+  sentiment    Sentiment?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  call         Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId, startMs])
+  @@index([orgId, createdAt(sort: Desc)])
+  @@map("transcripts")
+}
+
+model ToolCall {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @map("org_id") @db.Uuid
+  callId       String       @map("call_id") @db.Uuid
+  name         String
+  inputJson    Json         @map("input_json")
+  outputJson   Json?        @map("output_json")
+  errorMessage String?      @map("error_message")
+  startedAt    DateTime     @default(now()) @map("started_at")
+  endedAt      DateTime?    @map("ended_at")
+  durationMs   Int?         @map("duration_ms")
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  call         Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId, startedAt])
+  @@map("tool_calls")
+}
+
+enum CallEventType {
+  ROOM_CREATED
+  PARTICIPANT_JOINED
+  PARTICIPANT_LEFT
+  AGENT_SPOKE
+  USER_SPOKE
+  TOOL_INVOKED
+  TRANSFER_REQUESTED
+  RECORDING_STARTED
+  RECORDING_STOPPED
+  HANGUP
+  ERROR
+}
+
+model CallEvent {
+  id           String        @id @default(uuid()) @db.Uuid
+  orgId        String        @map("org_id") @db.Uuid
+  callId       String        @map("call_id") @db.Uuid
+  type         CallEventType
+  payload      Json?
+  occurredAt   DateTime      @default(now()) @map("occurred_at")
+  organization Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  call         Call          @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId, occurredAt])
+  @@map("call_events")
+}
+
+enum MetricLeg {
+  STT_FINALIZE
+  LLM_TTFT
+  LLM_TOTAL
+  TTS_TTFA
+  TOOL_TOTAL
+  END_TO_END
+}
+
+model CallMetric {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @map("org_id") @db.Uuid
+  callId       String       @map("call_id") @db.Uuid
+  leg          MetricLeg
+  valueMs      Int          @map("value_ms")
+  occurredAt   DateTime     @default(now()) @map("occurred_at")
+  metadata     Json?
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  call         Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId, leg])
+  @@index([orgId, leg, occurredAt(sort: Desc)])
+  @@map("call_metrics")
+}
+
+// -----------------------------------------------------------------------------
+// Calendar integration
+// -----------------------------------------------------------------------------
+
+model CalcomConnection {
+  id                String       @id @default(uuid()) @db.Uuid
+  orgId             String       @unique @map("org_id") @db.Uuid
+  calcomUserId      Int          @map("calcom_user_id")
+  managedUserEmail  String       @map("managed_user_email")
+  accessToken       String       @map("access_token") @db.Text
+  refreshToken      String       @map("refresh_token") @db.Text
+  expiresAt         DateTime     @map("expires_at")
+  defaultEventTypeId Int?        @map("default_event_type_id")
+  timezone          String       @default("America/Sao_Paulo")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  organization      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("calcom_connections")
+}
+
+// -----------------------------------------------------------------------------
+// Outbound campaigns
+// -----------------------------------------------------------------------------
+
+enum CampaignStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+  CANCELED
+}
+
+enum CampaignLeadStatus {
+  PENDING
+  CALLING
+  ATTEMPTED
+  REACHED
+  NO_ANSWER
+  VOICEMAIL
+  FAILED
+  EXCLUDED
+}
+
+model Campaign {
+  id              String          @id @default(uuid()) @db.Uuid
+  orgId           String          @map("org_id") @db.Uuid
+  agentId         String          @map("agent_id") @db.Uuid
+  name            String
+  status          CampaignStatus  @default(DRAFT)
+  fromPhoneNumberE164 String      @map("from_phone_number_e164")
+  scriptPrompt    String          @default("") @map("script_prompt") @db.Text
+  workingHours    Json            @default("{}") @map("working_hours")
+  maxAttempts     Int             @default(3) @map("max_attempts")
+  cooldownMinutes Int             @default(60) @map("cooldown_minutes")
+  concurrencyLimit Int            @default(2) @map("concurrency_limit")
+  startedAt       DateTime?       @map("started_at")
+  completedAt     DateTime?       @map("completed_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  organization    Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  agent           Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  leads           CampaignLead[]
+  attempts        CampaignAttempt[]
+
+  @@index([orgId, status])
+  @@map("campaigns")
+}
+
+model CampaignLead {
+  id           String              @id @default(uuid()) @db.Uuid
+  orgId        String              @map("org_id") @db.Uuid
+  campaignId   String              @map("campaign_id") @db.Uuid
+  name         String?
+  phoneE164    String              @map("phone_e164")
+  meta         Json                @default("{}")
+  status       CampaignLeadStatus  @default(PENDING)
+  attempts     Int                 @default(0)
+  lastAttemptAt DateTime?          @map("last_attempt_at")
+  nextEligibleAt DateTime?         @map("next_eligible_at")
+  reachedAt    DateTime?           @map("reached_at")
+  outcome      CallOutcome?
+  createdAt    DateTime            @default(now()) @map("created_at")
+  organization Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  campaign     Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignAttempts CampaignAttempt[]
+
+  @@unique([campaignId, phoneE164])
+  @@index([orgId, campaignId, status])
+  @@index([nextEligibleAt])
+  @@map("campaign_leads")
+}
+
+model CampaignAttempt {
+  id            String        @id @default(uuid()) @db.Uuid
+  orgId         String        @map("org_id") @db.Uuid
+  campaignId    String        @map("campaign_id") @db.Uuid
+  leadId        String        @map("lead_id") @db.Uuid
+  callId        String?       @unique @map("call_id") @db.Uuid
+  startedAt     DateTime      @default(now()) @map("started_at")
+  endedAt       DateTime?     @map("ended_at")
+  outcome       CallOutcome?
+  errorMessage  String?       @map("error_message")
+  organization  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  campaign      Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  lead          CampaignLead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  call          Call?         @relation(fields: [callId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, startedAt(sort: Desc)])
+  @@map("campaign_attempts")
+}
+
+// -----------------------------------------------------------------------------
+// Audit
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @map("org_id") @db.Uuid
+  userId       String?      @map("user_id") @db.Uuid
+  action       String
+  entity       String
+  entityId     String?      @map("entity_id")
+  metadata     Json?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}

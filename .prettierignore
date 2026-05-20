@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+dist
+coverage
+.yarn
+yarn.lock
+.next-env.d.ts
+prisma/migrations
+playwright-report
+test-results
