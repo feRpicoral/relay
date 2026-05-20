@@ -21,8 +21,8 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
     "db:rls": "tsx scripts/apply-rls.ts",
-    "worker:dev": "tsx watch worker/index.ts",
-    "worker:start": "tsx worker/index.ts",
+    "worker:dev": "tsx watch worker/agent.ts dev",
+    "worker:start": "tsx worker/agent.ts start",
     "inngest:dev": "inngest-cli dev",
     "prepare": "husky"
   },
@@ -84,7 +84,6 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "twilio": "^5.4.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

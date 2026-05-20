@@ -1,8 +1,6 @@
 import { getPrisma } from "@/lib/db/client";
-import { requireEnv } from "@/lib/env";
-import { buildRoomName, createRoom } from "@/lib/voice/livekit";
+import { buildRoomName, createRoom, placeOutboundSipCall } from "@/lib/voice/livekit";
 import { createOutboundCall } from "@/lib/voice/persistence";
-import { createOutboundCall as twilioOutbound } from "@/lib/voice/twilio";
 
 import { inngest } from "../client";
 
@@ -10,6 +8,11 @@ import { inngest } from "../client";
  * Dispatch the next call in a campaign. Triggered both on demand and by a cron
  * scan of `nextEligibleAt`. Respects working hours, max attempts, and the
  * campaign concurrency limit.
+ *
+ * Outbound dialing happens through LiveKit's SIP service — LiveKit originates
+ * the SIP INVITE to the configured outbound trunk (typically Twilio's elastic
+ * SIP trunk), which carries it to PSTN. The same agent worker that handles
+ * inbound rooms picks up this room via the framework's job dispatch.
  */
 export const campaignDispatch = inngest.createFunction(
   { id: "campaign-dispatch", retries: 2, concurrency: { key: "event.data.campaignId", limit: 1 } },
@@ -47,6 +50,16 @@ export const campaignDispatch = inngest.createFunction(
       });
     });
 
+    const roomName = buildRoomName(callId);
+    await step.run("livekit-room", async () => {
+      await createRoom(roomName, {
+        callId,
+        orgId: lead.orgId,
+        agentId: lead.campaign.agentId,
+        outbound: true,
+      });
+    });
+
     await step.run("mark-attempting", async () => {
       await getPrisma().campaignLead.update({
         where: { id: leadId },
@@ -66,22 +79,13 @@ export const campaignDispatch = inngest.createFunction(
       });
     });
 
-    const roomName = buildRoomName(callId);
-    await step.run("livekit-room", async () => {
-      await createRoom(roomName, { callId, orgId: lead.orgId, outbound: true });
-    });
-
-    await step.run("twilio-dial", async () => {
-      const twimlUrl = `${requireEnv("NEXT_PUBLIC_APP_URL")}/api/webhooks/twilio/voice`;
-      await twilioOutbound({
-        to: lead.phoneE164,
-        from: lead.campaign.fromPhoneNumberE164,
-        twimlUrl,
-        amdEnabled: true,
-        statusCallbackUrl: `${requireEnv("NEXT_PUBLIC_APP_URL")}/api/webhooks/twilio/status`,
+    await step.run("livekit-sip-outbound", async () => {
+      await placeOutboundSipCall({
+        roomName,
+        toE164: lead.phoneE164,
+        participantIdentity: `sip-${lead.id}`,
+        participantName: lead.name ?? lead.phoneE164,
       });
-      // The agent worker is dispatched by Twilio's voice webhook when the call
-      // is answered, same as inbound.
     });
 
     return { ok: true, callId, leadId };

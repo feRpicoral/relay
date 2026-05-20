@@ -23,5 +23,4 @@ COPY tsconfig.json ./
 COPY lib ./lib
 COPY worker ./worker
 
-EXPOSE 3001
-CMD ["yarn", "tsx", "worker/index.ts"]
+CMD ["yarn", "tsx", "worker/agent.ts", "start"]

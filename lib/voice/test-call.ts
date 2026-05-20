@@ -3,16 +3,16 @@ import "server-only";
 import { getPrisma } from "@/lib/db/client";
 import { type AgentId, asAgentId, asOrgId, type OrgId } from "@/lib/db/types";
 import { requireEnv } from "@/lib/env";
-import { issueParticipantToken } from "@/lib/voice/livekit";
-import { buildRoomName, createRoom } from "@/lib/voice/livekit";
+import { buildRoomName, createRoom, issueParticipantToken } from "@/lib/voice/livekit";
 import { createInboundCall } from "@/lib/voice/persistence";
 
 /**
  * Create a "test call" for the in-dashboard simulated call feature.
  *
- * Returns a LiveKit access token the browser uses to join the room and
- * publish microphone audio, plus the call id so the dashboard can subscribe
- * to live transcript updates.
+ * Creates a Call row + LiveKit room, returns a participant token the browser
+ * uses to join and publish microphone audio. The agent worker auto-dispatches
+ * to the new room (the framework subscribes to room-created events) and reads
+ * the call/org IDs from the room metadata.
  */
 export async function startTestCall(args: {
   orgId: OrgId;
@@ -23,7 +23,6 @@ export async function startTestCall(args: {
   if (!agent) throw new Error("Agent not found.");
   if (agent.orgId !== args.orgId) throw new Error("Cross-tenant agent reference.");
 
-  // Use the org's first inbound phone number, or a placeholder if none.
   const phone = await getPrisma().phoneNumber.findFirst({
     where: { orgId: args.orgId, agentId: args.agentId },
   });
@@ -37,17 +36,12 @@ export async function startTestCall(args: {
   });
 
   const roomName = buildRoomName(callId);
-  await createRoom(roomName, { callId, orgId: args.orgId, agentId: args.agentId, test: true });
-
-  // Dispatch worker.
-  fetch(`${requireEnv("WORKER_PUBLIC_URL")}/dispatch`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.WORKER_SHARED_SECRET ?? ""}`,
-    },
-    body: JSON.stringify({ callId, roomName }),
-  }).catch(() => undefined);
+  await createRoom(roomName, {
+    callId,
+    orgId: args.orgId,
+    agentId: args.agentId,
+    test: true,
+  });
 
   const token = await issueParticipantToken({
     roomName,
@@ -72,5 +66,4 @@ async function ensureTestPhone(orgId: OrgId, agentId: AgentId): Promise<string> 
   return phone.id;
 }
 
-// Re-export for convenience.
 export const _internal = { asOrgId, asAgentId };

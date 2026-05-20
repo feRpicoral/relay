@@ -80,21 +80,22 @@ The numbers below are what the architecture is designed for. They will be measur
 
 ```mermaid
 flowchart LR
-    Caller[Caller] --> Twilio[Twilio: PSTN + SIP]
+    Caller[Caller] -->|PSTN| Twilio[Twilio Elastic SIP Trunk]
     Twilio -->|SIP| LK[LiveKit Cloud]
-    LK <--> Worker[Agent worker: Node + Fly.io]
-    Worker --> STT[Deepgram Flux: STT + turn detection]
-    Worker --> LLM[Claude Haiku 4.5: streaming + tool use]
-    Worker --> TTS[Cartesia Sonic-3: streaming TTS]
-    LLM -.tool calls.-> Tools[lookup_kb / check_availability / book_appointment / transfer]
+    LK -->|dispatch| Worker[Agent worker: defineAgent, Fly.io]
+    Worker --> STT[Deepgram STT + turn detection]
+    Worker --> LLM[Claude Haiku 4.5 via OpenAI-compat]
+    Worker --> TTS[Cartesia Sonic-3 streaming TTS]
+    LLM -.tools.-> Tools[lookup_kb / check_availability / book_appointment / transfer]
     Tools --> Cal[Cal.com Platform API]
     Worker --> DB[(Postgres / Supabase)]
     DB --> RT[Supabase Realtime]
-    RT --> UI[Live call monitor]
+    RT --> UI[Live call monitor in dashboard]
     LK -.egress.-> Storage[Supabase Storage]
     Worker -.hangup.-> Inn[Inngest: call/completed]
     Inn --> Sonnet[Claude Sonnet 4.6: summary, outcome, sentiment]
     Sonnet --> DB
+    UI -.outbound campaign.-> SIPOut[LiveKit SIP outbound] --> Twilio
 ```
 
 ## Environment variables
@@ -113,7 +114,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `ANTHROPIC_MODEL_FAST`                  | `claude-haiku-4-5-20251001`                                                | same                            | no        |
 | `ANTHROPIC_MODEL_SUMMARY`               | `claude-sonnet-4-6`                                                        | same                            | no        |
 | `DEEPGRAM_API_KEY`                      | from `console.deepgram.com`                                                | same                            | yes       |
-| `DEEPGRAM_MODEL`                        | `flux-general`                                                             | same                            | no        |
+| `DEEPGRAM_MODEL`                        | `nova-3` (or `flux-general` once the plugin ships Flux)                    | same                            | no        |
 | `CARTESIA_API_KEY`                      | from `play.cartesia.ai`                                                    | same                            | yes       |
 | `CARTESIA_VERSION`                      | `2025-04-16`                                                               | same                            | no        |
 | `CARTESIA_MODEL`                        | `sonic-3`                                                                  | same                            | no        |
@@ -121,20 +122,18 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_API_KEY`                       | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
-| `TWILIO_ACCOUNT_SID`                    | from `console.twilio.com`                                                  | same                            | yes       |
-| `TWILIO_AUTH_TOKEN`                     | from `console.twilio.com`                                                  | same                            | yes       |
-| `TWILIO_SIP_DOMAIN`                     | the SIP domain that routes into LiveKit                                    | same                            | no        |
+| `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
 | `CALCOM_CLIENT_ID`                      | from Cal.com Platform                                                      | same                            | yes       |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `RESEND_API_KEY`                        | sending-access key                                                         | same                            | yes       |
 | `RESEND_FROM_EMAIL`                     | `onboarding@resend.dev` until you verify a domain                          | same                            | no        |
-| `WORKER_PUBLIC_URL`                     | the public origin of the deployed agent worker                             | `http://localhost:3001`         | no        |
-| `WORKER_SHARED_SECRET`                  | random 32+ char string the Next.js app uses to authenticate the worker     | same                            | yes       |
 | `NEXT_PUBLIC_SENTRY_DSN` _(optional)_   | from a Sentry project                                                      | same or unset                   | no        |
 | `NEXT_PUBLIC_POSTHOG_KEY` _(optional)_  | from PostHog                                                               | same or unset                   | no        |
 | `NEXT_PUBLIC_POSTHOG_HOST` _(optional)_ | `https://us.i.posthog.com`                                                 | same                            | no        |
+
+Twilio is configured as a **SIP carrier**, not via REST API — its account credentials live inside LiveKit's outbound trunk config in the LiveKit dashboard, not in your app env. The app never calls `api.twilio.com` directly.
 
 One value differs between local and production: **`DATABASE_URL`** uses the transaction pooler in production (every serverless invocation opens a fresh connection) and the session pooler locally (longer-lived, supports prepared statements, plays nicely on IPv4 home networks).
 
@@ -185,7 +184,7 @@ yarn db:seed --reset      # wipes and re-creates
 
 ```bash
 yarn dev                  # Next.js dashboard on :3000
-yarn worker:dev           # Agent worker on :3001 (separate terminal)
+yarn worker:dev           # Agent worker (separate terminal)
 yarn inngest:dev          # Inngest dev server (separate terminal)
 ```
 
@@ -202,14 +201,29 @@ yarn build                # Next.js production build
 
 The Next.js app deploys to Vercel. Import the repo, leave Build / Output / Install commands empty (Vercel auto-detects yarn via the `packageManager` field), and paste your env vars from `.env.local` swapping in the production values from the table above.
 
-The agent worker deploys separately. The included `worker/Dockerfile` targets Fly.io in `gru` (São Paulo) — that's the region recommended for proximity to Twilio's Brazil presence. Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app, plus `PORT=3001`. Point `WORKER_PUBLIC_URL` (in the Next.js app's env) at whatever URL the worker host gives you.
+The agent worker deploys separately. The included `worker/Dockerfile` targets Fly.io in `gru` (São Paulo) — that's the region recommended for proximity to your SIP carrier's Brazil presence. Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app.
+
+The worker uses `@livekit/agents`'s built-in job dispatch — when LiveKit Cloud creates a room (because a SIP call arrived, or the dashboard's test-call feature provisioned one), it dispatches a worker process automatically. There is no HTTP coupling between Vercel and the worker host.
+
+### SIP routing
+
+Relay treats Twilio (or any other SIP-capable carrier) as a **SIP carrier**, not as a Voice webhook target. Inbound calls flow:
+
+```
+caller → Twilio PSTN → Twilio's Elastic SIP Trunk → LiveKit Cloud SIP inbound trunk → room created → agent worker dispatched
+```
+
+Outbound calls flow the opposite direction — `placeOutboundSipCall()` (called from Inngest) tells LiveKit to originate a SIP INVITE that Twilio carries to PSTN.
 
 After the first deploy:
 
 1. In Supabase **Authentication → URL Configuration**, add `https://<your-deployment>` to **Site URL** and **Redirect URLs**.
-2. In Twilio, point your purchased number's Voice webhook at `https://<your-deployment>/api/webhooks/twilio/voice` with status callback `https://<your-deployment>/api/webhooks/twilio/status`.
-3. In LiveKit Cloud, create a SIP inbound trunk that delivers to a room name based on the SIP URI user-part (e.g. `call-<callId>`). Point Twilio's SIP routing at this trunk's domain.
-4. In Inngest, register the app with the `/api/inngest` route and copy the signing key.
+2. In **Twilio Console → Elastic SIP Trunking**, create a trunk. Set the termination URI to the LiveKit Cloud SIP URI shown in LiveKit's SIP dashboard. Buy a phone number and assign it to this trunk (origination).
+3. In **LiveKit Cloud → SIP**, create an inbound trunk that accepts calls from Twilio's IPs, and a dispatch rule that creates one room per call (default `call-<sid>`). Create an outbound trunk pointing at Twilio's SIP termination URI with your Twilio SIP credentials; copy its id into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`.
+4. In **LiveKit Cloud → Agents**, register a dispatch rule that runs your worker on every new room (the worker is auto-discovered by name; nothing to configure if you only have one).
+5. In Inngest, register the app with the `/api/inngest` route and copy the signing key.
+
+The number you connect inside Relay (`Settings → Phone numbers`) must match the E.164 the carrier sends in the SIP `To` header. The worker reads this from SIP attributes on the joining participant to resolve which org and agent owns the call.
 
 ### Applying schema changes to production
 
@@ -237,7 +251,6 @@ app/
     settings/           org, members, phone-numbers, calendar
   auth/                 supabase callback, signout, check-email
   api/
-    webhooks/twilio/    inbound voice + status callbacks
     webhooks/livekit/   room / participant events
     inngest/            Inngest serve handler
 
@@ -257,7 +270,7 @@ lib/
   inngest/              client, post-call function, campaign-dispatch, campaign-tick (cron)
   posthog/              client + server analytics
   supabase/             server, admin (service-role), browser, middleware
-  voice/                livekit, twilio, persistence, prompts, tools, cost
+  voice/                livekit (room + SIP outbound), persistence, prompts, cost
   voice/tools/          lookup-kb
 
 prisma/
@@ -268,11 +281,10 @@ prisma/
 scripts/
   apply-rls.ts          run setup.sql against DIRECT_URL
 
-worker/                 LiveKit agent worker (deployed separately)
-  index.ts              HTTP entrypoint with /dispatch endpoint
-  session.ts            conversation loop (Anthropic stream + tool use)
-  audio.ts              STT/TTS bridge
-  tts/                  Cartesia + ElevenLabs adapters
+worker/                 LiveKit Agents worker (deployed separately)
+  agent.ts              defineAgent({ entry }) — resolves tenant from SIP attrs,
+                        wires Deepgram STT + Anthropic LLM + Cartesia TTS + Silero VAD,
+                        runs the conversation loop, persists transcripts and metrics
   Dockerfile
 ```
 

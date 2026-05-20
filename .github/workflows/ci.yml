@@ -23,13 +23,11 @@ jobs:
       LIVEKIT_API_KEY: ci-livekit-key
       LIVEKIT_API_SECRET: ci-livekit-secret
       LIVEKIT_URL: wss://ci.livekit.cloud
-      TWILIO_ACCOUNT_SID: ci-twilio-sid
-      TWILIO_AUTH_TOKEN: ci-twilio-token
+      LIVEKIT_SIP_OUTBOUND_TRUNK_ID: ci-trunk
       CALCOM_CLIENT_ID: ci-calcom-client
       INNGEST_EVENT_KEY: ci-inngest-event
       INNGEST_SIGNING_KEY: ci-inngest-signing
       RESEND_API_KEY: ci-resend-key
-      WORKER_PUBLIC_URL: http://localhost:3001
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
