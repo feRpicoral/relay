@@ -116,13 +116,13 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `DEEPGRAM_API_KEY`                      | from `console.deepgram.com`                                                | same                            | yes       |
 | `DEEPGRAM_MODEL`                        | `nova-3`                                                                   | same                            | no        |
 | `CARTESIA_API_KEY`                      | from `play.cartesia.ai`                                                    | same                            | yes       |
-| `CARTESIA_VERSION`                      | `2025-04-16`                                                               | same                            | no        |
 | `CARTESIA_MODEL`                        | `sonic-3`                                                                  | same                            | no        |
 | `ELEVENLABS_API_KEY` _(premium SKU)_    | from `elevenlabs.io`                                                       | same or unset                   | yes       |
 | `LIVEKIT_API_KEY`                       | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
+| `LIVEKIT_SIP_OUTBOUND_TRUNK_HOST`       | host portion of the SIP transfer target; defaults to `sip.livekit.cloud`   | same or unset                   | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
