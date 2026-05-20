@@ -83,7 +83,7 @@ export function LatencyMeter({ callId, orgId, initial }: LatencyMeterProps) {
           return (
             <div key={leg} className="border-border bg-card/40 rounded-md border p-3">
               <p className="text-muted-foreground text-xs">{LEG_LABELS[leg]}</p>
-              <p className="text-muted-foreground mt-1 font-mono text-sm">—</p>
+              <p className="text-muted-foreground mt-1 font-mono text-sm">-</p>
             </div>
           );
         }
@@ -108,7 +108,7 @@ export function LatencyMeter({ callId, orgId, initial }: LatencyMeterProps) {
               <span className="text-muted-foreground text-xs">ms</span>
             </p>
             <p className="text-muted-foreground mt-1 text-[10px]">
-              p95 {Math.round(agg.p95)}ms · alvo {budget}ms
+              p95 {Math.round(agg.p95)}ms, alvo {budget}ms
             </p>
           </div>
         );

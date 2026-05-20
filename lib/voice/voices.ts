@@ -14,7 +14,7 @@ export interface VoiceOption {
 }
 
 export const VOICES: readonly VoiceOption[] = [
-  // Cartesia — pt-BR
+  // Cartesia, pt-BR
   {
     provider: "cartesia",
     voiceId: "pt-br-mariana",
@@ -40,7 +40,7 @@ export const VOICES: readonly VoiceOption[] = [
     description: "Voz feminina jovem e descontraída.",
   },
 
-  // Cartesia — en-US
+  // Cartesia, en-US
   {
     provider: "cartesia",
     voiceId: "en-us-emma",
@@ -58,14 +58,14 @@ export const VOICES: readonly VoiceOption[] = [
     description: "Professional, clear US accent.",
   },
 
-  // ElevenLabs — premium SKU
+  // ElevenLabs, premium SKU
   {
     provider: "elevenlabs",
     voiceId: "21m00Tcm4TlvDq8ikWAM",
     label: "Rachel (premium)",
     language: "en-US",
     gender: "female",
-    description: "ElevenLabs Flash v2.5 — highest quality.",
+    description: "ElevenLabs Flash v2.5, highest quality.",
   },
 ];
 

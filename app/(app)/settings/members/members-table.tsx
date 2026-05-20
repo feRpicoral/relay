@@ -138,7 +138,7 @@ export function MembersTable({
                 <div>
                   <p className="text-sm font-medium">{i.email}</p>
                   <p className="text-muted-foreground text-xs">
-                    Convidado como {i.role === "ADMIN" ? "Admin" : "Membro"} · expira{" "}
+                    Convidado como {i.role === "ADMIN" ? "Admin" : "Membro"}, expira{" "}
                     {new Date(i.expiresAt).toLocaleDateString("pt-BR")}
                   </p>
                 </div>

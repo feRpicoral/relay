@@ -55,7 +55,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
     <>
       <PageHeader
         title={call.direction === "INBOUND" ? "Chamada recebida" : "Chamada de saída"}
-        description={`${formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164)} · ${call.agent?.name ?? "Agente"}`}
+        description={`${formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164)}, ${call.agent?.name ?? "Agente"}`}
         actions={
           <div className="flex items-center gap-2">
             <CallStatusBadge status={call.status} />

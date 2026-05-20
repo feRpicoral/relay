@@ -26,7 +26,7 @@ const features = [
   {
     icon: MessageSquareText,
     title: "Transcrição ao vivo",
-    body: "Veja cada palavra em tempo real no dashboard — e assuma a chamada se precisar.",
+    body: "Veja cada palavra em tempo real no dashboard, e assuma a chamada se precisar.",
   },
   {
     icon: BarChart3,
@@ -73,7 +73,7 @@ export default function LandingPage() {
         </h1>
         <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg text-balance">
           Um agente de voz com IA que atende ligações, qualifica leads e agenda consultas em tempo
-          real — enquanto sua equipe vê tudo acontecer no dashboard.
+          real, enquanto sua equipe vê tudo acontecer no dashboard.
         </p>
         <div className="mt-10 flex items-center justify-center gap-3">
           <Button asChild size="lg" className="gap-2">

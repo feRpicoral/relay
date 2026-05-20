@@ -6,7 +6,7 @@ interface CostInput {
 
 /**
  * Rough per-call cost estimation in USD cents. Real billing reconciles against
- * provider invoices monthly. These numbers come from DECISIONS.md §14.
+ * provider invoices monthly. These numbers come from DECISIONS.md #14.
  */
 const RATES_PER_MIN_CENTS = {
   twilio: 1.0,

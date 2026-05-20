@@ -14,7 +14,7 @@ async function main() {
   await client.connect();
   try {
     await client.query(sql);
-    console.log("✓ RLS + auth sync applied.");
+    console.log("RLS + auth sync applied.");
   } finally {
     await client.end();
   }

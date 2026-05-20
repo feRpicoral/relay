@@ -1,9 +1,9 @@
 /**
- * Relay agent worker — the voice pipeline.
+ * Relay agent worker, the voice pipeline.
  *
  * Joins a LiveKit room (typically created by an inbound SIP call from the
  * configured trunk, or by the in-dashboard test-call feature), resolves the
- * tenant from SIP attributes, then runs a streaming STT → LLM → TTS pipeline
+ * tenant from SIP attributes, then runs a streaming STT -> LLM -> TTS pipeline
  * via @livekit/agents.
  *
  * Run with `yarn worker:start` (production) or `yarn worker:dev` (watch).
@@ -50,7 +50,7 @@ export default defineAgent({
   entry: async (ctx: JobContext) => {
     await ctx.connect();
 
-    // ── Resolve tenant + agent ─────────────────────────────────────────────
+    // Resolve tenant + agent
     // For an inbound SIP call, LiveKit attaches SIP attributes to the
     // participant. For the test-call feature, the room metadata carries the
     // pre-created callId. We support both paths.
@@ -92,7 +92,7 @@ export default defineAgent({
           orgId = meta.orgId;
         }
       } catch {
-        // Not JSON — fall through to abort.
+        // Not JSON, fall through to abort.
       }
       if (!callId || !orgId) {
         console.warn(`[agent] no SIP attrs and no room metadata; disconnecting`);
@@ -120,7 +120,7 @@ export default defineAgent({
     const systemPrompt = buildSystemPrompt({ ...agentCtx, language });
     const callStartedAt = Date.now();
 
-    // ── Tools ──────────────────────────────────────────────────────────────
+    // Tools
     const tools = {
       check_availability: llmModule.tool({
         description:
@@ -295,7 +295,7 @@ export default defineAgent({
       }),
     };
 
-    // ── Pipeline ───────────────────────────────────────────────────────────
+    // Pipeline
     const stt = new deepgram.STTv2({
       apiKey: requireEnv("DEEPGRAM_API_KEY"),
       model: envOr("DEEPGRAM_MODEL", "nova-3"),
@@ -337,7 +337,7 @@ export default defineAgent({
       tools,
     });
 
-    // ── Observability hooks ────────────────────────────────────────────────
+    // Observability hooks
     // Persist every finalized user/agent turn into our DB.
     session.on(AgentSessionEventTypes.ConversationItemAdded, (event) => {
       const item = event.item as unknown as
@@ -383,11 +383,11 @@ export default defineAgent({
       }
     });
 
-    // ── Start ──────────────────────────────────────────────────────────────
+    // Start
     await session.start({ agent, room: ctx.room });
     await session.say(buildGreeting(agentCtx));
 
-    // ── Wait for hangup ────────────────────────────────────────────────────
+    // Wait for hangup
     await new Promise<void>((resolve) => {
       const finish = () => resolve();
       ctx.room.once("disconnected", finish);

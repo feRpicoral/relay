@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: {
-    default: "Relay — AI Receptionist for Service Businesses",
-    template: "%s · Relay",
+    default: "Relay, AI Receptionist for Service Businesses",
+    template: "%s, Relay",
   },
   description:
     "Voice AI agents that answer your calls, schedule appointments, and qualify leads 24/7.",

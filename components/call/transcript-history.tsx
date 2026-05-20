@@ -69,9 +69,9 @@ export function TranscriptHistory({ rows, currentMs }: TranscriptHistoryProps) {
                   isAgent ? "text-primary-foreground/60" : "text-muted-foreground",
                 )}
               >
-                {isAgent ? "Agente" : "Cliente"} · {formatTimestamp(row.startMs)}
+                {isAgent ? "Agente" : "Cliente"}, {formatTimestamp(row.startMs)}
                 {row.sentiment && row.sentiment !== "NEUTRAL"
-                  ? ` · ${row.sentiment.toLowerCase()}`
+                  ? `, ${row.sentiment.toLowerCase()}`
                   : null}
               </p>
               <p>{row.text}</p>

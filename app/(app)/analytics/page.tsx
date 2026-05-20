@@ -67,7 +67,7 @@ export default async function AnalyticsPage({
           <Metric
             icon={<Timer className="text-muted-foreground h-4 w-4" />}
             label="AHT médio"
-            value={summary.avgHandleTimeMs === 0 ? "—" : formatDuration(summary.avgHandleTimeMs)}
+            value={summary.avgHandleTimeMs === 0 ? "-" : formatDuration(summary.avgHandleTimeMs)}
           />
           <Metric
             icon={<Wallet className="text-muted-foreground h-4 w-4" />}
@@ -77,7 +77,7 @@ export default async function AnalyticsPage({
           <Metric
             icon={<Gauge className="text-muted-foreground h-4 w-4" />}
             label="Latência p95"
-            value={summary.latencyP95 === 0 ? "—" : `${summary.latencyP95}ms`}
+            value={summary.latencyP95 === 0 ? "-" : `${summary.latencyP95}ms`}
             sub={summary.latencyP50 === 0 ? undefined : `p50 ${summary.latencyP50}ms`}
             highlight={summary.latencyP95 > 900}
           />
@@ -97,7 +97,7 @@ export default async function AnalyticsPage({
           <Card>
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm font-medium">
-                Latência p95 — histograma
+                Latência p95, histograma
               </CardTitle>
             </CardHeader>
             <div className="px-6 pb-6">
@@ -138,7 +138,7 @@ export default async function AnalyticsPage({
                   <span className="text-right tabular-nums">{a.totalCalls}</span>
                   <span className="text-right tabular-nums">{percent(a.conversionRate)}</span>
                   <span className="text-right tabular-nums">
-                    {a.avgHandleTimeMs === 0 ? "—" : formatDuration(a.avgHandleTimeMs)}
+                    {a.avgHandleTimeMs === 0 ? "-" : formatDuration(a.avgHandleTimeMs)}
                   </span>
                 </div>
               ))}

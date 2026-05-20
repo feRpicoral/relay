@@ -65,7 +65,7 @@ export function Waveform({ analyser, active, className, barCount = 48 }: Wavefor
           const idx = Math.floor((i / barCount) * (data.length * 0.6));
           amp = (data[idx] ?? 0) / 255;
         } else if (active) {
-          // Synthetic pattern — pleasing pulse instead of a flat line.
+          // Synthetic pattern, pleasing pulse instead of a flat line.
           const phase = tRef.current + i * 0.18;
           amp = (Math.sin(phase) * Math.sin(phase * 0.5) + 1) / 2.4 + 0.08;
         } else {

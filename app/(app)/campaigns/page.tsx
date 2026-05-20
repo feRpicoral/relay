@@ -77,7 +77,7 @@ export default async function CampaignsPage() {
                     <div>
                       <p className="font-semibold">{c.name}</p>
                       <p className="text-muted-foreground text-xs">
-                        Agente {c.agent.name} · {c._count.leads} leads · {c._count.attempts}{" "}
+                        Agente {c.agent.name}, {c._count.leads} leads, {c._count.attempts}{" "}
                         tentativas
                       </p>
                     </div>

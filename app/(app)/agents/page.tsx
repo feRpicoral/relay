@@ -40,7 +40,7 @@ export default async function AgentsPage() {
           <Empty
             icon={<Bot className="h-5 w-5" />}
             title="Você ainda não tem agentes"
-            description="Crie seu primeiro agente — leva uns 2 minutos."
+            description="Crie seu primeiro agente, leva uns 2 minutos."
             action={
               <Button asChild>
                 <Link href="/agents/new">Criar agente</Link>
@@ -64,11 +64,11 @@ export default async function AgentsPage() {
                         <p className="font-semibold">{a.name}</p>
                         <p className="text-muted-foreground text-xs">
                           {a.language === "PT_BR"
-                            ? "Português · "
+                            ? "Português, "
                             : a.language === "EN_US"
-                              ? "English · "
-                              : "Auto · "}
-                          {a._count.calls} chamadas · {a._count.knowledgeDocs} docs
+                              ? "English, "
+                              : "Auto, "}
+                          {a._count.calls} chamadas, {a._count.knowledgeDocs} docs
                         </p>
                       </div>
                     </div>
@@ -78,7 +78,7 @@ export default async function AgentsPage() {
                   </div>
                   {a.phoneNumbers.length > 0 ? (
                     <p className="text-muted-foreground mt-4 font-mono text-xs">
-                      {a.phoneNumbers.map((p) => p.e164).join(" · ")}
+                      {a.phoneNumbers.map((p) => p.e164).join(", ")}
                     </p>
                   ) : (
                     <p className="text-muted-foreground mt-4 text-xs">Nenhum número conectado</p>

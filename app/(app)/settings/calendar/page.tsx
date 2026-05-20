@@ -37,7 +37,7 @@ export default async function CalendarSettingsPage() {
               <div>
                 <CardTitle>Cal.com conectado</CardTitle>
                 <p className="text-muted-foreground text-xs">
-                  {connection.managedUserEmail} · fuso {connection.timezone}
+                  {connection.managedUserEmail}, fuso {connection.timezone}
                 </p>
               </div>
             </div>

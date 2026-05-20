@@ -126,7 +126,7 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
           placeholder="Você é a recepcionista..."
         />
         <p className="text-muted-foreground text-xs">
-          Vira parte do system prompt. Use cache prompt (sempre estável) — evite informações que
+          Vira parte do system prompt. Use cache prompt (sempre estável), evite informações que
           mudam por chamada.
         </p>
       </div>

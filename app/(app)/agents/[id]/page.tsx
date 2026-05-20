@@ -37,7 +37,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
     <>
       <PageHeader
         title={agent.name}
-        description={`${agent.language === "PT_BR" ? "Português" : agent.language === "EN_US" ? "English" : "Auto"} · ${agent.ttsProvider === "ELEVENLABS" ? "ElevenLabs" : "Cartesia"}`}
+        description={`${agent.language === "PT_BR" ? "Português" : agent.language === "EN_US" ? "English" : "Auto"}, ${agent.ttsProvider === "ELEVENLABS" ? "ElevenLabs" : "Cartesia"}`}
         actions={
           <div className="flex items-center gap-2">
             <TestCallButton agentId={agent.id} />
@@ -129,7 +129,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
                   agent.phoneNumbers.map((p) => (
                     <div key={p.id} className="flex items-center justify-between px-6 py-3">
                       <p className="font-mono text-sm">{p.e164}</p>
-                      <p className="text-muted-foreground text-xs">{p.label ?? "—"}</p>
+                      <p className="text-muted-foreground text-xs">{p.label ?? "-"}</p>
                     </div>
                   ))
                 )}
@@ -144,7 +144,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
 
 /**
  * The ElevenLabs voices are only offered when the worker has a key. If the
- * env var is unset, we filter them out — preventing a state where the UI sets
+ * env var is unset, we filter them out, preventing a state where the UI sets
  * `ttsProvider = ELEVENLABS` against a worker that can't synthesize.
  */
 function availableVoices() {

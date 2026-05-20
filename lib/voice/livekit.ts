@@ -57,7 +57,7 @@ export async function createRoom(roomName: string, metadata?: Record<string, unk
 export async function deleteRoom(roomName: string) {
   const svc = getRoomService();
   await svc.deleteRoom(roomName).catch(() => {
-    // already gone — fine.
+    // already gone, fine.
   });
 }
 

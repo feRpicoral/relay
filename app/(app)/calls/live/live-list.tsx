@@ -51,12 +51,12 @@ export function LiveCallsList({ orgId, initial }: { orgId: string; initial: Call
                     : formatPhone(c.callee_e164)}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  {c.agent_name ?? "—"} · {c.direction === "INBOUND" ? "Recebida" : "Realizada"} ·{" "}
+                  {c.agent_name ?? "-"}, {c.direction === "INBOUND" ? "Recebida" : "Realizada"} ,{" "}
                   {new Date(c.started_at).toLocaleTimeString("pt-BR", { hour12: false })}
                 </p>
               </div>
             </div>
-            <span className="text-muted-foreground text-xs">Ver ao vivo →</span>
+            <span className="text-muted-foreground text-xs">Ver ao vivo</span>
           </Link>
         ))}
       </div>

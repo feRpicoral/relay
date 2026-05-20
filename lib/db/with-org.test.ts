@@ -1,10 +1,10 @@
 /**
  * Tests for the `with-org` extension contract.
  *
- * We don't spin up a real Prisma client here — we drive the underlying
- * `$allOperations` handler directly to verify that orgId is injected into the
- * right slots for every operation shape. This is the load-bearing piece of our
- * multi-tenant isolation story, so it's worth pinning down explicitly.
+ * Drives `$allOperations` directly (no real Prisma client) to verify that
+ * orgId is injected into the right slot for every operation shape: find,
+ * create, createMany, upsert. Multi-tenant isolation depends on this layer
+ * matching the policies in `prisma/sql/setup.sql`.
  */
 import { describe, expect, it, vi } from "vitest";
 

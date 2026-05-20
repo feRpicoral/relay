@@ -14,7 +14,7 @@ export default async function NewAgentPage() {
     <>
       <PageHeader
         title="Novo agente"
-        description="Comece com defaults sensatos — você ajusta tudo depois."
+        description="Comece com defaults sensatos, você ajusta tudo depois."
       />
       <div className="p-8">
         <Card className="p-6">

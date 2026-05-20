@@ -63,7 +63,7 @@ export function TranscriptStream({ callId, orgId, initial }: TranscriptStreamPro
   if (rows.length === 0) {
     return (
       <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-        Aguardando primeira fala…
+        Aguardando primeira fala...
       </div>
     );
   }
@@ -101,8 +101,8 @@ function TranscriptTurn({ row }: { row: TranscriptRow }) {
           isAgent ? "text-primary-foreground/60" : "text-muted-foreground",
         )}
       >
-        {isAgent ? "Agente" : "Cliente"} · {formatTimestamp(row.start_ms)}
-        {!row.is_final ? " · ao vivo" : null}
+        {isAgent ? "Agente" : "Cliente"}, {formatTimestamp(row.start_ms)}
+        {!row.is_final ? ", ao vivo" : null}
       </p>
       <p>{row.text}</p>
     </div>

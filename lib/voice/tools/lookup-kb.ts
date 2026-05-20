@@ -5,7 +5,7 @@ import { getDb } from "@/lib/db/with-org";
 
 /**
  * Search the org's knowledge base. v1 uses simple ILIKE matching ranked by
- * occurrence — good enough for FAQ-sized KBs (<50k tokens). When/if a tenant's
+ * occurrence, good enough for FAQ-sized KBs (<50k tokens). When/if a tenant's
  * KB outgrows this we move to pgvector + embeddings.
  */
 export async function lookupKb(
@@ -41,7 +41,7 @@ function extractRelevantSpan(body: string, query: string, span = 240): string {
   if (idx === -1) return body.slice(0, span);
   const start = Math.max(0, idx - Math.floor(span / 2));
   const end = Math.min(body.length, start + span);
-  const prefix = start > 0 ? "…" : "";
-  const suffix = end < body.length ? "…" : "";
+  const prefix = start > 0 ? "..." : "";
+  const suffix = end < body.length ? "..." : "";
   return `${prefix}${body.slice(start, end)}${suffix}`;
 }

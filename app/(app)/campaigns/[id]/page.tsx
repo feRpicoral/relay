@@ -79,7 +79,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     <>
       <PageHeader
         title={campaign.name}
-        description={`Agente ${campaign.agent.name} · de ${campaign.fromPhoneNumberE164}`}
+        description={`Agente ${campaign.agent.name}, de ${campaign.fromPhoneNumberE164}`}
         actions={
           <div className="flex items-center gap-2">
             <Badge variant={STATUS_VARIANT[campaign.status] ?? "secondary"}>
@@ -115,7 +115,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
                 <div>
                   <p className="font-medium">{lead.name ?? formatPhone(lead.phoneE164)}</p>
                   <p className="text-muted-foreground text-xs">
-                    {formatPhone(lead.phoneE164)} · tentativas: {lead.attempts}
+                    {formatPhone(lead.phoneE164)}, tentativas: {lead.attempts}
                   </p>
                 </div>
                 <Badge variant={LEAD_VARIANT[lead.status] ?? "secondary"}>

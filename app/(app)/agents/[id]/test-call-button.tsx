@@ -20,7 +20,7 @@ export function TestCallButton({ agentId }: { agentId: string }) {
       if (result.ok) {
         setCallId(result.callId);
         toast.success("Teste iniciado", {
-          description: "Abrindo o monitor ao vivo…",
+          description: "Abrindo o monitor ao vivo...",
         });
         router.push(`/calls/${result.callId}/live`);
       } else {

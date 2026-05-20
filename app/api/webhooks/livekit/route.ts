@@ -9,7 +9,7 @@ import { recordCallEvent } from "@/lib/voice/persistence";
 export const dynamic = "force-dynamic";
 
 /**
- * LiveKit webhook events. We mostly observe — the worker handles its own
+ * LiveKit webhook events. We mostly observe, the worker handles its own
  * lifecycle. Events here are useful for debugging and for cases where the
  * worker process crashed and we need to finalize the Call row.
  */

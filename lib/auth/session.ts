@@ -81,7 +81,7 @@ export async function requireSessionOrOnboard(): Promise<Session> {
       include: { organization: { select: { id: true } } },
     });
     if (!anyMembership) redirect("/create-org");
-    // We have a membership but no active_org_id — set it now (rare).
+    // We have a membership but no active_org_id, set it now (rare).
     redirect(`/auth/select-org?defaultOrgId=${anyMembership.organization.id}`);
   }
 

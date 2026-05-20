@@ -59,8 +59,8 @@ export default async function CallsPage() {
                           : formatPhone(call.calleeE164)}
                       </p>
                       <p className="text-muted-foreground text-xs">
-                        {call.agent?.name ?? "—"} ·{" "}
-                        {call.direction === "INBOUND" ? "Recebida" : "Realizada"} ·{" "}
+                        {call.agent?.name ?? "-"} ,{" "}
+                        {call.direction === "INBOUND" ? "Recebida" : "Realizada"} ,{" "}
                         {new Intl.DateTimeFormat("pt-BR", {
                           dateStyle: "short",
                           timeStyle: "short",

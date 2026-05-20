@@ -9,7 +9,7 @@ import { inngest } from "../client";
  * scan of `nextEligibleAt`. Respects working hours, max attempts, and the
  * campaign concurrency limit.
  *
- * Outbound dialing happens through LiveKit's SIP service — LiveKit originates
+ * Outbound dialing happens through LiveKit's SIP service, LiveKit originates
  * the SIP INVITE to the configured outbound trunk (typically Twilio's elastic
  * SIP trunk), which carries it to PSTN. The same agent worker that handles
  * inbound rooms picks up this room via the framework's job dispatch.

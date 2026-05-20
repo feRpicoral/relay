@@ -21,7 +21,7 @@ const SUMMARY_TOOL_NAME = "submit_call_analysis";
  * result back to the Call row.
  *
  * The Sonnet vs Haiku split here is intentional: live calls use Haiku for
- * latency; offline analysis uses Sonnet for quality (per DECISIONS.md §3).
+ * latency; offline analysis uses Sonnet for quality (per DECISIONS.md #3).
  */
 export const postCallAnalysis = inngest.createFunction(
   { id: "post-call-analysis", retries: 3 },
@@ -106,7 +106,7 @@ export const postCallAnalysis = inngest.createFunction(
         messages: [
           {
             role: "user",
-            content: `Agente: ${call.agent?.name ?? "—"}\n\nTranscrição:\n${transcript}\n\nFerramentas usadas:\n${toolsUsed || "(nenhuma)"}`,
+            content: `Agente: ${call.agent?.name ?? "-"}\n\nTranscrição:\n${transcript}\n\nFerramentas usadas:\n${toolsUsed || "(nenhuma)"}`,
           },
         ],
       });

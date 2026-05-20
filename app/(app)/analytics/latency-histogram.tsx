@@ -31,7 +31,7 @@ export async function LatencyHistogram({
     const lo = buckets[i] ?? 0;
     const hi = buckets[i + 1] ?? Infinity;
     return {
-      label: `${lo}-${hi === Infinity ? "∞" : hi}ms`,
+      label: `${lo}-${hi === Infinity ? "+" : hi}ms`,
       lo,
       count: metrics.filter((m) => m.valueMs >= lo && m.valueMs < hi).length,
     };

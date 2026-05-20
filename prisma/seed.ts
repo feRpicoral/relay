@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 /**
- * Demo data seeder — Clínica Lumen.
+ * Demo data seeder, Clínica Lumen.
  *
  * Run with:
  *   yarn db:seed [--reset]
@@ -159,23 +159,23 @@ async function main() {
   const reset = process.argv.includes("--reset");
 
   if (reset) {
-    console.log("⚠️  --reset: wiping existing demo data");
+    console.log("--reset: wiping existing demo data");
     await prisma.organization.deleteMany({ where: { slug: DEMO_ORG_SLUG } });
   }
 
   const existing = await prisma.organization.findUnique({ where: { slug: DEMO_ORG_SLUG } });
   if (existing) {
-    console.log(`✓ demo org already exists at slug=${DEMO_ORG_SLUG}. Use --reset to wipe.`);
+    console.log(`demo org already exists at slug=${DEMO_ORG_SLUG}. Use --reset to wipe.`);
     return;
   }
 
-  console.log("→ creating Clínica Lumen demo org");
+  console.log("creating Clínica Lumen demo org");
   const org = await prisma.organization.create({
     data: { name: "Clínica Lumen", slug: DEMO_ORG_SLUG },
   });
 
   // Agent
-  console.log("→ creating PT-BR agent");
+  console.log("creating PT-BR agent");
   const agent = await prisma.agent.create({
     data: {
       orgId: org.id,
@@ -185,7 +185,7 @@ async function main() {
       voiceId: "pt-br-mariana",
       greeting: "Olá! Obrigada por ligar para a Clínica Lumen. Como posso ajudar?",
       personaPrompt:
-        "Você é Mariana, recepcionista virtual da Clínica Lumen — especializada em ortopedia. Seja calorosa, eficiente e direta. Sempre confirme detalhes antes de agendar.",
+        "Você é Mariana, recepcionista virtual da Clínica Lumen, especializada em ortopedia. Seja calorosa, eficiente e direta. Sempre confirme detalhes antes de agendar.",
       fallbackTransferE164: "+5511987654321",
       businessHours: {
         timezone: "America/Sao_Paulo",
@@ -199,7 +199,7 @@ async function main() {
   });
 
   // Knowledge docs
-  console.log("→ seeding knowledge base");
+  console.log("seeding knowledge base");
   for (const doc of KB_DOCS) {
     await prisma.knowledgeDoc.create({
       data: { orgId: org.id, agentId: agent.id, title: doc.title, body: doc.body },
@@ -207,7 +207,7 @@ async function main() {
   }
 
   // Phone number
-  console.log("→ seeding phone number");
+  console.log("seeding phone number");
   const phone = await prisma.phoneNumber.create({
     data: {
       orgId: org.id,
@@ -218,7 +218,7 @@ async function main() {
   });
 
   // Calls
-  console.log("→ seeding 60 calls across the last 30 days");
+  console.log("seeding 60 calls across the last 30 days");
   for (let i = 0; i < 60; i += 1) {
     const sample = SAMPLE_TRANSCRIPTS[i % SAMPLE_TRANSCRIPTS.length]!;
     const daysAgo = Math.floor(Math.random() * 30);
@@ -288,7 +288,7 @@ async function main() {
       });
     }
 
-    // Metrics — vary so the histogram looks realistic
+    // Metrics, vary so the histogram looks realistic
     const e2e = 600 + Math.floor(Math.random() * 500);
     await prisma.callMetric.create({
       data: {
@@ -340,7 +340,7 @@ async function main() {
     }
   }
 
-  console.log("✓ demo seeded.");
+  console.log("demo seeded.");
 }
 
 main()

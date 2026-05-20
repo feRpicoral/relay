@@ -66,7 +66,7 @@ export function PhoneNumberTable({
           <div key={row.id} className="flex items-center justify-between gap-4 px-5 py-4">
             <div>
               <p className="font-mono text-sm">{row.e164}</p>
-              <p className="text-muted-foreground text-xs">{row.label ?? "—"}</p>
+              <p className="text-muted-foreground text-xs">{row.label ?? "-"}</p>
             </div>
             <div className="flex items-center gap-2">
               <Select

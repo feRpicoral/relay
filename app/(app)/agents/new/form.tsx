@@ -58,7 +58,7 @@ export function NewAgentForm() {
           disabled={pending}
         />
         <p className="text-muted-foreground text-xs">
-          Só usado internamente — o cliente nunca vê esse nome.
+          Só usado internamente, o cliente nunca vê esse nome.
         </p>
       </div>
       <div className="space-y-2">

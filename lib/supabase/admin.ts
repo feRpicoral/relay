@@ -7,7 +7,7 @@ import { requireEnv } from "@/lib/env";
 let cached: SupabaseClient | null = null;
 
 /**
- * Service-role client. Bypasses RLS. Use sparingly — only for trusted server paths
+ * Service-role client. Bypasses RLS. Use sparingly, only for trusted server paths
  * (webhook handlers, admin actions, tenant resolution at call-start). Never expose
  * to the client.
  */

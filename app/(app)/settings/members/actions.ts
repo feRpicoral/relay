@@ -123,7 +123,7 @@ export async function removeMemberAction(input: z.infer<typeof RemoveSchema>): P
   await db.membership.delete({ where: { id: parsed.data.membershipId } });
 
   // Drop their app_metadata.active_org_id if it pointed to this org.
-  // Service role required — but we don't have user IDs to clear individually safely here.
+  // Service role required, but we don't have user IDs to clear individually safely here.
   // Their next login will redirect to /create-org since no membership exists.
   return { ok: true };
 }

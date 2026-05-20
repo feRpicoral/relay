@@ -59,7 +59,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
     <>
       <PageHeader
         title={isPeerView}
-        description={`${call.agent?.name ?? "Agente"} · ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(call.startedAt)}`}
+        description={`${call.agent?.name ?? "Agente"}, ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(call.startedAt)}`}
         actions={<CallStatusBadge status={call.status} />}
       />
 
@@ -69,12 +69,12 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             <SummaryStat
               icon={<Phone className="text-muted-foreground h-4 w-4" />}
               label="Duração"
-              value={call.durationMs ? formatDuration(call.durationMs) : "—"}
+              value={call.durationMs ? formatDuration(call.durationMs) : "-"}
             />
             <SummaryStat
               icon={<Bot className="text-muted-foreground h-4 w-4" />}
               label="Desfecho"
-              value={call.outcome ? (OUTCOME_LABEL[call.outcome] ?? call.outcome) : "—"}
+              value={call.outcome ? (OUTCOME_LABEL[call.outcome] ?? call.outcome) : "-"}
               badge={
                 call.outcome === "SCHEDULED"
                   ? "success"
@@ -86,7 +86,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             <SummaryStat
               icon={<Sparkles className="text-muted-foreground h-4 w-4" />}
               label="Sentimento"
-              value={call.sentiment ? (SENTIMENT_LABEL[call.sentiment] ?? call.sentiment) : "—"}
+              value={call.sentiment ? (SENTIMENT_LABEL[call.sentiment] ?? call.sentiment) : "-"}
               badge={call.sentiment ? SENTIMENT_VARIANT[call.sentiment] : undefined}
             />
           </div>
@@ -127,7 +127,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
               <div className="text-muted-foreground px-6 pb-6 text-sm">
                 {call.processedAt
                   ? "Sem resumo disponível."
-                  : "Processando resumo no momento — atualize em alguns segundos."}
+                  : "Processando resumo no momento, atualize em alguns segundos."}
               </div>
             </Card>
           )}

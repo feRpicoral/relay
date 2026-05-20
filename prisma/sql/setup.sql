@@ -1,5 +1,5 @@
 -- =============================================================================
--- Relay — RLS + auth integration
+-- Relay, RLS + auth integration
 --
 -- This script is idempotent. Run after `prisma migrate deploy`.
 --
@@ -78,7 +78,7 @@ AS $$
 $$;
 
 -- -----------------------------------------------------------------------------
--- 3. Tenant tables — uniform isolation policy
+-- 3. Tenant tables, uniform isolation policy
 -- -----------------------------------------------------------------------------
 
 DO $$

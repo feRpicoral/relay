@@ -22,7 +22,7 @@ export default async function LiveCallsPage() {
     <>
       <PageHeader
         title="Chamadas ao vivo"
-        description="Acompanhe as ligações que estão acontecendo agora — clique numa pra ver a transcrição em tempo real."
+        description="Acompanhe as ligações que estão acontecendo agora, clique numa pra ver a transcrição em tempo real."
       />
       <div className="p-8">
         {initial.length === 0 ? (
@@ -52,7 +52,7 @@ export default async function LiveCallsPage() {
           href="/calls"
           className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline"
         >
-          Ver histórico de chamadas →
+          Ver histórico de chamadas
         </Link>
       </div>
     </>

@@ -5,7 +5,7 @@ import { getPrisma } from "@/lib/db/client";
 import { type AgentContext, BusinessHoursSchema } from "./types";
 
 /**
- * Load the agent context for a given call by joining Call → Agent → KnowledgeDoc.
+ * Load the agent context for a given call by joining Call -> Agent -> KnowledgeDoc.
  * Used by the worker at call start.
  */
 export async function loadAgentContext(callId: string): Promise<AgentContext | null> {

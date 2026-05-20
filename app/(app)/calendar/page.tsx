@@ -74,13 +74,13 @@ export default async function CalendarPage() {
                     <div>
                       <p className="font-medium">{String(input.patientName ?? "Paciente")}</p>
                       <p className="text-muted-foreground text-xs">
-                        {String(input.slotIso ?? "")} · {String(input.patientPhone ?? "")}
+                        {String(input.slotIso ?? "")}, {String(input.patientPhone ?? "")}
                       </p>
                     </div>
                     <p className="text-muted-foreground text-xs">
                       {output?.status === "ACCEPTED" || output?.status === "CONFIRMED"
                         ? "Confirmada"
-                        : ((output?.status as string) ?? "—")}
+                        : ((output?.status as string) ?? "-")}
                     </p>
                   </Link>
                 );

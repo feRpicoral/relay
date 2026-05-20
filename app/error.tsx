@@ -13,7 +13,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surface to Sentry — module init handles the rest.
+    // Surface to Sentry, module init handles the rest.
     console.error("[error boundary]", error);
   }, [error]);
 

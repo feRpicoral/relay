@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             &ldquo;Atende todas as ligações, mesmo às 3h da manhã. Nossa recepção dobrou de
             capacidade sem contratar ninguém.&rdquo;
           </p>
-          <p className="text-muted-foreground text-sm">— Dra. Renata Martins, Clínica Lumen</p>
+          <p className="text-muted-foreground text-sm">- Dra. Renata Martins, Clínica Lumen</p>
         </div>
       </div>
       <div className="flex flex-col">

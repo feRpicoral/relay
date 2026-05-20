@@ -90,7 +90,7 @@ export function DefaultEventTypePicker({
         </Button>
       </div>
       <p className="text-muted-foreground text-xs">
-        Quando o agente faz <code>book_appointment</code>, usa esse event type. Crie-os em Cal.com →
+        Quando o agente faz <code>book_appointment</code>, usa esse event type. Crie-os em Cal.com
         Event Types.
       </p>
     </div>
