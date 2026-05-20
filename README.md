@@ -155,14 +155,16 @@ The Supabase project comes with several pre-installed extensions that show up as
 ```bash
 mkdir -p prisma/migrations/0_init
 
-yarn prisma migrate diff \
+yarn db:migrate:diff \
   --from-empty \
-  --to-schema prisma/schema.prisma \
+  --to-schema-datamodel prisma/schema.prisma \
   --script \
   > prisma/migrations/0_init/migration.sql
 
-yarn prisma migrate deploy
+yarn db:migrate:deploy
 ```
+
+Both commands load `.env.local` via `dotenv-cli` so they pick up `DIRECT_URL`.
 
 Then apply the RLS policies and auth trigger. Either copy `prisma/sql/setup.sql` into the Supabase SQL editor and run it, or use the bundled script that connects via `DIRECT_URL`:
 
@@ -200,7 +202,7 @@ yarn build                # Next.js production build
 
 The Next.js app deploys to Vercel. Import the repo, leave Build / Output / Install commands empty (Vercel auto-detects yarn via the `packageManager` field), and paste your env vars from `.env.local` swapping in the production values from the table above.
 
-The agent worker deploys separately. The included `worker/Dockerfile` targets Fly.io in `gru` (São Paulo), the region recommended for proximity to your SIP carrier's Brazil presence. Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app.
+The agent worker deploys separately. The included `Dockerfile` at the repo root, paired with `fly.toml`, targets Fly.io in `dfw` (Dallas). Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app.
 
 The worker uses the built-in `@livekit/agents` job dispatch. When LiveKit Cloud creates a room (because a SIP call arrived, or the dashboard's test-call feature provisioned one), it dispatches a worker process automatically. There is no HTTP coupling between Vercel and the worker host.
 
@@ -312,10 +314,11 @@ The phone number you connect inside Relay (Settings, Phone numbers) must match t
 The Vercel build only runs `next build`. It does not apply pending Prisma migrations. After committing a schema change locally, run from your machine:
 
 ```bash
-DATABASE_URL="<value of prod DIRECT_URL>" yarn prisma migrate deploy
+DATABASE_URL="<value of prod DIRECT_URL>" DIRECT_URL="<value of prod DIRECT_URL>" \
+  yarn prisma migrate deploy
 ```
 
-`prisma migrate deploy` applies every migration in `prisma/migrations/` that hasn't been recorded yet. The command is idempotent and atomic per migration.
+`yarn prisma` is invoked directly (not via `yarn db:migrate:deploy`) so the inline env vars override the `.env.local` values. `prisma migrate deploy` applies every migration in `prisma/migrations/` that hasn't been recorded yet. The command is idempotent and atomic per migration.
 
 ## Project layout
 
@@ -367,7 +370,9 @@ worker/                 LiveKit Agents worker (deployed separately)
   agent.ts              defineAgent({ entry }) that resolves tenant from SIP attrs,
                         wires Deepgram STT + Anthropic LLM + Cartesia TTS + Silero VAD,
                         runs the conversation loop, persists transcripts and metrics
-  Dockerfile
+
+Dockerfile              Worker container, used by Fly.io via fly.toml
+fly.toml                Fly.io app config (dfw region, outbound-only worker)
 ```
 
 ## CI

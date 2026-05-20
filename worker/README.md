@@ -1,7 +1,7 @@
 # Relay agent worker
 
 Long-lived voice agent that joins LiveKit rooms when a call arrives, runs the
-STT → LLM → TTS pipeline, and handles tool calls.
+STT, LLM, TTS pipeline, and handles tool calls.
 
 Run locally:
 
@@ -9,8 +9,8 @@ Run locally:
 yarn worker:dev
 ```
 
-Deploy: see `worker/Dockerfile`. Suggested target: Fly.io in `gru` (São Paulo)
-for proximity to Twilio's Brazil presence.
+Deploy: see the repo-root `Dockerfile` and `fly.toml`. Target is Fly.io in
+`dfw` (Dallas).
 
-Environment: every var in `.env.example` is required for production. Locally,
-unset providers fall back to no-op stubs so the dashboard demo doesn't crash.
+Environment: every var in `.env.example` is required for production. The worker
+loads `.env.local` via `dotenv-cli` when run through the package scripts.

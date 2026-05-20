@@ -1,0 +1,37 @@
+.git
+.github
+.next
+.vercel
+node_modules
+coverage
+playwright-report
+test-results
+.env
+.env.local
+.env.*.local
+.idea
+.vscode
+.husky
+.yarn/cache
+.yarn/install-state.gz
+*.log
+
+# Next.js app, not needed by the worker image
+app
+components
+hooks
+middleware.ts
+next-env.d.ts
+next.config.ts
+postcss.config.mjs
+sentry.*.config.ts
+instrumentation.ts
+playwright.config.ts
+vitest.config.ts
+eslint.config.mjs
+commitlint.config.mjs
+
+# Files intentionally not in the repo, but ignored anyway as a safety net.
+PLAN.md
+DECISIONS.md
+docs

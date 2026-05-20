@@ -1,6 +1,5 @@
 FROM node:22-bookworm-slim AS base
 
-# System deps used by some optional native modules in the LiveKit Agents stack.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     python3 \
@@ -17,7 +16,11 @@ COPY .yarn ./.yarn
 RUN yarn install --immutable
 
 COPY prisma ./prisma
-RUN yarn db:generate
+# Prisma's schema validator requires the referenced env vars to be defined.
+# The generated client reads them at runtime, so build-time placeholders are safe.
+ENV DATABASE_URL=postgresql://buildtime/placeholder
+ENV DIRECT_URL=postgresql://buildtime/placeholder
+RUN yarn prisma generate
 
 COPY tsconfig.json ./
 COPY lib ./lib
