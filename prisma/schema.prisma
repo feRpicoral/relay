@@ -47,6 +47,7 @@ model Organization {
   toolCalls         ToolCall[]
   knowledgeDocs     KnowledgeDoc[]
   calcomConnection  CalcomConnection?
+  twilioConnection  TwilioConnection?
   campaigns         Campaign[]
   campaignLeads     CampaignLead[]
   campaignAttempts  CampaignAttempt[]
@@ -139,7 +140,11 @@ model PhoneNumber {
   agentId       String?      @map("agent_id") @db.Uuid
   e164          String       @unique
   label         String?
+  // Twilio resource SID (PN...), set when provisioned via the Twilio integration.
   twilioSid     String?      @unique @map("twilio_sid")
+  // Twilio Elastic SIP Trunk SID this number is routed through (TK...). Stored
+  // so we can detach the number cleanly when the user unwires the integration.
+  twilioTrunkSid String?     @map("twilio_trunk_sid")
   inbound       Boolean      @default(true)
   outbound      Boolean      @default(true)
   createdAt     DateTime     @default(now()) @map("created_at")
@@ -354,6 +359,33 @@ model CalcomConnection {
   organization       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@map("calcom_connections")
+}
+
+// -----------------------------------------------------------------------------
+// Telephony integration (Twilio + per-org LiveKit trunks)
+// -----------------------------------------------------------------------------
+
+model TwilioConnection {
+  id                       String       @id @default(uuid()) @db.Uuid
+  orgId                    String       @unique @map("org_id") @db.Uuid
+  // Twilio account identifier (AC...). Public-ish, paired with auth token below.
+  accountSid               String       @map("account_sid")
+  // API Key SID (SK...) used in lieu of the master auth token. Always paired
+  // with `authTokenEncrypted` which holds the corresponding API Key secret,
+  // encrypted at rest via lib/crypto (AES-256-GCM, key from ENCRYPTION_KEY).
+  apiKeySid                String       @map("api_key_sid")
+  authTokenEncrypted       String       @map("auth_token_encrypted") @db.Text
+  // Twilio Elastic SIP Trunk we provisioned for this org (TK...). Lazily
+  // created on first number attach.
+  twilioTrunkSid           String?      @map("twilio_trunk_sid")
+  // LiveKit outbound trunk we provisioned for this org (ST_...). Carries the
+  // org's Twilio credentials so outbound calls bill to their account.
+  livekitOutboundTrunkId   String?      @map("livekit_outbound_trunk_id")
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+  organization             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("twilio_connections")
 }
 
 // -----------------------------------------------------------------------------

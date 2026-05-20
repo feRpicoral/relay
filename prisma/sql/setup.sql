@@ -94,6 +94,7 @@ DECLARE
     'call_events',
     'call_metrics',
     'calcom_connections',
+    'twilio_connections',
     'campaigns',
     'campaign_leads',
     'campaign_attempts',

@@ -12,6 +12,7 @@ const MULTI_TENANT_MODELS = new Set<string>([
   "CallEvent",
   "CallMetric",
   "CalcomConnection",
+  "TwilioConnection",
   "Campaign",
   "CampaignLead",
   "CampaignAttempt",
