@@ -16,13 +16,14 @@ COPY .yarn ./.yarn
 RUN yarn install --immutable
 
 COPY prisma ./prisma
-# Prisma's schema validator requires the referenced env vars to be defined.
-# The generated client reads them at runtime, so build-time placeholders are safe.
-ENV DATABASE_URL=postgresql://buildtime/placeholder
+COPY prisma.config.ts ./
+COPY tsconfig.json ./
+# `prisma.config.ts` reads DIRECT_URL at module load. A build-time placeholder
+# satisfies the throw; the generated client uses the real DATABASE_URL via the
+# adapter at runtime.
 ENV DIRECT_URL=postgresql://buildtime/placeholder
 RUN yarn prisma generate
 
-COPY tsconfig.json ./
 COPY lib ./lib
 COPY worker ./worker
 

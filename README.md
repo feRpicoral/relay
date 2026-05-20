@@ -152,14 +152,14 @@ yarn install                                  # postinstall runs prisma generate
 
 The Supabase project comes with several pre-installed extensions that show up as drift in `prisma migrate dev`. For an existing Supabase project that's never had Prisma run against it, bootstrap a baseline migration manually:
 
-Prisma's CLI reads `.env` (not `.env.local`), so either copy your local secrets there too (`cp .env.local .env`) or keep a single canonical `.env` file. Both filenames are gitignored.
+Prisma 7 reads connection URLs from `prisma.config.ts`, which calls Next.js's env loader and so picks up `.env.local` (or `.env` if you keep it there) automatically.
 
 ```bash
 mkdir -p prisma/migrations/0_init
 
 yarn prisma migrate diff \
   --from-empty \
-  --to-schema-datamodel prisma/schema.prisma \
+  --to-schema prisma/schema.prisma \
   --script \
   > prisma/migrations/0_init/migration.sql
 
@@ -314,8 +314,7 @@ The phone number you connect inside Relay (Settings, Phone numbers) must match t
 The Vercel build only runs `next build`. It does not apply pending Prisma migrations. After committing a schema change locally, run from your machine:
 
 ```bash
-DATABASE_URL="<value of prod DIRECT_URL>" DIRECT_URL="<value of prod DIRECT_URL>" \
-  yarn prisma migrate deploy
+DIRECT_URL="<value of prod DIRECT_URL>" yarn prisma migrate deploy
 ```
 
 `prisma migrate deploy` applies every migration in `prisma/migrations/` that hasn't been recorded yet. The command is idempotent and atomic per migration.
