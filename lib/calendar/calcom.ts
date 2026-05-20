@@ -3,7 +3,9 @@ import type { OrgId } from "@/lib/db/types";
 import { envOr } from "@/lib/env";
 
 const CALCOM_BASE = envOr("CALCOM_API_BASE", "https://api.cal.com/v2");
-const API_VERSION = "2026-02-25";
+// Cal.com pins certain endpoints to specific cal-api-version dates. Most don't
+// require the header at all; `/slots` does and must be exactly this date.
+const SLOTS_API_VERSION = "2024-09-04";
 
 interface AvailabilityInput {
   orgId: OrgId;
@@ -34,7 +36,6 @@ async function callApi<T>(path: string, init: RequestInit, apiKey: string): Prom
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
-      "cal-api-version": API_VERSION,
       ...(init.headers as Record<string, string> | undefined),
     },
   });
@@ -107,26 +108,29 @@ export const calcom = {
       throw new Error("No default event type configured for this org.");
     }
 
-    const url = new URL("/slots/available", CALCOM_BASE);
-    url.searchParams.set("eventTypeId", String(conn.eventTypeId));
-    url.searchParams.set("startTime", input.fromIso);
-    url.searchParams.set("endTime", input.toIso);
-    url.searchParams.set("timeZone", conn.timezone);
+    // GET /v2/slots in cal-api-version 2024-09-04 uses `start`, `end`, and
+    // returns slots keyed by date.
+    const params = new URLSearchParams({
+      eventTypeId: String(conn.eventTypeId),
+      start: input.fromIso,
+      end: input.toIso,
+      timeZone: conn.timezone,
+    });
 
     interface CalcomSlotsResponse {
-      data?: { slots?: Record<string, Array<{ time: string }>> };
+      data?: Record<string, Array<{ start: string }>>;
     }
 
     const data = await callApi<CalcomSlotsResponse>(
-      `${url.pathname}${url.search}`,
-      { method: "GET" },
+      `/slots?${params.toString()}`,
+      { method: "GET", headers: { "cal-api-version": SLOTS_API_VERSION } },
       conn.apiKey,
     );
 
     const out: Array<{ start: string; end: string }> = [];
-    for (const day of Object.values(data.data?.slots ?? {})) {
-      for (const slot of day ?? []) {
-        const start = new Date(slot.time);
+    for (const daySlots of Object.values(data.data ?? {})) {
+      for (const slot of daySlots ?? []) {
+        const start = new Date(slot.start);
         const end = new Date(start.getTime() + input.durationMin * 60 * 1000);
         out.push({ start: start.toISOString(), end: end.toISOString() });
       }
