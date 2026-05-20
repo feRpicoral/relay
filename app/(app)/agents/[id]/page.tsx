@@ -114,7 +114,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Números conectados</CardTitle>
                 <Button size="sm" asChild variant="outline">
-                  <Link href="/settings/phone-numbers">
+                  <Link href="/settings/telephony">
                     <Plus className="h-4 w-4" />
                     Conectar
                   </Link>

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { href: "/settings", label: "Organização" },
   { href: "/settings/members", label: "Membros", adminOnly: true },
-  { href: "/settings/phone-numbers", label: "Números", adminOnly: true },
+  { href: "/settings/telephony", label: "Telefonia", adminOnly: true },
   { href: "/settings/calendar", label: "Calendário", adminOnly: true },
 ];
 

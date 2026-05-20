@@ -110,7 +110,7 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline">
-                  <Link href="/settings/phone-numbers">
+                  <Link href="/settings/telephony">
                     Conectar número
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>
