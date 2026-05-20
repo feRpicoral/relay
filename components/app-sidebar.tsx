@@ -79,7 +79,10 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "border-border bg-card/40 sticky top-0 flex h-screen flex-col border-r transition-[width] duration-200",
+        // self-start stops the flex parent from stretching the aside to match
+        // <main>'s height; without it, sticky+h-screen still renders a tall
+        // background and the user-card footer floats mid-page on scrolled views.
+        "border-border bg-card/40 sticky top-0 flex h-screen flex-col self-start border-r transition-[width] duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >
