@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 import { BusinessHoursSchema } from "@/lib/voice/types";
+import { VOICES } from "@/lib/voice/voices";
 
 import { BusinessHoursForm } from "./hours-form";
 import { KnowledgeBase } from "./knowledge-base";
@@ -82,6 +83,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
                 language={agent.language}
                 currentVoiceId={agent.voiceId}
                 currentProvider={agent.ttsProvider}
+                voices={availableVoices()}
               />
             </Card>
           </TabsContent>
@@ -138,4 +140,14 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
       </div>
     </>
   );
+}
+
+/**
+ * The ElevenLabs voices are only offered when the worker has a key. If the
+ * env var is unset, we filter them out — preventing a state where the UI sets
+ * `ttsProvider = ELEVENLABS` against a worker that can't synthesize.
+ */
+function availableVoices() {
+  const elevenlabsEnabled = Boolean(process.env.ELEVENLABS_API_KEY);
+  return elevenlabsEnabled ? VOICES : VOICES.filter((v) => v.provider !== "elevenlabs");
 }

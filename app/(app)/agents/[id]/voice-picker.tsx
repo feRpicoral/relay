@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { type VoiceOption, VOICES } from "@/lib/voice/voices";
+import type { VoiceOption } from "@/lib/voice/voices";
 
 import { updateAgentVoiceAction } from "./actions";
 
@@ -16,14 +16,16 @@ export function VoicePicker({
   language,
   currentVoiceId,
   currentProvider,
+  voices,
 }: {
   agentId: string;
   language: "PT_BR" | "EN_US" | "AUTO";
   currentVoiceId: string;
   currentProvider: "CARTESIA" | "ELEVENLABS";
+  voices: readonly VoiceOption[];
 }) {
   const langFilter: "pt-BR" | "en-US" = language === "EN_US" ? "en-US" : "pt-BR";
-  const candidates = VOICES.filter((v) => v.language === langFilter);
+  const candidates = voices.filter((v) => v.language === langFilter);
 
   const [pending, startTransition] = useTransition();
   const [selectedId, setSelectedId] = useState(currentVoiceId);
@@ -50,13 +52,16 @@ export function VoicePicker({
     });
   }
 
+  const elevenlabsEnabled = voices.some((v) => v.provider === "elevenlabs");
+
   return (
     <div className="space-y-4">
       <div className="space-y-1">
         <p className="text-sm font-medium">Voz do agente</p>
         <p className="text-muted-foreground text-xs">
-          Cartesia (default) é otimizada pra latência. ElevenLabs é a opção premium com naturalidade
-          superior, mas adiciona ~35ms.
+          {elevenlabsEnabled
+            ? "Cartesia (default) é otimizada pra latência. ElevenLabs é a opção premium com naturalidade superior, mas adiciona ~35ms."
+            : "Cartesia (default) é otimizada pra latência. Configure ELEVENLABS_API_KEY pra liberar vozes premium."}
         </p>
       </div>
       <div className="grid gap-2">
