@@ -145,7 +145,7 @@ Free tiers on every platform cover the demo. The order below matches the depende
 1. New project at [supabase.com](https://supabase.com). Pick a region close to your users.
 2. **Authentication, URL Configuration**:
    - Site URL: production URL of the app (e.g. `https://relay-five-peach.vercel.app`)
-   - Redirect URLs: add the same URL with `/auth/callback` and `/auth/callback?**` (the `?**` wildcard is required because the magic link carries a `next=` query param)
+   - Redirect URLs: add the production URL with `/auth/callback` and `/auth/callback?**`, **plus** the dev pair `http://localhost:3000/auth/callback` and `http://localhost:3000/auth/callback?**`. The `?**` wildcard is required because the magic link carries a `next=` query param. Without the localhost entry, magic links issued from `yarn dev` fall back to the production Site URL and dump you on the live app instead of your local one.
 3. **Settings, API**: copy `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 4. **Settings, Database, Connect**: copy the pooled URI into `DATABASE_URL` and the direct URI into `DIRECT_URL`.
 
@@ -196,6 +196,7 @@ Both are no-ops with unset env vars. To enable: create projects, copy the DSN or
 2. `fly launch --no-deploy --copy-config` to register the app from the included `fly.toml`. Pick `dfw` when prompted.
 3. `grep -vE '^[A-Z_]+=$' .env.local | fly secrets import` to push all non-empty secrets in one shot.
 4. `fly deploy --ha=false` for the first (and every) deploy. `--ha=false` keeps it to one machine; LiveKit Cloud already distributes inbound rooms across whichever workers are connected.
+5. **Add a credit card** at https://fly.io/trial. On the trial plan Fly stops machines after 5 minutes with `Trial machine stopping. To run for longer than 5m0s...`. The worker needs to stay running to accept inbound LiveKit jobs. The `shared-cpu-1x:1024MB` size used here costs a couple of dollars a month above the free tier.
 
 ### Vercel (Next.js host)
 
