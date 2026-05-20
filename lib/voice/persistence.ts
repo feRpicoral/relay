@@ -7,7 +7,7 @@ import type { LatencyMetric, ToolCallRecord, TranscriptDelta } from "./types";
 interface CreateInboundCallInput {
   orgId: string;
   agentId: string;
-  phoneNumberId: string;
+  phoneNumberId: string | null;
   callerE164: string;
   calleeE164: string;
   twilioCallSid?: string;

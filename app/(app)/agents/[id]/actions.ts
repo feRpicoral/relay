@@ -8,13 +8,15 @@ import { BusinessHoursSchema } from "@/lib/voice/types";
 
 type Result = { ok: true } | { ok: false; error: string };
 
+const E164 = z.string().regex(/^\+\d{6,18}$/, "Use formato E.164: +5511999998888");
+
 const SettingsSchema = z.object({
   agentId: z.string().uuid(),
   name: z.string().min(2).max(120),
   language: z.enum(["PT_BR", "EN_US", "AUTO"]),
   personaPrompt: z.string().max(4000),
   greeting: z.string().max(280),
-  fallbackTransferE164: z.string().max(20).nullable(),
+  fallbackTransferE164: E164.nullable(),
   enabled: z.boolean(),
 });
 
@@ -23,7 +25,9 @@ export async function updateAgentSettingsAction(
 ): Promise<Result> {
   const session = await requireAdmin();
   const parsed = SettingsSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+  }
 
   const db = getDb(session.orgId);
   await db.agent.update({

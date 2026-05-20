@@ -16,6 +16,7 @@ export default async function PhoneNumbersPage() {
   const db = getDb(session.orgId);
   const [numbers, agents] = await Promise.all([
     db.phoneNumber.findMany({
+      where: { NOT: { e164: { startsWith: "+TEST-" } } },
       orderBy: { createdAt: "desc" },
       include: { agent: { select: { name: true } } },
     }),

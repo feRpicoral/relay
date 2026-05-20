@@ -5,6 +5,8 @@ import { type AgentId, asAgentId, asOrgId, type OrgId } from "@/lib/db/types";
 import { requireEnv } from "@/lib/env";
 import { buildRoomName, createRoom, issueParticipantToken } from "@/lib/voice/livekit";
 import { createInboundCall } from "@/lib/voice/persistence";
+// Note: previously created a "+TEST-..." phone row for orgs without a real
+// phone. Replaced by passing phoneNumberId=null below.
 
 /**
  * Create a "test call" for the in-dashboard simulated call feature.
@@ -27,10 +29,13 @@ export async function startTestCall(args: {
     where: { orgId: args.orgId, agentId: args.agentId },
   });
 
+  // Don't create a synthetic "+TEST-..." PhoneNumber row when none exists.
+  // The dashboard's phone-numbers list would surface it. PhoneNumber.id is
+  // nullable on Call, so null is fine.
   const { callId } = await createInboundCall({
     orgId: args.orgId,
     agentId: args.agentId,
-    phoneNumberId: phone?.id ?? (await ensureTestPhone(args.orgId, args.agentId)),
+    phoneNumberId: phone?.id ?? null,
     callerE164: "+0000000TEST",
     calleeE164: phone?.e164 ?? "+0000000TEST",
   });
@@ -50,20 +55,6 @@ export async function startTestCall(args: {
     canSubscribe: true,
   });
   return { token, livekitUrl: requireEnv("LIVEKIT_URL"), callId, roomName };
-}
-
-async function ensureTestPhone(orgId: OrgId, agentId: AgentId): Promise<string> {
-  const phone = await getPrisma().phoneNumber.create({
-    data: {
-      orgId,
-      agentId,
-      e164: `+TEST-${orgId.slice(0, 8)}`,
-      label: "(test number)",
-      inbound: false,
-      outbound: false,
-    },
-  });
-  return phone.id;
 }
 
 export const _internal = { asOrgId, asAgentId };
