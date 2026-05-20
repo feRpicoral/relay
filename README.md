@@ -102,37 +102,37 @@ flowchart LR
 
 Relay reads env vars via Next.js (`.env.local` for development, the platform's secret store for production). Same variable names in both. The "Sensitive" column tracks whether the value should be marked secret in your hosting provider. `NEXT_PUBLIC_*` values end up in the client bundle anyway, so marking them sensitive only hides them in the UI.
 
-| Variable                                | Production                                                                 | Local (`.env.local`)            | Sensitive |
-| --------------------------------------- | -------------------------------------------------------------------------- | ------------------------------- | --------- |
-| `NEXT_PUBLIC_APP_URL`                   | the public origin of your deployment                                       | `http://localhost:3000`         | no        |
-| `NEXT_PUBLIC_SUPABASE_URL`              | `https://<project>.supabase.co`                                            | same                            | no        |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`         | publishable key, `sb_publishable_xxx`                                      | same                            | no        |
-| `SUPABASE_SERVICE_ROLE_KEY`             | secret key, `sb_secret_xxx`                                                | same                            | yes       |
-| `DATABASE_URL`                          | Supabase **transaction pooler** URI + `?pgbouncer=true&connection_limit=1` | Supabase **session pooler** URI | yes       |
-| `DIRECT_URL`                            | Supabase **session pooler** URI                                            | same                            | yes       |
-| `ANTHROPIC_API_KEY`                     | from `console.anthropic.com`                                               | same                            | yes       |
-| `ANTHROPIC_MODEL_FAST`                  | `claude-haiku-4-5-20251001`                                                | same                            | no        |
-| `ANTHROPIC_MODEL_SUMMARY`               | `claude-sonnet-4-6`                                                        | same                            | no        |
-| `DEEPGRAM_API_KEY`                      | from `console.deepgram.com`                                                | same                            | yes       |
-| `DEEPGRAM_MODEL`                        | `nova-3`                                                                   | same                            | no        |
-| `CARTESIA_API_KEY`                      | from `play.cartesia.ai`                                                    | same                            | yes       |
-| `CARTESIA_MODEL`                        | `sonic-3`                                                                  | same                            | no        |
-| `ELEVENLABS_API_KEY` _(premium SKU)_    | from `elevenlabs.io`                                                       | same or unset                   | yes       |
-| `LIVEKIT_API_KEY`                       | from LiveKit Cloud project                                                 | same                            | yes       |
-| `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                 | same                            | yes       |
-| `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
-| `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
-| `LIVEKIT_SIP_OUTBOUND_TRUNK_HOST`       | Twilio Termination URI host, e.g. `<trunk>.pstn.twilio.com`                | same                            | no        |
-| `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
-| `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
-| `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
-| `RESEND_API_KEY`                        | sending-access key                                                         | same                            | yes       |
-| `RESEND_FROM_EMAIL`                     | `onboarding@resend.dev` until you verify a domain                          | same                            | no        |
-| `NEXT_PUBLIC_SENTRY_DSN` _(optional)_   | from a Sentry project                                                      | same or unset                   | no        |
-| `NEXT_PUBLIC_POSTHOG_KEY` _(optional)_  | from PostHog                                                               | same or unset                   | no        |
-| `NEXT_PUBLIC_POSTHOG_HOST` _(optional)_ | `https://us.i.posthog.com`                                                 | same                            | no        |
+| Variable                                | Production                                                                  | Local (`.env.local`)            | Sensitive |
+| --------------------------------------- | --------------------------------------------------------------------------- | ------------------------------- | --------- |
+| `NEXT_PUBLIC_APP_URL`                   | the public origin of your deployment                                        | `http://localhost:3000`         | no        |
+| `NEXT_PUBLIC_SUPABASE_URL`              | `https://<project>.supabase.co`                                             | same                            | no        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`         | publishable key, `sb_publishable_xxx`                                       | same                            | no        |
+| `SUPABASE_SERVICE_ROLE_KEY`             | secret key, `sb_secret_xxx`                                                 | same                            | yes       |
+| `DATABASE_URL`                          | Supabase **transaction pooler** URI + `?pgbouncer=true&connection_limit=1`  | Supabase **session pooler** URI | yes       |
+| `DIRECT_URL`                            | Supabase **session pooler** URI                                             | same                            | yes       |
+| `ANTHROPIC_API_KEY`                     | from `console.anthropic.com`                                                | same                            | yes       |
+| `ANTHROPIC_MODEL_FAST`                  | `claude-haiku-4-5-20251001`                                                 | same                            | no        |
+| `ANTHROPIC_MODEL_SUMMARY`               | `claude-sonnet-4-6`                                                         | same                            | no        |
+| `DEEPGRAM_API_KEY`                      | from `console.deepgram.com`                                                 | same                            | yes       |
+| `DEEPGRAM_MODEL`                        | `nova-3`                                                                    | same                            | no        |
+| `CARTESIA_API_KEY`                      | from `play.cartesia.ai`                                                     | same                            | yes       |
+| `CARTESIA_MODEL`                        | `sonic-3`                                                                   | same                            | no        |
+| `ELEVENLABS_API_KEY` _(premium SKU)_    | from `elevenlabs.io`                                                        | same or unset                   | yes       |
+| `LIVEKIT_API_KEY`                       | from LiveKit Cloud project                                                  | same                            | yes       |
+| `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                  | same                            | yes       |
+| `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                             | same                            | no        |
+| `LIVEKIT_SIP_INBOUND_TRUNK_ID`          | id of the shared LiveKit inbound trunk (E.164 allow-list managed by app)    | same                            | no        |
+| `ENCRYPTION_KEY`                        | 32+ char random for `lib/crypto.ts` AES-256-GCM (`openssl rand -base64 48`) | same                            | yes       |
+| `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                    | same                            | no        |
+| `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                      | from `inngest-cli dev`          | yes       |
+| `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                      | from `inngest-cli dev`          | yes       |
+| `RESEND_API_KEY`                        | sending-access key                                                          | same                            | yes       |
+| `RESEND_FROM_EMAIL`                     | `onboarding@resend.dev` until you verify a domain                           | same                            | no        |
+| `NEXT_PUBLIC_SENTRY_DSN` _(optional)_   | from a Sentry project                                                       | same or unset                   | no        |
+| `NEXT_PUBLIC_POSTHOG_KEY` _(optional)_  | from PostHog                                                                | same or unset                   | no        |
+| `NEXT_PUBLIC_POSTHOG_HOST` _(optional)_ | `https://us.i.posthog.com`                                                  | same                            | no        |
 
-Twilio is configured as a **SIP carrier**, not via REST API. Its account credentials live inside LiveKit's outbound trunk config in the LiveKit dashboard, not in your app env. The app never calls `api.twilio.com` directly.
+Twilio credentials are stored per-org in the database (`TwilioConnection`), not in env vars. Each org admin pastes an API Key in **Settings, Telefonia**; the app then provisions the org's Elastic SIP Trunk, registers a per-org LiveKit outbound trunk, and keeps the shared inbound trunk's allow-list in sync.
 
 One value differs between local and production: **`DATABASE_URL`** uses the transaction pooler in production (every serverless invocation opens a fresh connection) and the session pooler locally (longer-lived, supports prepared statements, plays nicely on IPv4 home networks).
 
@@ -160,15 +160,26 @@ Free tiers on every platform cover the demo. The order below matches the depende
 
 1. New project at [livekit.io](https://livekit.io). Note the WebSocket URL as `LIVEKIT_URL`.
 2. **Project Settings, Keys**: create one and copy into `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`.
-3. **SIP, Inbound Trunk**: number-based auth. Restricts the trunk to your specific Twilio numbers in E.164.
-4. **SIP, Outbound Trunk**: address points at your Twilio Termination URI host (e.g. `myproject.pstn.twilio.com`). Add Twilio's credential list username and password from step 2 of the Twilio section. Copy the trunk ID into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`. The host portion goes into `LIVEKIT_SIP_OUTBOUND_TRUNK_HOST` (transfers REFER to this).
+3. **SIP, Inbound Trunk**: create one with **number-based auth** and an empty initial numbers list. Copy its trunk ID into `LIVEKIT_SIP_INBOUND_TRUNK_ID`. The Relay app extends this trunk's allow-list automatically when a tenant attaches a number through Settings, Telefonia.
+4. **No outbound trunk to create here.** Per-org outbound trunks are provisioned via API when a tenant connects Twilio.
 
-### Twilio (PSTN carrier via Elastic SIP, not Voice webhooks)
+### Twilio (per-tenant, configured inside Relay)
 
-1. **Console, Elastic SIP Trunking**: create one.
-2. **Termination**: create a Credential List (username and password). This authenticates LiveKit's outbound calls when placing them through Twilio. Note the Termination URI (`xxx.pstn.twilio.com`).
-3. **Origination**: add an Origination URI pointing at your LiveKit SIP inbound (e.g. `sip:xxx.sip.livekit.cloud`).
-4. **Numbers**: buy or transfer a phone number, assign it to the trunk.
+This one is different from the others: **you (the Relay operator) don't need a Twilio account at all**. Each tenant connects their own Twilio account from inside the app.
+
+Tenant flow (do this once per workspace, in the Relay dashboard):
+
+1. Go to **Settings, Telefonia** in Relay. The screen shows a connection form.
+2. In a separate tab, open [Twilio Console](https://console.twilio.com), **Account, API Keys & tokens, Create API key**, type **Standard**, friendly name `Relay`. Copy the **SID**, **Secret**, and the **Account SID** from the top of the console.
+3. Paste all three into the Relay form. Relay validates the credentials, stores the secret encrypted (`lib/crypto.ts`, AES-256-GCM with `ENCRYPTION_KEY`), and lists the Twilio numbers in your account.
+4. For each number you want a Relay agent to answer, click **Conectar** and pick the agent. Relay then:
+   - Creates a Twilio Elastic SIP Trunk on your account (first attach only)
+   - Sets the trunk's Origination URL to your LiveKit inbound SIP host
+   - Attaches the number to the trunk
+   - Adds the E.164 to the LiveKit inbound trunk's allow-list
+   - Provisions a per-org LiveKit outbound trunk carrying your Twilio credentials (so outbound calls bill to your Twilio account)
+
+To use the Twilio integration you need Trunking enabled on your Twilio account; it's a free add-on you toggle once in **Console, Voice, Manage, SIP Trunking**.
 
 ### Model providers (STT, LLM, TTS)
 
