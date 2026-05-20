@@ -9,9 +9,11 @@
  * The --reset flag wipes all tables first. Without it, the seed will skip
  * cleanly if the demo org already exists.
  */
+import { randomUUID } from "node:crypto";
+
 import { loadEnvConfig } from "@next/env";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 
 loadEnvConfig(process.cwd());
@@ -179,69 +181,32 @@ async function main() {
     return;
   }
 
-  console.log("creating Clínica Lumen demo org");
-  const org = await prisma.organization.create({
-    data: { name: "Clínica Lumen", slug: DEMO_ORG_SLUG },
-  });
+  // Pre-generate every row in memory before touching the database so the whole
+  // seed runs inside one transaction. A mid-run failure rolls everything back,
+  // which makes the seed idempotent on failure: rerun without --reset.
+  console.log("preparing 60 calls across the last 30 days");
+  const orgId = randomUUID();
+  const agentId = randomUUID();
+  const phoneId = randomUUID();
+  const phoneE164 = "+551130000000";
 
-  // Agent
-  console.log("creating PT-BR agent");
-  const agent = await prisma.agent.create({
-    data: {
-      orgId: org.id,
-      name: "Recepcionista Mariana",
-      language: "PT_BR",
-      ttsProvider: "CARTESIA",
-      voiceId: "pt-br-mariana",
-      greeting: "Olá! Obrigada por ligar para a Clínica Lumen. Como posso ajudar?",
-      personaPrompt:
-        "Você é Mariana, recepcionista virtual da Clínica Lumen, especializada em ortopedia. Seja calorosa, eficiente e direta. Sempre confirme detalhes antes de agendar.",
-      fallbackTransferE164: "+5511987654321",
-      businessHours: {
-        timezone: "America/Sao_Paulo",
-        monday: { open: "08:00", close: "19:00" },
-        tuesday: { open: "08:00", close: "19:00" },
-        wednesday: { open: "08:00", close: "19:00" },
-        thursday: { open: "08:00", close: "19:00" },
-        friday: { open: "08:00", close: "19:00" },
-      },
-    },
-  });
+  const callsData: Prisma.CallCreateManyInput[] = [];
+  const transcriptsData: Prisma.TranscriptCreateManyInput[] = [];
+  const metricsData: Prisma.CallMetricCreateManyInput[] = [];
+  const toolCallsData: Prisma.ToolCallCreateManyInput[] = [];
 
-  // Knowledge docs
-  console.log("seeding knowledge base");
-  for (const doc of KB_DOCS) {
-    await prisma.knowledgeDoc.create({
-      data: { orgId: org.id, agentId: agent.id, title: doc.title, body: doc.body },
-    });
-  }
-
-  // Phone number
-  console.log("seeding phone number");
-  const phone = await prisma.phoneNumber.create({
-    data: {
-      orgId: org.id,
-      agentId: agent.id,
-      e164: "+551130000000",
-      label: "Recepção principal",
-    },
-  });
-
-  // Calls
-  console.log("seeding 60 calls across the last 30 days");
   for (let i = 0; i < 60; i += 1) {
     const sample = SAMPLE_TRANSCRIPTS[i % SAMPLE_TRANSCRIPTS.length]!;
-    const daysAgo = Math.floor(Math.random() * 30);
+    const daysBack = Math.floor(Math.random() * 30);
     const hour = 8 + Math.floor(Math.random() * 11);
     const minute = Math.floor(Math.random() * 60);
-    const startedAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+    const startedAt = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
     startedAt.setHours(hour, minute, 0, 0);
     const lastTurn = sample.turns[sample.turns.length - 1]!;
     const durationMs = lastTurn.ms + 4000 + Math.floor(Math.random() * 3000);
     const endedAt = new Date(startedAt.getTime() + durationMs);
 
     const callerE164 = SAMPLE_PHONES[i % SAMPLE_PHONES.length]!;
-
     const sentiment =
       sample.outcome === "SCHEDULED"
         ? "POSITIVE"
@@ -249,106 +214,152 @@ async function main() {
           ? "NEGATIVE"
           : "NEUTRAL";
 
-    const call = await prisma.call.create({
-      data: {
-        orgId: org.id,
-        agentId: agent.id,
-        phoneNumberId: phone.id,
-        callerE164,
-        calleeE164: phone.e164,
-        direction: "INBOUND",
-        status: "COMPLETED",
-        livekitRoomName: `call-${id()}`,
-        startedAt,
-        answeredAt: new Date(startedAt.getTime() + 1500),
-        endedAt,
-        durationMs,
-        outcome: sample.outcome,
-        summary: sample.summary,
-        sentiment,
-        topics:
-          sample.outcome === "SCHEDULED"
-            ? ["agendamento", "ortopedia", "convênio"]
-            : sample.outcome === "TRANSFERRED"
-              ? ["financeiro", "transferência"]
-              : sample.outcome === "QUALIFIED"
-                ? ["cirurgia", "menisco"]
-                : ["pagamento"],
-        costCents: 8 + Math.floor(Math.random() * 8),
-        processedAt: endedAt,
-      },
+    const callId = randomUUID();
+    callsData.push({
+      id: callId,
+      orgId,
+      agentId,
+      phoneNumberId: phoneId,
+      callerE164,
+      calleeE164: phoneE164,
+      direction: "INBOUND",
+      status: "COMPLETED",
+      livekitRoomName: `call-${id()}`,
+      startedAt,
+      answeredAt: new Date(startedAt.getTime() + 1500),
+      endedAt,
+      durationMs,
+      outcome: sample.outcome,
+      summary: sample.summary,
+      sentiment,
+      topics:
+        sample.outcome === "SCHEDULED"
+          ? ["agendamento", "ortopedia", "convênio"]
+          : sample.outcome === "TRANSFERRED"
+            ? ["financeiro", "transferência"]
+            : sample.outcome === "QUALIFIED"
+              ? ["cirurgia", "menisco"]
+              : ["pagamento"],
+      costCents: 8 + Math.floor(Math.random() * 8),
+      processedAt: endedAt,
     });
 
-    // Transcripts
     for (let t = 0; t < sample.turns.length; t += 1) {
       const turn = sample.turns[t]!;
       const next = sample.turns[t + 1];
       const endMs = next ? next.ms : turn.ms + 2500;
-      await prisma.transcript.create({
-        data: {
-          orgId: org.id,
-          callId: call.id,
-          speaker: turn.speaker,
-          text: turn.text,
-          startMs: turn.ms,
-          endMs,
-          isFinal: true,
-          sentiment: turn.speaker === "USER" ? sentiment : null,
-        },
+      transcriptsData.push({
+        orgId,
+        callId,
+        speaker: turn.speaker,
+        text: turn.text,
+        startMs: turn.ms,
+        endMs,
+        isFinal: true,
+        sentiment: turn.speaker === "USER" ? sentiment : null,
       });
     }
 
-    // Metrics, vary so the histogram looks realistic
-    const e2e = 600 + Math.floor(Math.random() * 500);
-    await prisma.callMetric.create({
-      data: {
-        orgId: org.id,
-        callId: call.id,
+    metricsData.push(
+      {
+        orgId,
+        callId,
         leg: "END_TO_END",
-        valueMs: e2e,
+        valueMs: 600 + Math.floor(Math.random() * 500),
         occurredAt: startedAt,
       },
-    });
-    await prisma.callMetric.create({
-      data: {
-        orgId: org.id,
-        callId: call.id,
+      {
+        orgId,
+        callId,
         leg: "LLM_TTFT",
         valueMs: 200 + Math.floor(Math.random() * 250),
         occurredAt: startedAt,
       },
-    });
-    await prisma.callMetric.create({
-      data: {
-        orgId: org.id,
-        callId: call.id,
+      {
+        orgId,
+        callId,
         leg: "TTS_TTFA",
         valueMs: 60 + Math.floor(Math.random() * 80),
         occurredAt: startedAt,
       },
-    });
+    );
 
     if (sample.outcome === "SCHEDULED" && Math.random() < 0.5) {
-      await prisma.toolCall.create({
-        data: {
-          orgId: org.id,
-          callId: call.id,
-          name: "book_appointment",
-          inputJson: {
-            slotIso: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            durationMin: 30,
-            patientName: "Paciente Exemplo",
-            patientPhone: callerE164,
-            reason: "Consulta ortopédica",
-          },
-          outputJson: { confirmationId: `book-${id()}`, status: "ACCEPTED" },
-          startedAt: new Date(startedAt.getTime() + 25000),
-          endedAt: new Date(startedAt.getTime() + 25400),
-          durationMs: 400,
+      toolCallsData.push({
+        orgId,
+        callId,
+        name: "book_appointment",
+        inputJson: {
+          slotIso: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          durationMin: 30,
+          patientName: "Paciente Exemplo",
+          patientPhone: callerE164,
+          reason: "Consulta ortopédica",
         },
+        outputJson: { confirmationId: `book-${id()}`, status: "ACCEPTED" },
+        startedAt: new Date(startedAt.getTime() + 25000),
+        endedAt: new Date(startedAt.getTime() + 25400),
+        durationMs: 400,
       });
     }
   }
+
+  console.log(
+    `inserting org/agent/kb/phone + ${callsData.length} calls, ${transcriptsData.length} transcripts, ${metricsData.length} metrics, ${toolCallsData.length} tool calls`,
+  );
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.organization.create({
+        data: { id: orgId, name: "Clínica Lumen", slug: DEMO_ORG_SLUG },
+      });
+      await tx.agent.create({
+        data: {
+          id: agentId,
+          orgId,
+          name: "Recepcionista Mariana",
+          language: "PT_BR",
+          ttsProvider: "CARTESIA",
+          voiceId: "pt-br-mariana",
+          greeting: "Olá! Obrigada por ligar para a Clínica Lumen. Como posso ajudar?",
+          personaPrompt:
+            "Você é Mariana, recepcionista virtual da Clínica Lumen, especializada em ortopedia. Seja calorosa, eficiente e direta. Sempre confirme detalhes antes de agendar.",
+          fallbackTransferE164: "+5511987654321",
+          businessHours: {
+            timezone: "America/Sao_Paulo",
+            monday: { open: "08:00", close: "19:00" },
+            tuesday: { open: "08:00", close: "19:00" },
+            wednesday: { open: "08:00", close: "19:00" },
+            thursday: { open: "08:00", close: "19:00" },
+            friday: { open: "08:00", close: "19:00" },
+          },
+        },
+      });
+      await tx.knowledgeDoc.createMany({
+        data: KB_DOCS.map((doc) => ({
+          orgId,
+          agentId,
+          title: doc.title,
+          body: doc.body,
+        })),
+      });
+      await tx.phoneNumber.create({
+        data: {
+          id: phoneId,
+          orgId,
+          agentId,
+          e164: phoneE164,
+          label: "Recepção principal",
+        },
+      });
+      await tx.call.createMany({ data: callsData });
+      await tx.transcript.createMany({ data: transcriptsData });
+      await tx.callMetric.createMany({ data: metricsData });
+      if (toolCallsData.length > 0) {
+        await tx.toolCall.createMany({ data: toolCallsData });
+      }
+    },
+    { timeout: 60_000 },
+  );
 
   console.log("demo seeded.");
 }
