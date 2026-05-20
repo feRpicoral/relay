@@ -2,7 +2,7 @@
 
 Voice AI receptionist for service businesses. A clinic, consultório, or service provider configures a voice agent, points a phone number at it, and the agent answers calls 24/7: qualifying leads, scheduling appointments, transferring to a human when needed. Operators watch each call happen live in the dashboard with streaming transcript and a per-leg latency meter.
 
-- Live demo: TODO
+- Live demo: https://relay-five-peach.vercel.app
 - API docs: TODO
 - Loom walkthrough: TODO
 
@@ -150,29 +150,19 @@ yarn install                                  # postinstall runs prisma generate
 
 ### First-time database setup
 
-The Supabase project comes with several pre-installed extensions that show up as drift in `prisma migrate dev`. For an existing Supabase project that's never had Prisma run against it, bootstrap a baseline migration manually:
-
-Prisma 7 reads connection URLs from `prisma.config.ts`, which calls Next.js's env loader and so picks up `.env.local` (or `.env` if you keep it there) automatically.
+Prisma 7 reads connection URLs from `prisma.config.ts`, which calls Next.js's env loader so `.env.local` is picked up automatically. The baseline migration is committed at `prisma/migrations/0_init/migration.sql` — for a fresh Supabase project, just apply it:
 
 ```bash
-mkdir -p prisma/migrations/0_init
-
-yarn prisma migrate diff \
-  --from-empty \
-  --to-schema prisma/schema.prisma \
-  --script \
-  > prisma/migrations/0_init/migration.sql
-
 yarn prisma migrate deploy
 ```
 
-Then apply the RLS policies and auth trigger. Either copy `prisma/sql/setup.sql` into the Supabase SQL editor and run it, or use the bundled script that connects via `DIRECT_URL`:
+Then the RLS policies and the `auth.users` -> `public.users` mirror trigger:
 
 ```bash
 yarn db:rls
 ```
 
-The script is idempotent and safe to re-run.
+`yarn db:rls` runs `prisma/sql/setup.sql` over `DIRECT_URL`. Idempotent, safe to re-run.
 
 Optional demo data, "Clínica Lumen" with 60 fake calls across the last 30 days:
 
@@ -180,6 +170,8 @@ Optional demo data, "Clínica Lumen" with 60 fake calls across the last 30 days:
 yarn db:seed              # skips if the demo org exists
 yarn db:seed --reset      # wipes and re-creates
 ```
+
+The seed runs every insert inside one transaction, so a failed/interrupted run leaves nothing behind. Re-run with `--reset` to recover from a partial state.
 
 ### Daily
 
@@ -200,11 +192,30 @@ yarn build                # Next.js production build
 
 ## Deploying
 
-The Next.js app deploys to Vercel. Import the repo, leave Build / Output / Install commands empty (Vercel auto-detects yarn via the `packageManager` field), and paste your env vars from `.env.local` swapping in the production values from the table above.
+Auto-deploys are off by default (`vercel.json` sets `git.deploymentEnabled: false`). Every push to `main` skips both Vercel and any branch-watching integration. Promote a build manually with the steps below.
 
-The agent worker deploys separately. The included `Dockerfile` at the repo root, paired with `fly.toml`, targets Fly.io in `dfw` (Dallas). Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app.
+### Vercel (Next.js app)
 
-The worker uses the built-in `@livekit/agents` job dispatch. When LiveKit Cloud creates a room (because a SIP call arrived, or the dashboard's test-call feature provisioned one), it dispatches a worker process automatically. There is no HTTP coupling between Vercel and the worker host.
+Import the repo, leave Build / Output / Install commands empty, and paste your env vars from `.env.local` swapping in the production values from the table above. One extra env var is required for Yarn 4 to be picked up via Corepack: set `ENABLE_EXPERIMENTAL_COREPACK=1` in the project's Environment Variables (any environment). Without it, Vercel falls back to Yarn 1, misresolves the Yarn 4 lockfile, and Next 16's TypeScript validator overflows the stack at build time.
+
+Deploy from your machine:
+
+```bash
+yarn vercel --prod
+```
+
+### Fly.io (agent worker)
+
+The worker is outbound-only (joins LiveKit rooms over websocket, no inbound HTTP). The included `Dockerfile` at the repo root and `fly.toml` target Fly in `dfw`.
+
+```bash
+fly secrets import < .env.local      # one-time, see the worker section above
+fly deploy --ha=false                 # single machine; LiveKit dispatch already distributes load
+```
+
+`--ha=false` is important — Fly creates a primary + standby pair by default, but LiveKit Cloud routes inbound rooms across whichever workers are connected, so the standby would be paid-for idle capacity.
+
+The worker uses `@livekit/agents` job dispatch. When LiveKit Cloud creates a room (SIP call or dashboard test-call), it dispatches a worker process. No HTTP coupling between Vercel and Fly.
 
 ### SIP routing
 
