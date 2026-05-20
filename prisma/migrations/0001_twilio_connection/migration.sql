@@ -9,6 +9,7 @@ CREATE TABLE "twilio_connections" (
     "api_key_sid" TEXT NOT NULL,
     "auth_token_encrypted" TEXT NOT NULL,
     "twilio_trunk_sid" TEXT,
+    "twilio_trunk_domain" TEXT,
     "livekit_outbound_trunk_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,

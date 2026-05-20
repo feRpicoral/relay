@@ -84,7 +84,17 @@ export const campaignDispatch = inngest.createFunction(
     });
 
     await step.run("livekit-sip-outbound", async () => {
+      const conn = await getPrisma().twilioConnection.findUnique({
+        where: { orgId: lead.orgId },
+        select: { livekitOutboundTrunkId: true },
+      });
+      if (!conn?.livekitOutboundTrunkId) {
+        throw new Error(
+          "Org has no LiveKit outbound trunk. Connect Twilio in Settings → Telefonia first.",
+        );
+      }
       await placeOutboundSipCall({
+        trunkId: conn.livekitOutboundTrunkId,
         roomName,
         toE164: lead.phoneE164,
         participantIdentity: `sip-${lead.id}`,

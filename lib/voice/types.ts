@@ -16,6 +16,10 @@ export interface AgentContext {
   knowledgeChunks: string[];
   businessHours: BusinessHours;
   fallbackTransferE164: string | null;
+  // Domain of the org's Twilio Elastic SIP Trunk (e.g. `relay-abc.pstn.twilio.com`).
+  // The worker uses this as the host for `sip:<e164>@<domain>` when REFERring
+  // the call during transfer_to_human. Null if the org hasn't connected Twilio.
+  transferSipDomain: string | null;
   callerE164: string;
   calleeE164: string;
 }

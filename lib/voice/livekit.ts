@@ -1,6 +1,6 @@
 import { AccessToken, RoomServiceClient, SipClient } from "livekit-server-sdk";
 
-import { optionalEnv, requireEnv } from "@/lib/env";
+import { requireEnv } from "@/lib/env";
 
 function lkUrl(): string {
   // RoomServiceClient wants https/http, not wss.
@@ -69,24 +69,25 @@ export function getSipClient(): SipClient {
 
 /**
  * Originate an outbound SIP call. LiveKit dials the destination via the
- * configured outbound trunk (typically a Twilio Elastic SIP trunk) and joins
- * the resulting participant to the given room. The agent worker dispatched to
- * the same room will then drive the conversation.
+ * outbound trunk passed in (per-org Twilio trunk provisioned through the
+ * settings UI). The agent worker dispatched to the same room will drive the
+ * conversation. Caller is responsible for resolving the org's trunk id (see
+ * `lib/telephony/connection.ts` and `lib/inngest/functions/campaign-dispatch.ts`).
  */
 export async function placeOutboundSipCall(args: {
+  trunkId: string;
   roomName: string;
   toE164: string;
   participantIdentity: string;
   participantName?: string;
 }): Promise<void> {
-  const trunkId = optionalEnv("LIVEKIT_SIP_OUTBOUND_TRUNK_ID");
-  if (!trunkId) {
+  if (!args.trunkId) {
     throw new Error(
-      "LIVEKIT_SIP_OUTBOUND_TRUNK_ID is not set; configure an outbound SIP trunk in LiveKit before running outbound campaigns.",
+      "Outbound trunk id missing. Connect Twilio in Settings → Telefonia so Relay can provision a per-org trunk before outbound calls.",
     );
   }
   const sip = getSipClient();
-  await sip.createSipParticipant(trunkId, args.toE164, args.roomName, {
+  await sip.createSipParticipant(args.trunkId, args.toE164, args.roomName, {
     participantIdentity: args.participantIdentity,
     participantName: args.participantName ?? args.toE164,
     waitUntilAnswered: false,

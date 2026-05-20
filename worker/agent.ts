@@ -27,7 +27,7 @@ import { z } from "zod";
 
 import { calcom } from "@/lib/calendar/calcom";
 import { asCallId, asOrgId } from "@/lib/db/types";
-import { envOr, optionalEnv, requireEnv } from "@/lib/env";
+import { envOr, requireEnv } from "@/lib/env";
 import { loadAgentContext, resolvePhoneNumber } from "@/lib/voice/agent-context";
 import { estimateCallCostCents } from "@/lib/voice/cost";
 import { getSipClient } from "@/lib/voice/livekit";
@@ -256,14 +256,14 @@ export default defineAgent({
                 "I'd transfer you, but no human number is configured. Please call back during business hours.",
             };
           }
-          const sipHost = optionalEnv("LIVEKIT_SIP_OUTBOUND_TRUNK_HOST");
+          const sipHost = agentCtx.transferSipDomain;
           if (!sipHost) {
             const endedAt = new Date();
             await recordToolCall(orgIdBranded, callIdBranded, {
               name: "transfer_to_human",
               inputJson: { reason },
               errorMessage:
-                "LIVEKIT_SIP_OUTBOUND_TRUNK_HOST not configured; cannot REFER to carrier.",
+                "Org has no Twilio trunk domain. Connect Twilio in Settings before enabling transfers.",
               startedAt,
               endedAt,
               durationMs: endedAt.getTime() - startedAt.getTime(),

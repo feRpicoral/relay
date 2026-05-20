@@ -82,7 +82,7 @@ async function ensureTwilioTrunk(orgId: OrgId): Promise<{
     domainName = trunk.domainName;
     await getPrisma().twilioConnection.update({
       where: { orgId },
-      data: { twilioTrunkSid: trunkSid },
+      data: { twilioTrunkSid: trunkSid, twilioTrunkDomain: domainName },
     });
   }
 

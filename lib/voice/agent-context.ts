@@ -19,6 +19,11 @@ export async function loadAgentContext(callId: string): Promise<AgentContext | n
           },
         },
       },
+      organization: {
+        include: {
+          twilioConnection: { select: { twilioTrunkDomain: true } },
+        },
+      },
     },
   });
   if (!call || !call.agent || !call.agent.enabled) return null;
@@ -41,6 +46,7 @@ export async function loadAgentContext(callId: string): Promise<AgentContext | n
     knowledgeChunks: call.agent.knowledgeDocs.map((d) => `${d.title}\n${d.body}`),
     businessHours,
     fallbackTransferE164: call.agent.fallbackTransferE164,
+    transferSipDomain: call.organization.twilioConnection?.twilioTrunkDomain ?? null,
     callerE164: call.callerE164,
     calleeE164: call.calleeE164,
   };

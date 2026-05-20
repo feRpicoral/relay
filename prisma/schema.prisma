@@ -378,6 +378,10 @@ model TwilioConnection {
   // Twilio Elastic SIP Trunk we provisioned for this org (TK...). Lazily
   // created on first number attach.
   twilioTrunkSid           String?      @map("twilio_trunk_sid")
+  // Termination URI domain of that Twilio trunk (e.g. `relay-abc.pstn.twilio.com`).
+  // Cached here so the worker can REFER to `sip:<e164>@<domain>` during
+  // `transfer_to_human` without a Twilio API round trip per transfer.
+  twilioTrunkDomain        String?      @map("twilio_trunk_domain")
   // LiveKit outbound trunk we provisioned for this org (ST_...). Carries the
   // org's Twilio credentials so outbound calls bill to their account.
   livekitOutboundTrunkId   String?      @map("livekit_outbound_trunk_id")
