@@ -152,19 +152,19 @@ yarn install                                  # postinstall runs prisma generate
 
 The Supabase project comes with several pre-installed extensions that show up as drift in `prisma migrate dev`. For an existing Supabase project that's never had Prisma run against it, bootstrap a baseline migration manually:
 
+Prisma's CLI reads `.env` (not `.env.local`), so either copy your local secrets there too (`cp .env.local .env`) or keep a single canonical `.env` file. Both filenames are gitignored.
+
 ```bash
 mkdir -p prisma/migrations/0_init
 
-yarn db:migrate:diff \
+yarn prisma migrate diff \
   --from-empty \
   --to-schema-datamodel prisma/schema.prisma \
   --script \
   > prisma/migrations/0_init/migration.sql
 
-yarn db:migrate:deploy
+yarn prisma migrate deploy
 ```
-
-Both commands load `.env.local` via `dotenv-cli` so they pick up `DIRECT_URL`.
 
 Then apply the RLS policies and auth trigger. Either copy `prisma/sql/setup.sql` into the Supabase SQL editor and run it, or use the bundled script that connects via `DIRECT_URL`:
 
@@ -318,7 +318,7 @@ DATABASE_URL="<value of prod DIRECT_URL>" DIRECT_URL="<value of prod DIRECT_URL>
   yarn prisma migrate deploy
 ```
 
-`yarn prisma` is invoked directly (not via `yarn db:migrate:deploy`) so the inline env vars override the `.env.local` values. `prisma migrate deploy` applies every migration in `prisma/migrations/` that hasn't been recorded yet. The command is idempotent and atomic per migration.
+`prisma migrate deploy` applies every migration in `prisma/migrations/` that hasn't been recorded yet. The command is idempotent and atomic per migration.
 
 ## Project layout
 

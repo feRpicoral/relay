@@ -12,5 +12,4 @@ yarn worker:dev
 Deploy: see the repo-root `Dockerfile` and `fly.toml`. Target is Fly.io in
 `dfw` (Dallas).
 
-Environment: every var in `.env.example` is required for production. The worker
-loads `.env.local` via `dotenv-cli` when run through the package scripts.
+Environment: every var in `.env.example` is required for production.
