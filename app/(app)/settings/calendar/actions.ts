@@ -1,47 +1,49 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
-
-import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { getAuthorizeUrl, listEventTypes } from "@/lib/calendar/calcom";
-import { CALCOM_OAUTH_STATE_COOKIE } from "@/lib/calendar/oauth-state";
+import { listEventTypes, validateApiKey } from "@/lib/calendar/calcom";
 import { getDb } from "@/lib/db/with-org";
-import { requireEnv } from "@/lib/env";
 
 type Result = { ok: true } | { ok: false; error: string };
 
-/**
- * Generate an authorize URL for Cal.com's OAuth Client flow and stash an
- * anti-CSRF token in an HttpOnly cookie. The client form does
- * `window.location.href = result.url` to start the redirect dance.
- */
-export async function startCalcomOAuthAction(): Promise<
-  { ok: true; url: string } | { ok: false; error: string }
-> {
-  await requireAdmin();
+const ConnectSchema = z.object({
+  apiKey: z.string().min(8).max(200),
+});
 
-  const state = randomBytes(32).toString("hex");
-  const cookieStore = await cookies();
-  cookieStore.set(CALCOM_OAUTH_STATE_COOKIE, state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 300,
-    path: "/",
-  });
+export async function connectCalcomAction(input: z.infer<typeof ConnectSchema>): Promise<Result> {
+  const session = await requireAdmin();
+  const parsed = ConnectSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "API key inválida." };
 
-  const redirectUri = `${requireEnv("NEXT_PUBLIC_APP_URL")}/api/oauth/calcom/callback`;
+  let me;
   try {
-    return { ok: true, url: getAuthorizeUrl({ state, redirectUri }) };
+    me = await validateApiKey(parsed.data.apiKey);
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Failed to build authorize URL.",
+      error: err instanceof Error ? err.message : "Cal.com rejeitou a API key.",
     };
   }
+
+  const db = getDb(session.orgId);
+  await db.calcomConnection.upsert({
+    where: { orgId: session.orgId },
+    create: {
+      orgId: session.orgId,
+      apiKey: parsed.data.apiKey,
+      calcomUserEmail: me.email,
+      timezone: me.timezone,
+    },
+    update: {
+      apiKey: parsed.data.apiKey,
+      calcomUserEmail: me.email,
+      timezone: me.timezone,
+    },
+  });
+
+  return { ok: true };
 }
 
 const EventTypeSchema = z.object({ eventTypeId: z.number().int().positive() });

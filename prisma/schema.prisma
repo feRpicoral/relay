@@ -345,18 +345,15 @@ model CallMetric {
 // -----------------------------------------------------------------------------
 
 model CalcomConnection {
-  id                String       @id @default(uuid()) @db.Uuid
-  orgId             String       @unique @map("org_id") @db.Uuid
-  calcomUserId      Int          @map("calcom_user_id")
-  managedUserEmail  String       @map("managed_user_email")
-  accessToken       String       @map("access_token") @db.Text
-  refreshToken      String       @map("refresh_token") @db.Text
-  expiresAt         DateTime     @map("expires_at")
-  defaultEventTypeId Int?        @map("default_event_type_id")
-  timezone          String       @default("America/Sao_Paulo")
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
-  organization      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id                 String       @id @default(uuid()) @db.Uuid
+  orgId              String       @unique @map("org_id") @db.Uuid
+  apiKey             String       @map("api_key") @db.Text
+  calcomUserEmail    String?      @map("calcom_user_email")
+  defaultEventTypeId Int?         @map("default_event_type_id")
+  timezone           String       @default("America/Sao_Paulo")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  organization       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@map("calcom_connections")
 }

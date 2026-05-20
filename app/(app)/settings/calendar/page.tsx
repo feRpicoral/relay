@@ -37,7 +37,7 @@ export default async function CalendarSettingsPage() {
               <div>
                 <CardTitle>Cal.com conectado</CardTitle>
                 <p className="text-muted-foreground text-xs">
-                  {connection.managedUserEmail}, fuso {connection.timezone}
+                  {connection.calcomUserEmail ?? "API key conectada"}, fuso {connection.timezone}
                 </p>
               </div>
             </div>
@@ -57,7 +57,7 @@ export default async function CalendarSettingsPage() {
         <Empty
           icon={<CalendarCheck2 className="h-5 w-5" />}
           title="Conecte sua conta Cal.com"
-          description="Criamos um managed user na sua conta Cal.com Platform automaticamente. Configure CALCOM_CLIENT_ID e CALCOM_CLIENT_SECRET no ambiente primeiro."
+          description="Conecte sua conta Cal.com colando uma API key. Gere em Cal.com em Settings, Security, API Keys."
           action={<ConnectForm />}
         />
       )}

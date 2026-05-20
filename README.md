@@ -21,7 +21,7 @@ The receptionist can take over the call from the dashboard at any moment.
 
 When the call hangs up, an Inngest job pulls the recording and asks Claude Sonnet 4.6 to produce a structured summary, classify the outcome (`SCHEDULED` / `QUALIFIED` / `TRANSFERRED` / `NOT_QUALIFIED` / `NO_ANSWER`), score sentiment, and extract topics. The detail page shows the recording in a scrub-able player with the transcript highlighting the currently-spoken segment.
 
-The same dashboard ships outbound campaigns (CSV upload, working-hour respect, retries with cooldown), an analytics page (volume, conversion, latency p95, weekday-by-hour heatmap), and a Cal.com OAuth integration for booking appointments mid-call.
+The same dashboard ships outbound campaigns (CSV upload, working-hour respect, retries with cooldown), an analytics page (volume, conversion, latency p95, weekday-by-hour heatmap), and a Cal.com integration for booking appointments mid-call.
 
 ## Pillars
 
@@ -64,7 +64,7 @@ Plus the rest of the B2B surface:
 
 ## Stack
 
-Next.js 15, TypeScript strict, Tailwind v4, shadcn/ui (new-york, zinc), Prisma 6 (adapter pattern), Supabase (Auth + Postgres + Realtime + Storage), LiveKit Agents on the worker side with the Node SDK, Twilio for PSTN, Deepgram for STT, Claude Haiku 4.5 for the live LLM and Sonnet 4.6 for offline analysis, Cartesia Sonic-3 for TTS with ElevenLabs Flash v2.5 as a premium SKU, Cal.com OAuth Client for calendar, Inngest for background jobs, Resend for transactional email, Sentry, PostHog, Vitest, Geist Sans and Mono, violet accent.
+Next.js 15, TypeScript strict, Tailwind v4, shadcn/ui (new-york, zinc), Prisma 6 (adapter pattern), Supabase (Auth + Postgres + Realtime + Storage), LiveKit Agents on the worker side with the Node SDK, Twilio for PSTN, Deepgram for STT, Claude Haiku 4.5 for the live LLM and Sonnet 4.6 for offline analysis, Cartesia Sonic-3 for TTS with ElevenLabs Flash v2.5 as a premium SKU, Cal.com API key for calendar, Inngest for background jobs, Resend for transactional email, Sentry, PostHog, Vitest, Geist Sans and Mono, violet accent.
 
 ## Performance targets
 
@@ -124,9 +124,6 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
-| `CALCOM_AUTHORIZE_BASE`                 | `https://app.cal.com`                                                      | same                            | no        |
-| `CALCOM_CLIENT_ID`                      | from Cal.com OAuth Client                                                  | same                            | yes       |
-| `CALCOM_CLIENT_SECRET`                  | from Cal.com OAuth Client                                                  | same                            | yes       |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `RESEND_API_KEY`                        | sending-access key                                                         | same                            | yes       |
@@ -291,22 +288,18 @@ Under **SIP**:
 
 Under **Agents**: register a dispatch rule that runs your worker on every new room.
 
-#### Cal.com (OAuth Client)
+#### Cal.com (API key)
 
-Under **Settings, OAuth Clients, Create OAuth Client**:
+Cal.com Platform is closed to new signups as of 2026, so OAuth Client provisioning is not an option. Use personal API keys instead. Any Cal.com account works (free, paid, personal, team).
 
-- Name: `Relay`.
-- Redirect URIs: `https://<your-deployment>/api/oauth/calcom/callback`. Also add `http://localhost:3000/api/oauth/calcom/callback` for local dev.
-- Website URL: your deployment URL.
-- Authentication Mode: PKCE off (we keep the secret server-side).
-- Scopes (User category, exactly these five):
-  - View event types
-  - View bookings
-  - Create, edit, and delete bookings
-  - View availability
-  - View personal info and primary email address
+Each org admin generates one key on their own Cal.com account:
 
-Leave Team and Organization scopes unchecked. After saving, copy the client ID and secret into `CALCOM_CLIENT_ID` and `CALCOM_CLIENT_SECRET`. Each org admin clicks "Conectar Cal.com" in Relay's settings, which redirects through Cal.com's authorize page and back into our `/api/oauth/calcom/callback`.
+1. In Cal.com, **Settings, Security, API Keys, Add**.
+2. Set a recognizable name like `Relay`. Set an expiration (or none for the demo).
+3. Copy the generated key. It starts with `cal_live_`.
+4. In Relay, **Settings, Calendar, Conectar Cal.com**: paste the key and submit. Relay validates it by calling `/me` and stores it against the org.
+
+The agent worker uses the stored key for `/event-types`, `/slots/available`, and `/bookings`. There is no OAuth dance, no redirect URI to register, and nothing to configure in env beyond `CALCOM_API_BASE` (which defaults to `https://api.cal.com/v2`).
 
 #### Inngest
 
