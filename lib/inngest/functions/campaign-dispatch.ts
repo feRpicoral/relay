@@ -15,8 +15,12 @@ import { inngest } from "../client";
  * inbound rooms picks up this room via the framework's job dispatch.
  */
 export const campaignDispatch = inngest.createFunction(
-  { id: "campaign-dispatch", retries: 2, concurrency: { key: "event.data.campaignId", limit: 1 } },
-  { event: "campaign/lead.ready" },
+  {
+    id: "campaign-dispatch",
+    retries: 2,
+    concurrency: { key: "event.data.campaignId", limit: 1 },
+    triggers: [{ event: "campaign/lead.ready" }],
+  },
   async ({ event, step }) => {
     const { leadId } = event.data;
 

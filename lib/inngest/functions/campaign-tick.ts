@@ -8,8 +8,7 @@ import { inngest } from "../client";
  * Runs every minute.
  */
 export const campaignTick = inngest.createFunction(
-  { id: "campaign-tick" },
-  { cron: "* * * * *" },
+  { id: "campaign-tick", triggers: [{ cron: "* * * * *" }] },
   async ({ step }) => {
     const campaigns = await step.run("load-running-campaigns", async () => {
       return getPrisma().campaign.findMany({

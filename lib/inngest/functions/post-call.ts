@@ -24,8 +24,7 @@ const SUMMARY_TOOL_NAME = "submit_call_analysis";
  * latency; offline analysis uses Sonnet for quality (per DECISIONS.md #3).
  */
 export const postCallAnalysis = inngest.createFunction(
-  { id: "post-call-analysis", retries: 3 },
-  { event: "call/completed" },
+  { id: "post-call-analysis", retries: 3, triggers: [{ event: "call/completed" }] },
   async ({ event, step }) => {
     const { callId } = event.data;
 
