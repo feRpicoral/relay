@@ -22,8 +22,11 @@ export function CreateOrgForm() {
       const result = await createOrgAction(formData);
       if (result.ok) {
         toast.success("Organização criada");
+        // No router.refresh() here: it would re-render the current (create-org)
+        // page during transition, which the user is about to leave anyway, and
+        // useTransition would keep the spinner active until that refetch
+        // finished. push() alone runs the RSC for /dashboard once.
         router.push("/dashboard");
-        router.refresh();
       } else {
         setError(result.error);
       }
