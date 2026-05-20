@@ -1,5 +1,3 @@
-import "server-only";
-
 import type { OrgId } from "@/lib/db/types";
 import { getDb } from "@/lib/db/with-org";
 

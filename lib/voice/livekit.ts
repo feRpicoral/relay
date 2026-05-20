@@ -1,5 +1,3 @@
-import "server-only";
-
 import { AccessToken, RoomServiceClient, SipClient } from "livekit-server-sdk";
 
 import { optionalEnv, requireEnv } from "@/lib/env";

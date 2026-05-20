@@ -1,5 +1,3 @@
-import "server-only";
-
 import { getPrisma } from "@/lib/db/client";
 import type { OrgId } from "@/lib/db/types";
 import { envOr } from "@/lib/env";

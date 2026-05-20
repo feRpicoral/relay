@@ -1,5 +1,3 @@
-import "server-only";
-
 import { getPrisma } from "@/lib/db/client";
 import { asCallId, asOrgId, type CallId, type OrgId } from "@/lib/db/types";
 import { getDb } from "@/lib/db/with-org";

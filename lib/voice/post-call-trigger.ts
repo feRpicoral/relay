@@ -1,5 +1,3 @@
-import "server-only";
-
 import { inngest } from "@/lib/inngest/client";
 
 /**
