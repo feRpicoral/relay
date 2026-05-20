@@ -122,7 +122,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
-| `LIVEKIT_SIP_OUTBOUND_TRUNK_HOST`       | host portion of the SIP transfer target; defaults to `sip.livekit.cloud`   | same or unset                   | no        |
+| `LIVEKIT_SIP_OUTBOUND_TRUNK_HOST`       | Twilio Termination URI host, e.g. `<trunk>.pstn.twilio.com`                | same                            | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |

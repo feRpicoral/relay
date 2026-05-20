@@ -256,6 +256,25 @@ export default defineAgent({
                 "I'd transfer you, but no human number is configured. Please call back during business hours.",
             };
           }
+          const sipHost = optionalEnv("LIVEKIT_SIP_OUTBOUND_TRUNK_HOST");
+          if (!sipHost) {
+            const endedAt = new Date();
+            await recordToolCall(orgIdBranded, callIdBranded, {
+              name: "transfer_to_human",
+              inputJson: { reason },
+              errorMessage:
+                "LIVEKIT_SIP_OUTBOUND_TRUNK_HOST not configured; cannot REFER to carrier.",
+              startedAt,
+              endedAt,
+              durationMs: endedAt.getTime() - startedAt.getTime(),
+            });
+            return {
+              ok: false,
+              error: "sip_host_not_configured",
+              message:
+                "I can't transfer right now, the system isn't fully configured. Please call back later.",
+            };
+          }
           try {
             const identity = participant.identity ?? "";
             const room = ctx.room.name ?? "";
@@ -265,7 +284,7 @@ export default defineAgent({
             await getSipClient().transferSipParticipant(
               room,
               identity,
-              `sip:${transferTo}@${optionalEnv("LIVEKIT_SIP_OUTBOUND_TRUNK_HOST") ?? "sip.livekit.cloud"}`,
+              `sip:${transferTo}@${sipHost}`,
               { playDialtone: false },
             );
             const endedAt = new Date();
