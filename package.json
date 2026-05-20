@@ -34,6 +34,7 @@
     "@livekit/agents": "^1.4.3",
     "@livekit/agents-plugin-cartesia": "^1.4.3",
     "@livekit/agents-plugin-deepgram": "^1.4.3",
+    "@livekit/agents-plugin-elevenlabs": "^1.4.3",
     "@livekit/agents-plugin-openai": "^1.4.3",
     "@livekit/agents-plugin-silero": "^1.4.3",
     "@livekit/rtc-node": "^0.13.28",

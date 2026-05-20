@@ -44,10 +44,7 @@ export default async function CalendarSettingsPage() {
             <Badge variant="success">Ativo</Badge>
           </CardHeader>
           <div className="space-y-4 px-6 pb-6">
-            <DefaultEventTypePicker
-              currentEventTypeId={connection.defaultEventTypeId}
-              orgId={session.orgId}
-            />
+            <DefaultEventTypePicker currentEventTypeId={connection.defaultEventTypeId} />
             <Button asChild variant="outline" size="sm">
               <a href="https://app.cal.com" target="_blank" rel="noreferrer">
                 Abrir Cal.com
@@ -60,7 +57,7 @@ export default async function CalendarSettingsPage() {
         <Empty
           icon={<CalendarCheck2 className="h-5 w-5" />}
           title="Conecte sua conta Cal.com"
-          description="O agente cria managed users automaticamente em sua conta Cal.com Platform. Você precisa de uma API key OAuth."
+          description="Criamos um managed user na sua conta Cal.com Platform automaticamente. Configure CALCOM_CLIENT_ID e CALCOM_CLIENT_SECRET no ambiente primeiro."
           action={<ConnectForm />}
         />
       )}

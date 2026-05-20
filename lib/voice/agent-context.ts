@@ -23,7 +23,7 @@ export async function loadAgentContext(callId: string): Promise<AgentContext | n
       },
     },
   });
-  if (!call || !call.agent) return null;
+  if (!call || !call.agent || !call.agent.enabled) return null;
 
   const businessHoursParsed = BusinessHoursSchema.safeParse(call.agent.businessHours);
   const businessHours = businessHoursParsed.success

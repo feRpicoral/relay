@@ -6,7 +6,6 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type VoiceOption, VOICES } from "@/lib/voice/voices";
 
@@ -98,16 +97,6 @@ export function VoicePicker({
           );
         })}
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        disabled
-        title="Sample playback chega em breve"
-        className="opacity-60"
-      >
-        Reproduzir amostra (em breve)
-      </Button>
     </div>
   );
 }

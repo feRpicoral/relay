@@ -20,15 +20,17 @@ import {
 } from "@livekit/agents";
 import * as cartesia from "@livekit/agents-plugin-cartesia";
 import * as deepgram from "@livekit/agents-plugin-deepgram";
+import * as elevenlabs from "@livekit/agents-plugin-elevenlabs";
 import * as openai from "@livekit/agents-plugin-openai";
 import * as silero from "@livekit/agents-plugin-silero";
 import { z } from "zod";
 
 import { calcom } from "@/lib/calendar/calcom";
 import { asCallId, asOrgId } from "@/lib/db/types";
-import { envOr, requireEnv } from "@/lib/env";
+import { envOr, optionalEnv, requireEnv } from "@/lib/env";
 import { loadAgentContext, resolvePhoneNumber } from "@/lib/voice/agent-context";
 import { estimateCallCostCents } from "@/lib/voice/cost";
+import { getSipClient } from "@/lib/voice/livekit";
 import {
   appendTranscript,
   createInboundCall,
@@ -236,26 +238,64 @@ export default defineAgent({
         async execute({ reason }) {
           const startedAt = new Date();
           await recordCallEvent(orgIdBranded, callIdBranded, "TRANSFER_REQUESTED", { reason });
-          const endedAt = new Date();
-          await recordToolCall(orgIdBranded, callIdBranded, {
-            name: "transfer_to_human",
-            inputJson: { reason },
-            outputJson: { transferToE164: agentCtx.fallbackTransferE164 },
-            startedAt,
-            endedAt,
-            durationMs: endedAt.getTime() - startedAt.getTime(),
-          });
-          // The actual SIP REFER / blind transfer happens via LiveKit SIP API
-          // when this tool result is observed; left as a follow-up.
-          return { ok: true, transferToE164: agentCtx.fallbackTransferE164 };
+          const transferTo = agentCtx.fallbackTransferE164;
+          if (!transferTo) {
+            const endedAt = new Date();
+            await recordToolCall(orgIdBranded, callIdBranded, {
+              name: "transfer_to_human",
+              inputJson: { reason },
+              errorMessage: "No fallback transfer number configured for this agent.",
+              startedAt,
+              endedAt,
+              durationMs: endedAt.getTime() - startedAt.getTime(),
+            });
+            return {
+              ok: false,
+              error: "no_fallback_number",
+              message:
+                "I'd transfer you, but no human number is configured. Please call back during business hours.",
+            };
+          }
+          try {
+            const identity = participant.identity ?? "";
+            const room = ctx.room.name ?? "";
+            if (!identity || !room) {
+              throw new Error("Missing participant identity or room name for transfer.");
+            }
+            await getSipClient().transferSipParticipant(
+              room,
+              identity,
+              `sip:${transferTo}@${optionalEnv("LIVEKIT_SIP_OUTBOUND_TRUNK_HOST") ?? "sip.livekit.cloud"}`,
+              { playDialtone: false },
+            );
+            const endedAt = new Date();
+            await recordToolCall(orgIdBranded, callIdBranded, {
+              name: "transfer_to_human",
+              inputJson: { reason },
+              outputJson: { transferToE164: transferTo },
+              startedAt,
+              endedAt,
+              durationMs: endedAt.getTime() - startedAt.getTime(),
+            });
+            return { ok: true, transferToE164: transferTo };
+          } catch (err) {
+            const endedAt = new Date();
+            const message = err instanceof Error ? err.message : String(err);
+            await recordToolCall(orgIdBranded, callIdBranded, {
+              name: "transfer_to_human",
+              inputJson: { reason },
+              errorMessage: message,
+              startedAt,
+              endedAt,
+              durationMs: endedAt.getTime() - startedAt.getTime(),
+            });
+            return { ok: false, error: "transfer_failed", message };
+          }
         },
       }),
     };
 
     // ── Pipeline ───────────────────────────────────────────────────────────
-    // We use STTv2 because it accepts arbitrary model strings (so we can use
-    // Flux when it ships in a published plugin version, falling back to
-    // Nova-3 today). The v1 STT is enum-locked.
     const stt = new deepgram.STTv2({
       apiKey: requireEnv("DEEPGRAM_API_KEY"),
       model: envOr("DEEPGRAM_MODEL", "nova-3"),
@@ -268,12 +308,20 @@ export default defineAgent({
       model: envOr("ANTHROPIC_MODEL_FAST", "claude-haiku-4-5-20251001"),
     });
 
-    const tts = new cartesia.TTS({
-      apiKey: requireEnv("CARTESIA_API_KEY"),
-      model: envOr("CARTESIA_MODEL", "sonic-3"),
-      voice: agentCtx.voiceId,
-      language: language === "pt-BR" ? "pt" : "en",
-    });
+    const tts =
+      agentCtx.ttsProvider === "elevenlabs"
+        ? new elevenlabs.TTS({
+            apiKey: requireEnv("ELEVENLABS_API_KEY"),
+            voiceId: agentCtx.voiceId,
+            model: "eleven_flash_v2_5",
+            languageCode: language === "pt-BR" ? "pt" : "en",
+          })
+        : new cartesia.TTS({
+            apiKey: requireEnv("CARTESIA_API_KEY"),
+            model: envOr("CARTESIA_MODEL", "sonic-3"),
+            voice: agentCtx.voiceId,
+            language: language === "pt-BR" ? "pt" : "en",
+          });
 
     const vad = await silero.VAD.load();
 

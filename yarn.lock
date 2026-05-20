@@ -1480,6 +1480,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@livekit/agents-plugin-elevenlabs@npm:^1.4.3":
+  version: 1.4.3
+  resolution: "@livekit/agents-plugin-elevenlabs@npm:1.4.3"
+  dependencies:
+    "@livekit/mutex": "npm:^1.1.1"
+    ws: "npm:^8.18.0"
+  peerDependencies:
+    "@livekit/agents": 1.4.3
+    "@livekit/rtc-node": ^0.13.27
+  checksum: 10c0/9ad94524fb601a4f49de1d5d2ff306437d91d3bffb775a2e44dc872e5fbaa5956bcb9457c3a6bd7f1403b670db5eaefdf1f0c9bd8e43ebcb919cd7743a21e3c1
+  languageName: node
+  linkType: hard
+
 "@livekit/agents-plugin-openai@npm:^1.4.3":
   version: 1.4.3
   resolution: "@livekit/agents-plugin-openai@npm:1.4.3"
@@ -12206,6 +12219,7 @@ __metadata:
     "@livekit/agents": "npm:^1.4.3"
     "@livekit/agents-plugin-cartesia": "npm:^1.4.3"
     "@livekit/agents-plugin-deepgram": "npm:^1.4.3"
+    "@livekit/agents-plugin-elevenlabs": "npm:^1.4.3"
     "@livekit/agents-plugin-openai": "npm:^1.4.3"
     "@livekit/agents-plugin-silero": "npm:^1.4.3"
     "@livekit/rtc-node": "npm:^0.13.28"

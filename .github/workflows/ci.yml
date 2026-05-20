@@ -25,6 +25,7 @@ jobs:
       LIVEKIT_URL: wss://ci.livekit.cloud
       LIVEKIT_SIP_OUTBOUND_TRUNK_ID: ci-trunk
       CALCOM_CLIENT_ID: ci-calcom-client
+      CALCOM_CLIENT_SECRET: ci-calcom-secret
       INNGEST_EVENT_KEY: ci-inngest-event
       INNGEST_SIGNING_KEY: ci-inngest-signing
       RESEND_API_KEY: ci-resend-key
