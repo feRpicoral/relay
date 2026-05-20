@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             org={{ name: membership.organization.name, slug: membership.organization.slug }}
             role={membership.role}
           />
-          <main className="bg-background ml-60 flex min-h-screen flex-1 flex-col">{children}</main>
+          <main className="bg-background flex min-h-screen flex-1 flex-col">{children}</main>
         </div>
       </TooltipProvider>
     </PostHogProvider>

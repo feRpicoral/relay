@@ -27,6 +27,7 @@ const eslintConfig = defineConfig([
   },
   globalIgnores([
     ".next/**",
+    ".vercel/**",
     "out/**",
     "build/**",
     "dist/**",

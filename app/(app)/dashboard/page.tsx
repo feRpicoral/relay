@@ -24,8 +24,8 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Olá, ${session.email.split("@")[0]}`}
-        description={`Visão geral da ${session.orgName}.`}
+        title={`Olá, ${session.userName ?? session.email.split("@")[0]}`}
+        description={`Visão geral da ${session.orgName}`}
         actions={
           <Button asChild>
             <Link href="/agents/new">
@@ -74,46 +74,52 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 px-8 pb-8 md:grid-cols-2">
-        <Card className="border-dashed">
-          <CardHeader>
-            <Badge variant="outline" className="mb-2 w-fit">
-              Primeiros passos
-            </Badge>
-            <CardTitle>Configure seu primeiro agente</CardTitle>
-            <CardDescription>
-              Defina persona, voz, base de conhecimento e horários de atendimento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline">
-              <Link href="/agents/new">
-                Criar agente
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card className="border-dashed">
-          <CardHeader>
-            <Badge variant="outline" className="mb-2 w-fit">
-              Próximo passo
-            </Badge>
-            <CardTitle>Conecte um número de telefone</CardTitle>
-            <CardDescription>
-              Aponte um número Twilio (ou SIP trunk) pro seu agente atender.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline">
-              <Link href="/settings/phone-numbers">
-                Conectar número
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {agentCount === 0 || phoneCount === 0 ? (
+        <div className="grid gap-4 px-8 pb-8 md:grid-cols-2">
+          {agentCount === 0 ? (
+            <Card className="border-dashed">
+              <CardHeader>
+                <Badge variant="outline" className="mb-2 w-fit">
+                  Primeiros passos
+                </Badge>
+                <CardTitle>Configure seu primeiro agente</CardTitle>
+                <CardDescription>
+                  Defina persona, voz, base de conhecimento e horários de atendimento.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link href="/agents/new">
+                    Criar agente
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+          {phoneCount === 0 ? (
+            <Card className="border-dashed">
+              <CardHeader>
+                <Badge variant="outline" className="mb-2 w-fit">
+                  Próximo passo
+                </Badge>
+                <CardTitle>Conecte um número de telefone</CardTitle>
+                <CardDescription>
+                  Aponte um número Twilio (ou SIP trunk) pro seu agente atender.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link href="/settings/phone-numbers">
+                    Conectar número
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 }

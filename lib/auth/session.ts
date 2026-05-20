@@ -10,6 +10,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export interface Session {
   userId: UserId;
   email: string;
+  userName: string | null;
   orgId: OrgId;
   orgName: string;
   orgSlug: string;
@@ -45,13 +46,17 @@ export async function getSession(): Promise<Session | null> {
 
   const membership = await getPrisma().membership.findUnique({
     where: { orgId_userId: { orgId: activeOrgId, userId } },
-    include: { organization: { select: { id: true, name: true, slug: true } } },
+    include: {
+      organization: { select: { id: true, name: true, slug: true } },
+      user: { select: { name: true } },
+    },
   });
   if (!membership) return null;
 
   return {
     userId,
     email,
+    userName: membership.user.name,
     orgId: asOrgId(membership.organization.id),
     orgName: membership.organization.name,
     orgSlug: membership.organization.slug,
