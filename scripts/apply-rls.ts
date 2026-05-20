@@ -2,9 +2,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { loadEnvConfig } from "@next/env";
 import { Client } from "pg";
 
 import { requireEnv } from "../lib/env";
+
+loadEnvConfig(process.cwd());
 
 async function main() {
   const sqlPath = resolve(__dirname, "..", "prisma", "sql", "setup.sql");

@@ -9,10 +9,20 @@
  * The --reset flag wipes all tables first. Without it, the seed will skip
  * cleanly if the demo org already exists.
  */
+import { loadEnvConfig } from "@next/env";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 
-const prisma = new PrismaClient();
+loadEnvConfig(process.cwd());
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set. Fill it in .env.local before running the seeder.");
+}
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 const id = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 10);
 
 const DEMO_ORG_SLUG = "clinica-lumen-demo";
