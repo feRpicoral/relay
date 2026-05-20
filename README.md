@@ -196,7 +196,7 @@ Auto-deploys are off by default (`vercel.json` sets `git.deploymentEnabled: fals
 
 ### Vercel (Next.js app)
 
-Import the repo, leave Build / Output / Install commands empty, and paste your env vars from `.env.local` swapping in the production values from the table above. One extra env var is required for Yarn 4 to be picked up via Corepack: set `ENABLE_EXPERIMENTAL_COREPACK=1` in the project's Environment Variables (any environment). Without it, Vercel falls back to Yarn 1, misresolves the Yarn 4 lockfile, and Next 16's TypeScript validator overflows the stack at build time.
+Import the repo and paste your env vars from `.env.local` swapping in the production values from the table above. Leave Build / Output / Install commands empty — Vercel auto-detects the `packageManager: yarn@4.14.1` field in `package.json` and uses Corepack for installs. Setting a custom `installCommand` here causes Vercel to skip that detection and fall back to Yarn 1, which misresolves the Yarn 4 lockfile and crashes the Next 16 TypeScript validator at build time.
 
 Deploy from your machine:
 
