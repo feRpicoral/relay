@@ -136,6 +136,74 @@ Twilio is configured as a **SIP carrier**, not via REST API. Its account credent
 
 One value differs between local and production: **`DATABASE_URL`** uses the transaction pooler in production (every serverless invocation opens a fresh connection) and the session pooler locally (longer-lived, supports prepared statements, plays nicely on IPv4 home networks).
 
+## Provisioning the third-party accounts
+
+Free tiers on every platform cover the demo. The order below matches the dependency chain: Supabase first (database), then the model providers, then telephony.
+
+### Supabase
+
+1. New project at [supabase.com](https://supabase.com). Pick a region close to your users.
+2. **Authentication, URL Configuration**:
+   - Site URL: production URL of the app (e.g. `https://relay-five-peach.vercel.app`)
+   - Redirect URLs: add the same URL with `/auth/callback` and `/auth/callback?**` (the `?**` wildcard is required because the magic link carries a `next=` query param)
+3. **Settings, API**: copy `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+4. **Settings, Database, Connect**: copy the pooled URI into `DATABASE_URL` and the direct URI into `DIRECT_URL`.
+
+### LiveKit Cloud
+
+1. New project at [livekit.io](https://livekit.io). Note the WebSocket URL as `LIVEKIT_URL`.
+2. **Project Settings, Keys**: create one and copy into `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`.
+3. **SIP, Inbound Trunk**: number-based auth. Restricts the trunk to your specific Twilio numbers in E.164.
+4. **SIP, Outbound Trunk**: address points at your Twilio Termination URI host (e.g. `myproject.pstn.twilio.com`). Add Twilio's credential list username and password from step 2 of the Twilio section. Copy the trunk ID into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`. The host portion goes into `LIVEKIT_SIP_OUTBOUND_TRUNK_HOST` (transfers REFER to this).
+
+### Twilio (PSTN carrier via Elastic SIP, not Voice webhooks)
+
+1. **Console, Elastic SIP Trunking**: create one.
+2. **Termination**: create a Credential List (username and password). This authenticates LiveKit's outbound calls when placing them through Twilio. Note the Termination URI (`xxx.pstn.twilio.com`).
+3. **Origination**: add an Origination URI pointing at your LiveKit SIP inbound (e.g. `sip:xxx.sip.livekit.cloud`).
+4. **Numbers**: buy or transfer a phone number, assign it to the trunk.
+
+### Model providers (STT, LLM, TTS)
+
+- **Anthropic** ([console.anthropic.com](https://console.anthropic.com)), API Keys, copy into `ANTHROPIC_API_KEY`. Used both by the live worker (Haiku 4.5) and by the post-call Inngest function (Sonnet 4.6).
+- **Deepgram** ([deepgram.com](https://deepgram.com)), API Keys, copy into `DEEPGRAM_API_KEY`. Streaming STT with native turn detection.
+- **Cartesia** ([cartesia.ai](https://cartesia.ai)), API Keys, copy into `CARTESIA_API_KEY`. Default TTS.
+- **ElevenLabs** _(optional, premium voice SKU)_ ([elevenlabs.io](https://elevenlabs.io)), Profile, API Key, copy into `ELEVENLABS_API_KEY`. Leave unset and the agent UI hides ElevenLabs voices.
+
+### Cal.com (calendar)
+
+Personal API key only (no OAuth). Generate at **app.cal.com, Settings, Security, API Keys**; the key starts with `cal_live_`. **Don't** store in env. Paste it per-tenant in the app at **Settings, Calendário**. Each org's key is encrypted in the DB.
+
+### Inngest (background jobs)
+
+1. Sign up at [inngest.com](https://inngest.com). Create an "App" for Relay.
+2. **Manage, Event Keys**: copy into `INNGEST_EVENT_KEY`.
+3. **Manage, Signing Keys**: copy into `INNGEST_SIGNING_KEY`.
+4. **Apps, Sync new app**: URL is `<your-vercel-url>/api/inngest`. Inngest auto-discovers the functions.
+
+### Resend (transactional email for invites)
+
+1. [resend.com](https://resend.com), API Keys, copy into `RESEND_API_KEY`.
+2. Verify a sending domain, or use the sandbox `onboarding@resend.dev` until you do. `RESEND_FROM_EMAIL` is whatever address is verified.
+
+### Sentry, PostHog _(optional)_
+
+Both are no-ops with unset env vars. To enable: create projects, copy the DSN or project key, paste into `NEXT_PUBLIC_SENTRY_DSN` or `NEXT_PUBLIC_POSTHOG_KEY`.
+
+### Fly.io (worker host)
+
+1. Install `flyctl` and `fly auth login`.
+2. `fly launch --no-deploy --copy-config` to register the app from the included `fly.toml`. Pick `dfw` when prompted.
+3. `grep -vE '^[A-Z_]+=$' .env.local | fly secrets import` to push all non-empty secrets in one shot.
+4. `fly deploy --ha=false` for the first (and every) deploy. `--ha=false` keeps it to one machine; LiveKit Cloud already distributes inbound rooms across whichever workers are connected.
+
+### Vercel (Next.js host)
+
+1. `yarn vercel link` to attach this repo to a Vercel project.
+2. Set `ENABLE_EXPERIMENTAL_COREPACK=1` as an env var (Settings, Environment Variables, or `yarn vercel env add`). Without it Vercel falls back to Yarn 1 and the Yarn 4 lockfile resolution breaks the build.
+3. Bulk-push the rest of `.env.local` (see the install loop in the deploy section below).
+4. `yarn vercel --prod` to deploy. Auto-deploy on git push is intentionally disabled in `vercel.json`; promotion is always manual.
+
 ## Local development
 
 Requires Node 22 and Yarn 4 via Corepack.
