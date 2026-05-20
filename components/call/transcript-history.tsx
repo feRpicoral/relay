@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -21,13 +21,10 @@ interface TranscriptHistoryProps {
 
 export function TranscriptHistory({ rows, currentMs }: TranscriptHistoryProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (currentMs == null) return;
-    const active = rows.find((r) => currentMs >= r.startMs && currentMs <= r.endMs);
-    setActiveId(active?.id ?? null);
-  }, [currentMs, rows]);
+  const activeId =
+    currentMs == null
+      ? null
+      : (rows.find((r) => currentMs >= r.startMs && currentMs <= r.endMs)?.id ?? null);
 
   useEffect(() => {
     if (!activeId) return;

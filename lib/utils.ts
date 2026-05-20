@@ -52,3 +52,9 @@ export function safeStringify(value: unknown): string {
     return String(value);
   }
 }
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export function daysAgo(days: number): Date {
+  return new Date(Date.now() - days * MS_PER_DAY);
+}

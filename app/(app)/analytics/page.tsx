@@ -9,7 +9,7 @@ import {
   loadVolumeByDay,
 } from "@/lib/analytics/queries";
 import { requireSession } from "@/lib/auth/session";
-import { currency, formatDuration, percent } from "@/lib/utils";
+import { currency, daysAgo, formatDuration, percent } from "@/lib/utils";
 
 import { Heatmap } from "./heatmap";
 import { LatencyHistogram } from "./latency-histogram";
@@ -31,7 +31,7 @@ export default async function AnalyticsPage({
   const session = await requireSession();
   const { range } = await searchParams;
   const days = RANGE_TO_DAYS[range ?? "7d"] ?? 7;
-  const rangeStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rangeStart = daysAgo(days);
 
   const [summary, volume, heatmap, agentRows] = await Promise.all([
     loadAnalyticsSummary(session.orgId, rangeStart),

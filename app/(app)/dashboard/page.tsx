@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
+import { daysAgo } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const session = await requireSession();
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
 
   const [callsToday, agentCount, phoneCount] = await Promise.all([
     db.call.count({
-      where: { startedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      where: { startedAt: { gte: daysAgo(1) } },
     }),
     db.agent.count(),
     db.phoneNumber.count(),
