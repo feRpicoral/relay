@@ -24,6 +24,7 @@
     "worker:dev": "tsx watch worker/agent.ts dev",
     "worker:start": "tsx worker/agent.ts start",
     "inngest:dev": "inngest-cli dev",
+    "postinstall": "prisma generate",
     "prepare": "husky"
   },
   "dependencies": {
