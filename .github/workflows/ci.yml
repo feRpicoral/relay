@@ -26,7 +26,6 @@ jobs:
       TWILIO_ACCOUNT_SID: ci-twilio-sid
       TWILIO_AUTH_TOKEN: ci-twilio-token
       CALCOM_CLIENT_ID: ci-calcom-client
-      CALCOM_CLIENT_SECRET: ci-calcom-secret
       INNGEST_EVENT_KEY: ci-inngest-event
       INNGEST_SIGNING_KEY: ci-inngest-signing
       RESEND_API_KEY: ci-resend-key

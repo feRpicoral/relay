@@ -16,6 +16,7 @@ import { performance } from "node:perf_hooks";
 import { asCallId, asOrgId } from "@/lib/db/types";
 import { recordCallEvent, recordLatency } from "@/lib/voice/persistence";
 
+import { getDeepgramConfig, isDeepgramConfigured } from "./stt/deepgram";
 import type { UserTurn } from "./types";
 
 export interface BridgeOptions {
@@ -90,7 +91,8 @@ export async function startCallBridge(opts: BridgeOptions): Promise<BridgeHandle
   // Live LiveKit / Deepgram wiring happens here. Pseudocode:
   //
   //   const room = await connectAsAgent(opts.roomName)
-  //   const deepgram = openDeepgramFlux({ language: opts.language })
+  //   const { apiKey, model } = getDeepgramConfig()
+  //   const deepgram = openDeepgramFlux({ apiKey, model, language: opts.language })
   //   room.on("trackSubscribed", (track) => track.pipeTo(deepgram.input))
   //   deepgram.on("turn_event", async (turn) => {
   //     if (turn.event === "end_of_turn") {
@@ -98,6 +100,10 @@ export async function startCallBridge(opts: BridgeOptions): Promise<BridgeHandle
   //     }
   //   })
   //   room.on("participantDisconnected", () => handle.hangup())
+  if (isDeepgramConfigured()) {
+    const cfg = getDeepgramConfig();
+    console.log(`[bridge] deepgram model=${cfg.model} ready for ${opts.roomName}`);
+  }
 
   return handle;
 }

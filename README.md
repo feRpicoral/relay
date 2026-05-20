@@ -111,7 +111,6 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `DIRECT_URL`                            | Supabase **session pooler** URI                                            | same                            | yes       |
 | `ANTHROPIC_API_KEY`                     | from `console.anthropic.com`                                               | same                            | yes       |
 | `ANTHROPIC_MODEL_FAST`                  | `claude-haiku-4-5-20251001`                                                | same                            | no        |
-| `ANTHROPIC_MODEL_REASONING`             | `claude-sonnet-4-6`                                                        | same                            | no        |
 | `ANTHROPIC_MODEL_SUMMARY`               | `claude-sonnet-4-6`                                                        | same                            | no        |
 | `DEEPGRAM_API_KEY`                      | from `console.deepgram.com`                                                | same                            | yes       |
 | `DEEPGRAM_MODEL`                        | `flux-general`                                                             | same                            | no        |
@@ -122,14 +121,11 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_API_KEY`                       | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                 | same                            | yes       |
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
-| `LIVEKIT_SIP_TRUNK_ID`                  | from LiveKit Cloud → SIP                                                   | same                            | no        |
 | `TWILIO_ACCOUNT_SID`                    | from `console.twilio.com`                                                  | same                            | yes       |
 | `TWILIO_AUTH_TOKEN`                     | from `console.twilio.com`                                                  | same                            | yes       |
 | `TWILIO_SIP_DOMAIN`                     | the SIP domain that routes into LiveKit                                    | same                            | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
 | `CALCOM_CLIENT_ID`                      | from Cal.com Platform                                                      | same                            | yes       |
-| `CALCOM_CLIENT_SECRET`                  | from Cal.com Platform                                                      | same                            | yes       |
-| `CALCOM_WEBHOOK_SECRET`                 | from Cal.com Platform                                                      | same                            | yes       |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `RESEND_API_KEY`                        | sending-access key                                                         | same                            | yes       |
@@ -137,7 +133,6 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `WORKER_PUBLIC_URL`                     | the public origin of the deployed agent worker                             | `http://localhost:3001`         | no        |
 | `WORKER_SHARED_SECRET`                  | random 32+ char string the Next.js app uses to authenticate the worker     | same                            | yes       |
 | `NEXT_PUBLIC_SENTRY_DSN` _(optional)_   | from a Sentry project                                                      | same or unset                   | no        |
-| `SENTRY_AUTH_TOKEN` _(optional)_        | from Sentry org settings (build-time source map upload)                    | unset locally                   | yes       |
 | `NEXT_PUBLIC_POSTHOG_KEY` _(optional)_  | from PostHog                                                               | same or unset                   | no        |
 | `NEXT_PUBLIC_POSTHOG_HOST` _(optional)_ | `https://us.i.posthog.com`                                                 | same                            | no        |
 
