@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { CallStatusBadge } from "@/components/call/call-status-badge";
 import { LatencyMeter } from "@/components/call/latency-meter";
 import { LiveCallListener } from "@/components/call/live-call-listener";
 import { ToolTimeline } from "@/components/call/tool-timeline";
@@ -15,7 +14,7 @@ import { optionalEnv } from "@/lib/env";
 import { formatPhone } from "@/lib/utils";
 import { issueParticipantToken } from "@/lib/voice/livekit";
 
-import { HangupButton } from "./hangup-button";
+import { LiveStatusActions } from "./live-status-actions";
 
 export default async function LiveCallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -56,12 +55,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
       <PageHeader
         title={call.direction === "INBOUND" ? "Chamada recebida" : "Chamada de saída"}
         description={`${formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164)}, ${call.agent?.name ?? "Agente"}`}
-        actions={
-          <div className="flex items-center gap-2">
-            <CallStatusBadge status={call.status} />
-            {active ? <HangupButton callId={call.id} /> : null}
-          </div>
-        }
+        actions={<LiveStatusActions callId={call.id} initialStatus={call.status} />}
       />
       <div className="grid gap-6 p-8 lg:grid-cols-[1fr_440px]">
         <div className="space-y-6">
