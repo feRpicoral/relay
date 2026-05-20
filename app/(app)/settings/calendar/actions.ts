@@ -1,34 +1,45 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
+
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { listEventTypes, provisionCalcomManagedUser } from "@/lib/calendar/calcom";
+import { getAuthorizeUrl, listEventTypes } from "@/lib/calendar/calcom";
+import { CALCOM_OAUTH_STATE_COOKIE } from "@/lib/calendar/oauth-state";
 import { getDb } from "@/lib/db/with-org";
-import { slugify } from "@/lib/slug";
+import { requireEnv } from "@/lib/env";
 
 type Result = { ok: true } | { ok: false; error: string };
 
 /**
- * Provisions a Cal.com Platform managed user for this org and stores the
- * tokens. The org admin's email is used as the managed-user identity, with a
- * `relay-<slug>` namespace suffix to avoid colliding if they already have a
- * personal Cal.com account.
+ * Generate an authorize URL for Cal.com's OAuth Client flow and stash an
+ * anti-CSRF token in an HttpOnly cookie. The client form does
+ * `window.location.href = result.url` to start the redirect dance.
  */
-export async function connectCalcomAction(): Promise<Result> {
-  const session = await requireAdmin();
+export async function startCalcomOAuthAction(): Promise<
+  { ok: true; url: string } | { ok: false; error: string }
+> {
+  await requireAdmin();
+
+  const state = randomBytes(32).toString("hex");
+  const cookieStore = await cookies();
+  cookieStore.set(CALCOM_OAUTH_STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 300,
+    path: "/",
+  });
+
+  const redirectUri = `${requireEnv("NEXT_PUBLIC_APP_URL")}/api/oauth/calcom/callback`;
   try {
-    const managedEmail = namespacedEmail(session.email, session.orgSlug);
-    await provisionCalcomManagedUser({
-      orgId: session.orgId,
-      email: managedEmail,
-      name: session.orgName,
-    });
-    return { ok: true };
+    return { ok: true, url: getAuthorizeUrl({ state, redirectUri }) };
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Failed to connect Cal.com.",
+      error: err instanceof Error ? err.message : "Failed to build authorize URL.",
     };
   }
 }
@@ -73,10 +84,4 @@ export async function disconnectCalcomAction(): Promise<Result> {
   const db = getDb(session.orgId);
   await db.calcomConnection.delete({ where: { orgId: session.orgId } }).catch(() => undefined);
   return { ok: true };
-}
-
-function namespacedEmail(email: string, orgSlug: string): string {
-  const [user, domain] = email.split("@");
-  if (!user || !domain) return email;
-  return `${user}+relay-${slugify(orgSlug)}@${domain}`;
 }

@@ -21,7 +21,7 @@ The receptionist can take over the call from the dashboard at any moment.
 
 When the call hangs up, an Inngest job pulls the recording and asks Claude Sonnet 4.6 to produce a structured summary, classify the outcome (`SCHEDULED` / `QUALIFIED` / `TRANSFERRED` / `NOT_QUALIFIED` / `NO_ANSWER`), score sentiment, and extract topics. The detail page shows the recording in a scrub-able player with the transcript highlighting the currently-spoken segment.
 
-The same dashboard ships outbound campaigns (CSV upload, working-hour respect, retries with cooldown), an analytics page (volume, conversion, latency p95, weekday-by-hour heatmap), and a Cal.com Platform integration for booking appointments mid-call.
+The same dashboard ships outbound campaigns (CSV upload, working-hour respect, retries with cooldown), an analytics page (volume, conversion, latency p95, weekday-by-hour heatmap), and a Cal.com OAuth integration for booking appointments mid-call.
 
 ## Pillars
 
@@ -64,7 +64,7 @@ Plus the rest of the B2B surface:
 
 ## Stack
 
-Next.js 15, TypeScript strict, Tailwind v4, shadcn/ui (new-york, zinc), Prisma 6 (adapter pattern), Supabase (Auth + Postgres + Realtime + Storage), LiveKit Agents on the worker side with the Node SDK, Twilio for PSTN, Deepgram for STT, Claude Haiku 4.5 for the live LLM and Sonnet 4.6 for offline analysis, Cartesia Sonic-3 for TTS with ElevenLabs Flash v2.5 as a premium SKU, Cal.com Platform API for calendar, Inngest for background jobs, Resend for transactional email, Sentry, PostHog, Vitest, Geist Sans and Mono, violet accent.
+Next.js 15, TypeScript strict, Tailwind v4, shadcn/ui (new-york, zinc), Prisma 6 (adapter pattern), Supabase (Auth + Postgres + Realtime + Storage), LiveKit Agents on the worker side with the Node SDK, Twilio for PSTN, Deepgram for STT, Claude Haiku 4.5 for the live LLM and Sonnet 4.6 for offline analysis, Cartesia Sonic-3 for TTS with ElevenLabs Flash v2.5 as a premium SKU, Cal.com OAuth Client for calendar, Inngest for background jobs, Resend for transactional email, Sentry, PostHog, Vitest, Geist Sans and Mono, violet accent.
 
 ## Performance targets
 
@@ -87,7 +87,7 @@ flowchart LR
     Worker --> LLM[Claude Haiku 4.5 via OpenAI-compat]
     Worker --> TTS[Cartesia Sonic-3 streaming TTS]
     LLM -.tools.-> Tools[lookup_kb / check_availability / book_appointment / transfer]
-    Tools --> Cal[Cal.com Platform API]
+    Tools --> Cal[Cal.com API]
     Worker --> DB[(Postgres / Supabase)]
     DB --> RT[Supabase Realtime]
     RT --> UI[Live call monitor in dashboard]
@@ -124,8 +124,9 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                            | same                            | no        |
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
-| `CALCOM_CLIENT_ID`                      | from Cal.com Platform                                                      | same                            | yes       |
-| `CALCOM_CLIENT_SECRET`                  | from Cal.com Platform, used to provision and refresh managed users         | same                            | yes       |
+| `CALCOM_AUTHORIZE_BASE`                 | `https://app.cal.com`                                                      | same                            | no        |
+| `CALCOM_CLIENT_ID`                      | from Cal.com OAuth Client                                                  | same                            | yes       |
+| `CALCOM_CLIENT_SECRET`                  | from Cal.com OAuth Client                                                  | same                            | yes       |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `RESEND_API_KEY`                        | sending-access key                                                         | same                            | yes       |
@@ -228,15 +229,90 @@ flowchart LR
     end
 ```
 
-After the first deploy:
+After the first deploy, configure each provider's dashboard as described below.
 
-1. In Supabase, **Authentication, URL Configuration**: add `https://<your-deployment>` to **Site URL** and **Redirect URLs**.
-2. In **Twilio Console, Elastic SIP Trunking**: create a trunk. Set the termination URI to the LiveKit Cloud SIP URI shown in LiveKit's SIP dashboard. Buy a phone number and assign it to this trunk (origination).
-3. In **LiveKit Cloud, SIP**: create an inbound trunk that accepts calls from Twilio's IPs, and a dispatch rule that creates one room per call (default `call-<sid>`). Create an outbound trunk pointing at Twilio's SIP termination URI with your Twilio SIP credentials. Copy its id into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`.
-4. In **LiveKit Cloud, Agents**: register a dispatch rule that runs your worker on every new room (the worker is auto-discovered by name; nothing to configure if you only have one).
-5. In Inngest, register the app with the `/api/inngest` route and copy the signing key.
+#### Supabase
 
-The number you connect inside Relay (Settings, Phone numbers) must match the E.164 the carrier sends in the SIP `To` header. The worker reads this from SIP attributes on the joining participant to resolve which org and agent owns the call.
+Project creation:
+
+- **Enable Data API**: uncheck. Relay queries through Prisma server-side; PostgREST is unused.
+- **Automatically expose new tables**: uncheck (default).
+- **Enable automatic RLS**: check. Defense in depth on top of `prisma/sql/setup.sql`.
+- **Postgres Type**: Postgres (default), not OrioleDB.
+
+After project exists, **Authentication, URL Configuration**: add `https://<your-deployment>` to **Site URL** and **Redirect URLs**.
+
+Connection strings:
+
+- `DATABASE_URL` on Vercel: **Transaction pooler** URI, append `?pgbouncer=true&connection_limit=1`.
+- `DIRECT_URL` on Vercel: **Session pooler** URI.
+- Both `DATABASE_URL` and `DIRECT_URL` locally: **Session pooler** URI. The Direct connection option is IPv6-only and not needed here.
+
+#### Twilio (Elastic SIP Trunking)
+
+Create a trunk under **Twilio Console, Elastic SIP Trunking, Trunks**.
+
+**Features tab:**
+
+| Setting                       | Value                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| Call Recording                | Disabled (LiveKit Egress handles recording)                                      |
+| Secure Trunking               | Disabled initially; enable after basic connectivity works, matching LiveKit SRTP |
+| Call Transfer (SIP REFER)     | Enabled (needed by `transfer_to_human`)                                          |
+| Caller ID for Transfer Target | Set caller ID as Transferee                                                      |
+| Enable PSTN Transfer          | Checked                                                                          |
+| Symmetric RTP                 | Enabled                                                                          |
+
+**Termination tab:**
+
+- Twilio auto-generates a Termination URI like `<trunk>.pstn.twilio.com`. Copy it into LiveKit's outbound trunk config.
+- Assign a Credential List (created under Authentication) so LiveKit can authenticate when dialing out.
+
+**Origination tab:**
+
+- Add the LiveKit SIP inbound URI as the origination URI. Get it from **LiveKit Cloud, SIP**.
+- Priority 10, Weight 10, Enabled.
+
+**Numbers tab:**
+
+- Assign every Twilio E.164 you've purchased. Each one must match what you connect in Relay's `Settings, Phone numbers`.
+
+**Authentication tab:**
+
+- Create one Credential List with a single credential (random username + strong password). Use it on the Termination tab. The same username/password go into LiveKit's outbound trunk config.
+
+#### LiveKit Cloud
+
+Under **SIP**:
+
+- **Inbound trunk**: name `twilio-inbound`. Direction Inbound. Numbers: paste every Twilio E.164 (comma-separated). Allowed addresses: leave blank. Media encryption SRTP: Disabled (must match Twilio's Secure Trunking). Include headers: No headers.
+- **Outbound trunk**: name `twilio-outbound`. Direction Outbound. Address: Twilio's Termination URI. Auth username + password: the Credential List you created in Twilio. After creating, copy the trunk id into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`.
+- **Dispatch rule**: one room per call, default name `call-<sid>`.
+
+Under **Agents**: register a dispatch rule that runs your worker on every new room.
+
+#### Cal.com (OAuth Client)
+
+Under **Settings, OAuth Clients, Create OAuth Client**:
+
+- Name: `Relay`.
+- Redirect URIs: `https://<your-deployment>/api/oauth/calcom/callback`. Also add `http://localhost:3000/api/oauth/calcom/callback` for local dev.
+- Website URL: your deployment URL.
+- Authentication Mode: PKCE off (we keep the secret server-side).
+- Scopes (User category, exactly these five):
+  - View event types
+  - View bookings
+  - Create, edit, and delete bookings
+  - View availability
+  - View personal info and primary email address
+
+Leave Team and Organization scopes unchecked. After saving, copy the client ID and secret into `CALCOM_CLIENT_ID` and `CALCOM_CLIENT_SECRET`. Each org admin clicks "Conectar Cal.com" in Relay's settings, which redirects through Cal.com's authorize page and back into our `/api/oauth/calcom/callback`.
+
+#### Inngest
+
+Register the app with the `/api/inngest` route URL on `app.inngest.com`. Copy the event key and signing key into the env. The campaign-tick cron will start firing once the app is registered.
+
+The phone number you connect inside Relay (Settings, Phone numbers) must match the E.164 the carrier sends in the SIP `To` header. The worker reads this from SIP attributes on the joining participant to resolve which org and agent owns the call.
 
 ### Applying schema changes to production
 

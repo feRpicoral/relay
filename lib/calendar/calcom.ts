@@ -5,6 +5,7 @@ import type { OrgId } from "@/lib/db/types";
 import { envOr, optionalEnv, requireEnv } from "@/lib/env";
 
 const CALCOM_BASE = envOr("CALCOM_API_BASE", "https://api.cal.com/v2");
+const CALCOM_AUTHORIZE_BASE = envOr("CALCOM_AUTHORIZE_BASE", "https://app.cal.com");
 const API_VERSION = "2024-08-13";
 
 interface AvailabilityInput {
@@ -30,19 +31,132 @@ export class CalcomNotConfiguredError extends Error {
   }
 }
 
-async function platformAuthHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "x-cal-secret-key": requireEnv("CALCOM_CLIENT_SECRET"),
-    "x-cal-client-id": requireEnv("CALCOM_CLIENT_ID"),
-    "cal-api-version": API_VERSION,
+export function getAuthorizeUrl(args: { state: string; redirectUri: string }): string {
+  const clientId = requireEnv("CALCOM_CLIENT_ID");
+  const url = new URL(`/oauth/${clientId}/authorize`, CALCOM_AUTHORIZE_BASE);
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", args.redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("state", args.state);
+  return url.toString();
+}
+
+interface OAuthTokenResponse {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  data?: {
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpiresAt?: number | string;
   };
 }
 
-/**
- * Ensure the connection's access token is fresh. Refreshes if within 60s of
- * expiry. Returns the (possibly refreshed) access token.
- */
+async function postOAuthToken(body: Record<string, string>): Promise<OAuthTokenResponse> {
+  const clientId = requireEnv("CALCOM_CLIENT_ID");
+  const res = await fetch(`${CALCOM_BASE}/oauth/${clientId}/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "cal-api-version": API_VERSION,
+    },
+    body: new URLSearchParams(body).toString(),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Cal.com OAuth token endpoint returned ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return (await res.json()) as OAuthTokenResponse;
+}
+
+function parseTokens(json: OAuthTokenResponse): {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: Date;
+} {
+  const accessToken = json.access_token ?? json.data?.accessToken;
+  const refreshToken = json.refresh_token ?? json.data?.refreshToken;
+  if (!accessToken || !refreshToken) {
+    throw new Error("Cal.com token response missing access_token or refresh_token.");
+  }
+  let expiresAt: Date;
+  if (json.expires_in) {
+    expiresAt = new Date(Date.now() + json.expires_in * 1000);
+  } else if (json.data?.accessTokenExpiresAt != null) {
+    const raw = json.data.accessTokenExpiresAt;
+    const ms = typeof raw === "number" ? raw : new Date(raw).getTime();
+    expiresAt = new Date(ms);
+  } else {
+    expiresAt = new Date(Date.now() + 55 * 60 * 1000);
+  }
+  return { accessToken, refreshToken, expiresAt };
+}
+
+interface MeResponse {
+  data?: { id?: number; email?: string; timeZone?: string };
+  id?: number;
+  email?: string;
+  timeZone?: string;
+}
+
+async function fetchMe(accessToken: string): Promise<{
+  id: number;
+  email: string;
+  timezone: string;
+}> {
+  const res = await fetch(`${CALCOM_BASE}/me`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "cal-api-version": API_VERSION,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Cal.com /me returned ${res.status}`);
+  }
+  const json = (await res.json()) as MeResponse;
+  const id = json.data?.id ?? json.id;
+  const email = json.data?.email ?? json.email;
+  const timezone = json.data?.timeZone ?? json.timeZone ?? "America/Sao_Paulo";
+  if (!id || !email) throw new Error("Cal.com /me returned no id/email.");
+  return { id, email, timezone };
+}
+
+export async function exchangeAuthCodeAndStore(args: {
+  orgId: OrgId;
+  code: string;
+  redirectUri: string;
+}): Promise<void> {
+  const json = await postOAuthToken({
+    grant_type: "authorization_code",
+    code: args.code,
+    redirect_uri: args.redirectUri,
+    client_id: requireEnv("CALCOM_CLIENT_ID"),
+    client_secret: requireEnv("CALCOM_CLIENT_SECRET"),
+  });
+  const tokens = parseTokens(json);
+  const me = await fetchMe(tokens.accessToken);
+
+  await getPrisma().calcomConnection.upsert({
+    where: { orgId: args.orgId },
+    create: {
+      orgId: args.orgId,
+      calcomUserId: me.id,
+      managedUserEmail: me.email,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+      timezone: me.timezone,
+    },
+    update: {
+      calcomUserId: me.id,
+      managedUserEmail: me.email,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+    },
+  });
+}
+
 async function freshAccessToken(orgId: OrgId): Promise<{
   accessToken: string;
   eventTypeId: number | null;
@@ -61,35 +175,23 @@ async function freshAccessToken(orgId: OrgId): Promise<{
     };
   }
 
-  const clientId = requireEnv("CALCOM_CLIENT_ID");
-  const res = await fetch(`${CALCOM_BASE}/oauth/${clientId}/refresh`, {
-    method: "POST",
-    headers: await platformAuthHeaders(),
-    body: JSON.stringify({ refreshToken: conn.refreshToken }),
+  const json = await postOAuthToken({
+    grant_type: "refresh_token",
+    refresh_token: conn.refreshToken,
+    client_id: requireEnv("CALCOM_CLIENT_ID"),
+    client_secret: requireEnv("CALCOM_CLIENT_SECRET"),
   });
-  if (!res.ok) {
-    throw new Error(`Cal.com token refresh failed: ${res.status}`);
-  }
-  const json = (await res.json()) as {
-    data?: { accessToken: string; refreshToken: string; expiresAt?: string };
-    accessToken?: string;
-    refreshToken?: string;
-    accessTokenExpiresAt?: string;
-  };
-  const accessToken = json.data?.accessToken ?? json.accessToken;
-  const refreshToken = json.data?.refreshToken ?? json.refreshToken;
-  if (!accessToken || !refreshToken) {
-    throw new Error("Cal.com token refresh returned no tokens.");
-  }
-  const expiresAt = new Date(
-    json.data?.expiresAt ?? json.accessTokenExpiresAt ?? Date.now() + 50 * 60 * 1000,
-  );
+  const tokens = parseTokens(json);
   await prisma.calcomConnection.update({
     where: { orgId },
-    data: { accessToken, refreshToken, expiresAt },
+    data: {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+    },
   });
   return {
-    accessToken,
+    accessToken: tokens.accessToken,
     eventTypeId: conn.defaultEventTypeId,
     timezone: conn.timezone,
   };
@@ -110,74 +212,6 @@ async function callApi<T>(path: string, init: RequestInit, accessToken: string):
     throw new Error(`Cal.com ${res.status} ${path}: ${errText.slice(0, 200)}`);
   }
   return (await res.json()) as T;
-}
-
-interface ManagedUserResponse {
-  status?: string;
-  data: {
-    user: { id: number; email: string };
-    accessToken: string;
-    refreshToken: string;
-    accessTokenExpiresAt?: string | number;
-  };
-}
-
-/**
- * Create a Cal.com Platform managed user for this org and persist the resulting
- * tokens. The clinic admin clicks "Connect Cal.com" and we create their managed
- * user behind the scenes using the platform credentials.
- */
-export async function provisionCalcomManagedUser(args: {
-  orgId: OrgId;
-  email: string;
-  name: string;
-  timezone?: string;
-}): Promise<{ calcomUserId: number; expiresAt: Date }> {
-  const clientId = requireEnv("CALCOM_CLIENT_ID");
-  const res = await fetch(`${CALCOM_BASE}/oauth/${clientId}/users`, {
-    method: "POST",
-    headers: await platformAuthHeaders(),
-    body: JSON.stringify({
-      email: args.email,
-      name: args.name,
-      timeZone: args.timezone ?? "America/Sao_Paulo",
-      locale: "pt-BR",
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Cal.com managed-user create failed: ${res.status} ${text.slice(0, 200)}`);
-  }
-  const json = (await res.json()) as ManagedUserResponse;
-  const expiresAt = new Date(
-    json.data.accessTokenExpiresAt
-      ? typeof json.data.accessTokenExpiresAt === "number"
-        ? json.data.accessTokenExpiresAt
-        : new Date(json.data.accessTokenExpiresAt).getTime()
-      : Date.now() + 50 * 60 * 1000,
-  );
-
-  await getPrisma().calcomConnection.upsert({
-    where: { orgId: args.orgId },
-    create: {
-      orgId: args.orgId,
-      calcomUserId: json.data.user.id,
-      managedUserEmail: json.data.user.email,
-      accessToken: json.data.accessToken,
-      refreshToken: json.data.refreshToken,
-      expiresAt,
-      timezone: args.timezone ?? "America/Sao_Paulo",
-    },
-    update: {
-      calcomUserId: json.data.user.id,
-      managedUserEmail: json.data.user.email,
-      accessToken: json.data.accessToken,
-      refreshToken: json.data.refreshToken,
-      expiresAt,
-    },
-  });
-
-  return { calcomUserId: json.data.user.id, expiresAt };
 }
 
 interface CalcomEventType {

@@ -1,24 +1,21 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
-import { connectCalcomAction } from "./actions";
+import { startCalcomOAuthAction } from "./actions";
 
 export function ConnectForm() {
   const [pending, startTransition] = useTransition();
-  const router = useRouter();
 
   function onConnect() {
     startTransition(async () => {
-      const result = await connectCalcomAction();
+      const result = await startCalcomOAuthAction();
       if (result.ok) {
-        toast.success("Cal.com conectado");
-        router.refresh();
+        window.location.href = result.url;
       } else {
         toast.error(result.error);
       }
