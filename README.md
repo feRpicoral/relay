@@ -1,6 +1,6 @@
 # Relay
 
-Voice AI receptionist for service businesses. A clinic, consultório, or service provider configures a voice agent, points a phone number at it, and the agent answers calls 24/7 — qualifying leads, scheduling appointments, transferring to a human when needed. Operators watch each call happen live in the dashboard with streaming transcript and a per-leg latency meter.
+Voice AI receptionist for service businesses. A clinic, consultório, or service provider configures a voice agent, points a phone number at it, and the agent answers calls 24/7: qualifying leads, scheduling appointments, transferring to a human when needed. Operators watch each call happen live in the dashboard with streaming transcript and a per-leg latency meter.
 
 - Live demo: TODO
 - API docs: TODO
@@ -8,28 +8,28 @@ Voice AI receptionist for service businesses. A clinic, consultório, or service
 
 ## What it does
 
-A clinic admin signs up, creates an organization, and configures an agent: persona prompt, voice, business hours, and a knowledge base of FAQs. They point a Twilio number at the webhook and they're done.
+A clinic admin signs up, creates an organization, and configures an agent: persona prompt, voice, business hours, and a knowledge base of FAQs. They point a Twilio number at the SIP trunk and they're done.
 
 A caller dials in. Roughly half a second after they finish speaking, the agent responds in a natural voice. While the call is in progress:
 
 1. A live waveform pulses to incoming audio.
 2. The transcript fills in token-by-token with speaker labels on each turn.
-3. A latency meter shows STT, LLM TTFT, TTS TTFA, and end-to-end p95 in real time — each leg colored red if it exceeds its budget.
+3. A latency meter shows STT, LLM TTFT, TTS TTFA, and end-to-end p95 in real time, with each leg colored red if it exceeds its budget.
 4. Any tool the agent invokes (check availability, look up FAQ, book appointment, transfer) appears in an inline timeline with input, output, and duration.
 
 The receptionist can take over the call from the dashboard at any moment.
 
 When the call hangs up, an Inngest job pulls the recording and asks Claude Sonnet 4.6 to produce a structured summary, classify the outcome (`SCHEDULED` / `QUALIFIED` / `TRANSFERRED` / `NOT_QUALIFIED` / `NO_ANSWER`), score sentiment, and extract topics. The detail page shows the recording in a scrub-able player with the transcript highlighting the currently-spoken segment.
 
-The same dashboard ships outbound campaigns (CSV upload, working-hour respect, retries with cooldown), an analytics page (volume, conversion, latency p95, weekday × hour heatmap), and a Cal.com Platform integration for booking appointments mid-call.
+The same dashboard ships outbound campaigns (CSV upload, working-hour respect, retries with cooldown), an analytics page (volume, conversion, latency p95, weekday-by-hour heatmap), and a Cal.com Platform integration for booking appointments mid-call.
 
 ## Pillars
 
 ### Real-time voice pipeline
 
 - Twilio terminates the PSTN call and bridges it into LiveKit Cloud over SIP.
-- A long-lived Node worker joins the LiveKit room and runs the conversation loop. The worker is deployed separately from the Next.js app — Vercel functions cannot keep a websocket open for a 10-minute call.
-- Deepgram Flux handles STT, VAD, and turn-detection in one streaming API. End-of-turn events fire the LLM, eliminating the 150–300 ms variance of separate VAD + silence-timer pipelines.
+- A long-lived Node worker joins the LiveKit room and runs the conversation loop. The worker is deployed separately from the Next.js app, since Vercel functions cannot keep a websocket open for a 10-minute call.
+- Deepgram handles STT, VAD, and turn-detection in one streaming API. End-of-turn events fire the LLM, eliminating the 150-300 ms variance of separate VAD + silence-timer pipelines.
 - Claude Haiku 4.5 runs the conversation. Streamed tokens are split sentence-by-sentence and handed to Cartesia Sonic-3 so audio starts playing before the LLM finishes generating.
 - Tool use is native to the Anthropic SDK call. Four tools are available during the call: `check_availability`, `book_appointment`, `lookup_kb`, `transfer_to_human`. Each tool is zod-validated, recorded with input/output/duration, and the LLM continues the conversation with the tool result as a normal turn.
 - Adaptive interruption / barge-in cancels in-flight LLM generation and flushes the TTS audio queue the moment the user starts speaking.
@@ -58,13 +58,13 @@ Plus the rest of the B2B surface:
 ### Post-call processing and analytics
 
 - The worker triggers an Inngest `call/completed` event on hangup. The function loads the transcript and tool calls, asks Claude Sonnet 4.6 (quality over latency for offline analysis) to fill a structured summary, runs idempotently, and writes back to the `Call` row.
-- The recording is captured by LiveKit Egress, stored in Supabase Storage, and rendered in the detail page via a scrub-able `<audio>` element synced to the transcript — moving the playhead highlights the currently-spoken turn.
+- The recording is captured by LiveKit Egress, stored in Supabase Storage, and rendered in the detail page via a scrub-able `<audio>` element synced to the transcript. Moving the playhead highlights the currently-spoken turn.
 - An outbound campaign engine runs as a 1-minute Inngest cron. It scans running campaigns for leads that are eligible (working hours, cooldown elapsed, attempts not exhausted) and emits dispatch events. The dispatcher is concurrency-limited per campaign.
-- The analytics page aggregates per-call metrics into a volume chart, a latency p95 histogram (the headline metric — buckets ≥ 1000 ms render destructive-red), a weekday × hour heatmap, and a per-agent comparison.
+- The analytics page aggregates per-call metrics into a volume chart, a latency p95 histogram (the headline metric; buckets above 1000 ms render destructive-red), a weekday-by-hour heatmap, and a per-agent comparison.
 
 ## Stack
 
-Next.js 15, TypeScript strict, Tailwind v4, shadcn/ui (new-york, zinc), Prisma 6 (adapter pattern), Supabase (Auth + Postgres + Realtime + Storage), LiveKit Agents on the worker side with the Node SDK, Twilio for PSTN, Deepgram Flux for STT, Claude Haiku 4.5 for the live LLM and Sonnet 4.6 for offline analysis, Cartesia Sonic-3 for TTS with ElevenLabs Flash v2.5 as a premium SKU, Cal.com Platform API for calendar, Inngest for background jobs, Resend for transactional email, Sentry, PostHog, Vitest, Geist Sans and Mono, violet accent.
+Next.js 15, TypeScript strict, Tailwind v4, shadcn/ui (new-york, zinc), Prisma 6 (adapter pattern), Supabase (Auth + Postgres + Realtime + Storage), LiveKit Agents on the worker side with the Node SDK, Twilio for PSTN, Deepgram for STT, Claude Haiku 4.5 for the live LLM and Sonnet 4.6 for offline analysis, Cartesia Sonic-3 for TTS with ElevenLabs Flash v2.5 as a premium SKU, Cal.com Platform API for calendar, Inngest for background jobs, Resend for transactional email, Sentry, PostHog, Vitest, Geist Sans and Mono, violet accent.
 
 ## Performance targets
 
@@ -82,8 +82,8 @@ The numbers below are what the architecture is designed for. They will be measur
 flowchart LR
     Caller[Caller] -->|PSTN| Twilio[Twilio Elastic SIP Trunk]
     Twilio -->|SIP| LK[LiveKit Cloud]
-    LK -->|dispatch| Worker[Agent worker: defineAgent, Fly.io]
-    Worker --> STT[Deepgram STT + turn detection]
+    LK -->|dispatch| Worker[Agent worker, defineAgent, Fly.io]
+    Worker --> STT[Deepgram STT, turn detection]
     Worker --> LLM[Claude Haiku 4.5 via OpenAI-compat]
     Worker --> TTS[Cartesia Sonic-3 streaming TTS]
     LLM -.tools.-> Tools[lookup_kb / check_availability / book_appointment / transfer]
@@ -114,7 +114,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `ANTHROPIC_MODEL_FAST`                  | `claude-haiku-4-5-20251001`                                                | same                            | no        |
 | `ANTHROPIC_MODEL_SUMMARY`               | `claude-sonnet-4-6`                                                        | same                            | no        |
 | `DEEPGRAM_API_KEY`                      | from `console.deepgram.com`                                                | same                            | yes       |
-| `DEEPGRAM_MODEL`                        | `nova-3` (or `flux-general` once the plugin ships Flux)                    | same                            | no        |
+| `DEEPGRAM_MODEL`                        | `nova-3`                                                                   | same                            | no        |
 | `CARTESIA_API_KEY`                      | from `play.cartesia.ai`                                                    | same                            | yes       |
 | `CARTESIA_VERSION`                      | `2025-04-16`                                                               | same                            | no        |
 | `CARTESIA_MODEL`                        | `sonic-3`                                                                  | same                            | no        |
@@ -125,6 +125,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`         | id of the LiveKit outbound trunk pointed at your Twilio SIP credentials    | same                            | no        |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                   | same                            | no        |
 | `CALCOM_CLIENT_ID`                      | from Cal.com Platform                                                      | same                            | yes       |
+| `CALCOM_CLIENT_SECRET`                  | from Cal.com Platform, used to provision and refresh managed users         | same                            | yes       |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                     | from `inngest-cli dev`          | yes       |
 | `RESEND_API_KEY`                        | sending-access key                                                         | same                            | yes       |
@@ -133,7 +134,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `NEXT_PUBLIC_POSTHOG_KEY` _(optional)_  | from PostHog                                                               | same or unset                   | no        |
 | `NEXT_PUBLIC_POSTHOG_HOST` _(optional)_ | `https://us.i.posthog.com`                                                 | same                            | no        |
 
-Twilio is configured as a **SIP carrier**, not via REST API — its account credentials live inside LiveKit's outbound trunk config in the LiveKit dashboard, not in your app env. The app never calls `api.twilio.com` directly.
+Twilio is configured as a **SIP carrier**, not via REST API. Its account credentials live inside LiveKit's outbound trunk config in the LiveKit dashboard, not in your app env. The app never calls `api.twilio.com` directly.
 
 One value differs between local and production: **`DATABASE_URL`** uses the transaction pooler in production (every serverless invocation opens a fresh connection) and the session pooler locally (longer-lived, supports prepared statements, plays nicely on IPv4 home networks).
 
@@ -165,7 +166,7 @@ yarn prisma migrate diff \
 yarn prisma migrate deploy
 ```
 
-Then apply the RLS policies and auth trigger: either copy `prisma/sql/setup.sql` into the Supabase SQL editor and run it, or use the bundled script that connects via `DIRECT_URL`:
+Then apply the RLS policies and auth trigger. Either copy `prisma/sql/setup.sql` into the Supabase SQL editor and run it, or use the bundled script that connects via `DIRECT_URL`:
 
 ```bash
 yarn db:rls
@@ -173,7 +174,7 @@ yarn db:rls
 
 The script is idempotent and safe to re-run.
 
-Optional demo data — "Clínica Lumen" with 60 fake calls across the last 30 days:
+Optional demo data, "Clínica Lumen" with 60 fake calls across the last 30 days:
 
 ```bash
 yarn db:seed              # skips if the demo org exists
@@ -201,33 +202,45 @@ yarn build                # Next.js production build
 
 The Next.js app deploys to Vercel. Import the repo, leave Build / Output / Install commands empty (Vercel auto-detects yarn via the `packageManager` field), and paste your env vars from `.env.local` swapping in the production values from the table above.
 
-The agent worker deploys separately. The included `worker/Dockerfile` targets Fly.io in `gru` (São Paulo) — that's the region recommended for proximity to your SIP carrier's Brazil presence. Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app.
+The agent worker deploys separately. The included `worker/Dockerfile` targets Fly.io in `gru` (São Paulo), the region recommended for proximity to your SIP carrier's Brazil presence. Any host that supports long-lived processes works: Fly, Render, Railway, or a self-managed VM. Set the same env vars as the Next.js app.
 
-The worker uses `@livekit/agents`'s built-in job dispatch — when LiveKit Cloud creates a room (because a SIP call arrived, or the dashboard's test-call feature provisioned one), it dispatches a worker process automatically. There is no HTTP coupling between Vercel and the worker host.
+The worker uses the built-in `@livekit/agents` job dispatch. When LiveKit Cloud creates a room (because a SIP call arrived, or the dashboard's test-call feature provisioned one), it dispatches a worker process automatically. There is no HTTP coupling between Vercel and the worker host.
 
 ### SIP routing
 
-Relay treats Twilio (or any other SIP-capable carrier) as a **SIP carrier**, not as a Voice webhook target. Inbound calls flow:
+Relay treats Twilio (or any other SIP-capable carrier) as a **SIP carrier**, not as a Voice webhook target.
 
+```mermaid
+flowchart LR
+    subgraph Inbound["Inbound call"]
+      direction LR
+      Caller([Caller]) -->|PSTN| TwIn[Twilio Elastic SIP Trunk]
+      TwIn -->|SIP INVITE| LKIn[LiveKit SIP inbound trunk]
+      LKIn --> Room1[Room created]
+      Room1 --> Worker1[Agent worker dispatched]
+    end
+    subgraph Outbound["Outbound campaign"]
+      direction LR
+      Cron[Inngest cron] --> Place["placeOutboundSipCall()"]
+      Place --> LKOut[LiveKit SIP outbound trunk]
+      LKOut -->|SIP INVITE| TwOut[Twilio Elastic SIP Trunk]
+      TwOut -->|PSTN| Lead([Lead])
+    end
 ```
-caller → Twilio PSTN → Twilio's Elastic SIP Trunk → LiveKit Cloud SIP inbound trunk → room created → agent worker dispatched
-```
-
-Outbound calls flow the opposite direction — `placeOutboundSipCall()` (called from Inngest) tells LiveKit to originate a SIP INVITE that Twilio carries to PSTN.
 
 After the first deploy:
 
-1. In Supabase **Authentication → URL Configuration**, add `https://<your-deployment>` to **Site URL** and **Redirect URLs**.
-2. In **Twilio Console → Elastic SIP Trunking**, create a trunk. Set the termination URI to the LiveKit Cloud SIP URI shown in LiveKit's SIP dashboard. Buy a phone number and assign it to this trunk (origination).
-3. In **LiveKit Cloud → SIP**, create an inbound trunk that accepts calls from Twilio's IPs, and a dispatch rule that creates one room per call (default `call-<sid>`). Create an outbound trunk pointing at Twilio's SIP termination URI with your Twilio SIP credentials; copy its id into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`.
-4. In **LiveKit Cloud → Agents**, register a dispatch rule that runs your worker on every new room (the worker is auto-discovered by name; nothing to configure if you only have one).
+1. In Supabase, **Authentication, URL Configuration**: add `https://<your-deployment>` to **Site URL** and **Redirect URLs**.
+2. In **Twilio Console, Elastic SIP Trunking**: create a trunk. Set the termination URI to the LiveKit Cloud SIP URI shown in LiveKit's SIP dashboard. Buy a phone number and assign it to this trunk (origination).
+3. In **LiveKit Cloud, SIP**: create an inbound trunk that accepts calls from Twilio's IPs, and a dispatch rule that creates one room per call (default `call-<sid>`). Create an outbound trunk pointing at Twilio's SIP termination URI with your Twilio SIP credentials. Copy its id into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`.
+4. In **LiveKit Cloud, Agents**: register a dispatch rule that runs your worker on every new room (the worker is auto-discovered by name; nothing to configure if you only have one).
 5. In Inngest, register the app with the `/api/inngest` route and copy the signing key.
 
-The number you connect inside Relay (`Settings → Phone numbers`) must match the E.164 the carrier sends in the SIP `To` header. The worker reads this from SIP attributes on the joining participant to resolve which org and agent owns the call.
+The number you connect inside Relay (Settings, Phone numbers) must match the E.164 the carrier sends in the SIP `To` header. The worker reads this from SIP attributes on the joining participant to resolve which org and agent owns the call.
 
 ### Applying schema changes to production
 
-The Vercel build only runs `next build` — it does not apply pending Prisma migrations. After committing a schema change locally, run from your machine:
+The Vercel build only runs `next build`. It does not apply pending Prisma migrations. After committing a schema change locally, run from your machine:
 
 ```bash
 DATABASE_URL="<value of prod DIRECT_URL>" yarn prisma migrate deploy
@@ -282,7 +295,7 @@ scripts/
   apply-rls.ts          run setup.sql against DIRECT_URL
 
 worker/                 LiveKit Agents worker (deployed separately)
-  agent.ts              defineAgent({ entry }) — resolves tenant from SIP attrs,
+  agent.ts              defineAgent({ entry }) that resolves tenant from SIP attrs,
                         wires Deepgram STT + Anthropic LLM + Cartesia TTS + Silero VAD,
                         runs the conversation loop, persists transcripts and metrics
   Dockerfile
