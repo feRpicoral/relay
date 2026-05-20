@@ -145,7 +145,14 @@ Free tiers on every platform cover the demo. The order below matches the depende
 1. New project at [supabase.com](https://supabase.com). Pick a region close to your users.
 2. **Authentication, URL Configuration**:
    - Site URL: production URL of the app (e.g. `https://relay-five-peach.vercel.app`)
-   - Redirect URLs: add the production URL with `/auth/callback` and `/auth/callback?**`, **plus** the dev pair `http://localhost:3000/auth/callback` and `http://localhost:3000/auth/callback?**`. The `?**` wildcard is required because the magic link carries a `next=` query param. Without the localhost entry, magic links issued from `yarn dev` fall back to the production Site URL and dump you on the live app instead of your local one.
+   - Redirect URLs: add **four separate entries**:
+     - `http://localhost:3000/auth/callback`
+     - `http://localhost:3000/auth/callback?**`
+     - `https://relay-five-peach.vercel.app/auth/callback`
+     - `https://relay-five-peach.vercel.app/auth/callback?**`
+
+     Each environment needs both the bare path (initial magic link with no query) and the `?**` glob (login flow appends `?next=…`). Without the localhost pair, magic links issued from `yarn dev` fall back to the production Site URL and land you on the live app instead of your local one.
+
 3. **Settings, API**: copy `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 4. **Settings, Database, Connect**: copy the pooled URI into `DATABASE_URL` and the direct URI into `DIRECT_URL`.
 
