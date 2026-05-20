@@ -1,0 +1,18 @@
+# Fly.io config for the Relay agent worker.
+# The worker is a long-lived Node process that connects outbound to LiveKit
+# Cloud via websocket and never accepts inbound HTTP, so there is intentionally
+# no [[services]] section.
+
+app = "relay-worker"
+primary_region = "gru"
+
+[build]
+dockerfile = "worker/Dockerfile"
+
+[deploy]
+strategy = "immediate"
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 1024
