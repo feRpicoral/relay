@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { connect, disconnect } from "@/lib/telephony/connection";
+import { attachNumber, detachNumber, fullCleanup } from "@/lib/telephony/provisioning";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -39,6 +40,54 @@ export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>):
 
 export async function disconnectTwilioAction(): Promise<Result> {
   const session = await requireAdmin();
+  // Tear down the per-org resources first (numbers in trunk, allow-list,
+  // LiveKit outbound trunk). Then drop the credentials.
+  try {
+    await fullCleanup(session.orgId);
+  } catch (err) {
+    // Cleanup is best-effort; if Twilio is unreachable or creds were already
+    // revoked we still want to drop the local row so the user can reconnect.
+    console.warn("[telephony] fullCleanup partial failure on disconnect:", err);
+  }
   await disconnect(session.orgId);
+  return { ok: true };
+}
+
+const AttachSchema = z.object({
+  twilioSid: z.string().regex(/^PN[a-f0-9]{32}$/i, "Twilio number SID inválido."),
+  agentId: z.string().uuid(),
+  label: z.string().max(120).optional(),
+});
+
+export async function attachNumberAction(input: z.infer<typeof AttachSchema>): Promise<Result> {
+  const session = await requireAdmin();
+  const parsed = AttachSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+  }
+  try {
+    await attachNumber({
+      orgId: session.orgId,
+      twilioSid: parsed.data.twilioSid,
+      agentId: parsed.data.agentId as Parameters<typeof attachNumber>[0]["agentId"],
+      label: parsed.data.label,
+    });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+  return { ok: true };
+}
+
+const DetachSchema = z.object({ phoneNumberId: z.string().uuid() });
+
+export async function detachNumberAction(input: z.infer<typeof DetachSchema>): Promise<Result> {
+  const session = await requireAdmin();
+  const parsed = DetachSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  try {
+    await detachNumber(session.orgId, parsed.data.phoneNumberId);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
   return { ok: true };
 }
