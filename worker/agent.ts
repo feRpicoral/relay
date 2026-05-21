@@ -314,10 +314,17 @@ export default defineAgent({
       }),
     };
 
-    // Pipeline
-    const stt = new deepgram.STTv2({
+    // Pipeline.
+    //
+    // We deliberately use deepgram.STT (V1, /v1/listen) rather than STTv2
+    // (Flux). STTv2 only accepts flux-general-en or flux-general-multi —
+    // passing nova-3 fails the WebSocket handshake with a generic 400. Nova-3
+    // is the current Deepgram flagship for low-latency streaming and supports
+    // pt-BR natively. The V1 class also exposes interimResults/endpointing
+    // params that AgentSession's VAD-driven turn loop expects.
+    const stt = new deepgram.STT({
       apiKey: requireEnv("DEEPGRAM_API_KEY"),
-      model: envOr("DEEPGRAM_MODEL", "nova-3"),
+      model: envOr("DEEPGRAM_MODEL", "nova-3") as deepgram.STTOptions["model"],
       language: language === "pt-BR" ? "pt-BR" : "en-US",
     });
 
