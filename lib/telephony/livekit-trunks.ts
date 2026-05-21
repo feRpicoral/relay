@@ -59,14 +59,21 @@ export async function createOutboundTrunk(args: {
   authPassword: string;
   numbers: string[];
 }): Promise<string> {
+  // LiveKit's address must be a plain `sip:host` — putting `;transport=tls`
+  // here returns "trunk address should not contain transport parameter".
+  // Transport is configured separately via the `transport` opt.
+  //
+  // Default to UDP because Twilio Elastic SIP Trunks ship with UDP on 5060
+  // and require explicit setup for TLS. UDP works against any new Twilio
+  // trunk out of the box.
   const trunk = await client().createSipOutboundTrunk(
     `relay-org-${args.orgId.slice(0, 8)}`,
-    `sip:${args.twilioDomain};transport=tls`,
+    `sip:${args.twilioDomain}`,
     args.numbers,
     {
       authUsername: args.authUsername,
       authPassword: args.authPassword,
-      transport: 3, // SIPTransport.SIP_TRANSPORT_TLS — secure outbound by default
+      transport: 1, // SIPTransport.SIP_TRANSPORT_UDP
     },
   );
   return trunk.sipTrunkId;
