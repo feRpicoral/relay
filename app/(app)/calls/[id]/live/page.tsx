@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { LatencyMeter } from "@/components/call/latency-meter";
 import { LiveCallListener } from "@/components/call/live-call-listener";
+import { TestCallSession } from "@/components/call/test-call-session";
 import { ToolTimeline } from "@/components/call/tool-timeline";
 import { TranscriptStream } from "@/components/call/transcript-stream";
 import { PageHeader } from "@/components/page-header";
@@ -33,18 +34,23 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
   if (!call) notFound();
 
   const livekitUrl = optionalEnv("LIVEKIT_URL") ?? null;
-  let listenerToken: string | null = null;
+  // Test calls (no real PSTN caller) need the operator's browser to publish
+  // mic audio into the room — otherwise the worker has nothing to react to.
+  // We detect by the placeholder callerE164 set in lib/voice/test-call.ts.
+  const isTestCall = call.callerE164 === "+0000000TEST";
+
+  let lkToken: string | null = null;
   if (livekitUrl && call.livekitRoomName) {
     try {
-      listenerToken = await issueParticipantToken({
+      lkToken = await issueParticipantToken({
         roomName: call.livekitRoomName,
-        identity: `monitor-${session.userId}`,
-        canPublish: false,
+        identity: isTestCall ? `tester-${session.userId}` : `monitor-${session.userId}`,
+        canPublish: isTestCall,
         canSubscribe: true,
         ttlSeconds: 3600,
       });
     } catch {
-      listenerToken = null;
+      lkToken = null;
     }
   }
 
@@ -71,12 +77,21 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
               </div>
             </CardHeader>
             <div className="px-6 pb-6">
-              <LiveCallListener
-                livekitUrl={livekitUrl}
-                roomName={call.livekitRoomName}
-                token={listenerToken}
-                active={active}
-              />
+              {isTestCall ? (
+                <TestCallSession
+                  livekitUrl={livekitUrl}
+                  roomName={call.livekitRoomName}
+                  token={lkToken}
+                  active={active}
+                />
+              ) : (
+                <LiveCallListener
+                  livekitUrl={livekitUrl}
+                  roomName={call.livekitRoomName}
+                  token={lkToken}
+                  active={active}
+                />
+              )}
             </div>
           </Card>
           <Card>
