@@ -1,21 +1,10 @@
 "use client";
 
 import { Mic, MicOff } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Waveform } from "@/components/call/waveform";
 import { Badge } from "@/components/ui/badge";
-
-// LiveKit's RemoteTrack carries an `attach()` method that returns an HTML
-// audio/video element wired up for autoplay. We use it instead of building our
-// own <audio> with srcObject because browser autoplay policies silently drop
-// MediaStream playback without the right element setup.
-interface AttachableTrack {
-  kind: string;
-  mediaStreamTrack: MediaStreamTrack;
-  attach: () => HTMLMediaElement;
-  detach: () => HTMLMediaElement[];
-}
 
 interface TestCallSessionProps {
   livekitUrl: string | null;
@@ -24,108 +13,126 @@ interface TestCallSessionProps {
   active: boolean;
 }
 
+interface AttachableTrack {
+  kind: string;
+  mediaStreamTrack: MediaStreamTrack;
+  attach: () => HTMLMediaElement;
+}
+
 /**
- * Test-call participant. Unlike LiveCallListener (passive), this joins the
- * LiveKit room WITH publish permission and captures the browser microphone
- * so the agent worker has audio to react to. Also plays back the agent's
- * outbound audio and renders a waveform of it.
+ * Test-call participant. Joins the LiveKit room with publish permission,
+ * captures the browser microphone (so the worker has audio to react to),
+ * plays back agent audio, and renders a waveform of it.
  *
- * The page swaps this in for LiveCallListener when the call is a test
- * (callerE164 = "+0000000TEST") so the operator running the test actually
- * speaks into the room rather than just observing it.
+ * Critical: every per-mount resource (room, audio context, attached <audio>
+ * elements) lives in closure variables inside the effect — NOT in refs.
+ * React Strict Mode double-invokes effects in dev, and shared refs would
+ * cause cleanup-1 to teardown room-2 mid-connect, triggering "could not
+ * createOffer with closed peer connection" and silent audio.
  */
 export function TestCallSession({ livekitUrl, roomName, token, active }: TestCallSessionProps) {
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [micState, setMicState] = useState<"idle" | "live" | "blocked">("idle");
-  const roomRef = useRef<unknown | null>(null);
-  const attachedElementsRef = useRef<HTMLMediaElement[]>([]);
 
   useEffect(() => {
     if (!livekitUrl || !roomName || !token || !active) return;
 
     let cancelled = false;
-    let ctx: AudioContext | null = null;
+    let room: { disconnect: () => Promise<void> } | null = null;
+    let audioCtx: AudioContext | null = null;
+    const attachedEls: HTMLMediaElement[] = [];
 
     (async () => {
+      const livekit = await import("livekit-client");
+      if (cancelled) return;
+      const { Room, RoomEvent, Track, createLocalAudioTrack } = livekit;
+
+      const r = new Room();
+      room = r;
+
+      // Build the audio context now so onTrack can connect sources to the
+      // analyser whether the agent track was already published or not.
+      audioCtx = new AudioContext();
+      const localAnalyser = audioCtx.createAnalyser();
+      localAnalyser.fftSize = 512;
+
+      function onTrack(track: AttachableTrack) {
+        if (cancelled) return;
+        if (track.kind !== Track.Kind.Audio) return;
+        // attach() makes a properly-configured <audio>; mounting in the DOM is
+        // required for some browsers to actually play the MediaStream.
+        const el = track.attach();
+        el.style.display = "none";
+        document.body.appendChild(el);
+        attachedEls.push(el);
+        // Also pipe through Web Audio so the waveform reacts.
+        const stream = new MediaStream([track.mediaStreamTrack]);
+        const source = audioCtx!.createMediaStreamSource(stream);
+        source.connect(localAnalyser);
+      }
+
+      // Wire listeners BEFORE connect so we don't miss agent tracks that were
+      // published while we were negotiating.
+      r.on(RoomEvent.TrackSubscribed, (track: AttachableTrack) => onTrack(track));
+
       try {
-        const { Room, RoomEvent, Track, createLocalAudioTrack } = await import("livekit-client");
-        const room = new Room();
-        roomRef.current = room;
-        await room.connect(livekitUrl, token);
+        await r.connect(livekitUrl, token);
+      } catch (err) {
+        console.warn("[test-call-session] connect failed:", err);
+        return;
+      }
+      if (cancelled) {
+        await r.disconnect().catch(() => undefined);
+        return;
+      }
+
+      // Catch tracks that landed while connect() was in flight.
+      (
+        r as unknown as {
+          remoteParticipants: Map<
+            string,
+            { audioTrackPublications: Map<string, { track?: AttachableTrack }> }
+          >;
+        }
+      ).remoteParticipants.forEach((p) => {
+        p.audioTrackPublications.forEach((pub) => {
+          if (pub.track) onTrack(pub.track);
+        });
+      });
+
+      setAnalyser(localAnalyser);
+
+      // Capture mic and publish. Browser prompts permission on first call.
+      try {
+        const micTrack = await createLocalAudioTrack({
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        });
         if (cancelled) {
-          await room.disconnect();
+          micTrack.stop();
           return;
         }
-
-        // Set up analyser to visualize the agent's outbound audio.
-        ctx = new AudioContext();
-        const newAnalyser = ctx.createAnalyser();
-        newAnalyser.fftSize = 512;
-        setAnalyser(newAnalyser);
-
-        const onTrack = (track: AttachableTrack) => {
-          if (track.kind !== Track.Kind.Audio) return;
-          // attach() returns an <audio> wired for autoplay; we have to put it
-          // in the DOM (some browsers silently mute disconnected media).
-          const element = track.attach();
-          element.style.display = "none";
-          document.body.appendChild(element);
-          attachedElementsRef.current.push(element);
-          // Feed the same stream to the analyser for the waveform display.
-          const stream = new MediaStream([track.mediaStreamTrack]);
-          const source = ctx!.createMediaStreamSource(stream);
-          source.connect(newAnalyser);
-        };
-
-        room.on(RoomEvent.TrackSubscribed, (track: AttachableTrack) => onTrack(track));
-        room.remoteParticipants.forEach(
-          (p: { audioTrackPublications: Map<string, { track?: AttachableTrack }> }) => {
-            p.audioTrackPublications.forEach((pub) => {
-              if (pub.track) onTrack(pub.track);
-            });
-          },
-        );
-
-        // Capture mic and publish. Browser prompts for permission on the first
-        // `createLocalAudioTrack` call. If denied, leave the participant in the
-        // room as a silent listener so the operator can still see the agent.
-        try {
-          const micTrack = await createLocalAudioTrack({
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          });
-          if (cancelled) {
-            micTrack.stop();
-            return;
-          }
-          await room.localParticipant.publishTrack(micTrack);
-          setMicState("live");
-        } catch (err) {
-          console.warn("[test-call-session] mic capture blocked:", err);
-          setMicState("blocked");
-        }
+        await (
+          r as unknown as { localParticipant: { publishTrack: (t: unknown) => Promise<unknown> } }
+        ).localParticipant.publishTrack(micTrack);
+        setMicState("live");
       } catch (err) {
-        console.warn("[test-call-session] connection failed:", err);
+        console.warn("[test-call-session] mic capture blocked:", err);
+        setMicState("blocked");
       }
     })();
 
     return () => {
       cancelled = true;
-      // Pull elements off the DOM before disconnecting so a quick re-render
-      // (StrictMode double-invoke in dev) doesn't leave orphan <audio> tags.
-      for (const el of attachedElementsRef.current) {
-        el.remove();
+      for (const el of attachedEls) el.remove();
+      // Fire-and-forget; do NOT await — useEffect cleanup must be sync.
+      if (room) {
+        void room.disconnect().catch(() => undefined);
       }
-      attachedElementsRef.current = [];
-      (async () => {
-        if (roomRef.current) {
-          const room = roomRef.current as { disconnect: () => Promise<void> };
-          await room.disconnect().catch(() => undefined);
-          roomRef.current = null;
-        }
-        if (ctx) await ctx.close().catch(() => undefined);
-      })();
+      if (audioCtx) {
+        void audioCtx.close().catch(() => undefined);
+      }
     };
   }, [livekitUrl, roomName, token, active]);
 
