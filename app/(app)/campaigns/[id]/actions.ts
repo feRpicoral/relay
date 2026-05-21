@@ -65,12 +65,12 @@ export async function pauseCampaignAction(input: z.infer<typeof Schema>): Promis
 export async function cancelCampaignAction(input: z.infer<typeof Schema>): Promise<Result> {
   const parsed = Schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Entrada inválida." };
-  // Cancel uses canceledAt (already on the schema) instead of completedAt;
-  // completedAt is for natural completion. Keeping the two distinct lets
-  // analytics tell finished campaigns from operator-killed ones.
+  // canceledAt is distinct from completedAt: the former marks operator
+  // intervention, the latter marks natural exhaustion. Keeps analytics able
+  // to differentiate the two.
   return transitionCampaign({
     campaignId: parsed.data.campaignId,
     kind: "cancel",
-    data: { status: "CANCELED", completedAt: new Date() },
+    data: { status: "CANCELED", canceledAt: new Date() },
   });
 }
