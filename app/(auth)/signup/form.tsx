@@ -63,7 +63,14 @@ export function SignupForm() {
       </div>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar conta"}
+        {pending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            <span className="sr-only">Enviando link</span>
+          </>
+        ) : (
+          "Criar conta"
+        )}
       </Button>
       <p className="text-muted-foreground text-xs">
         Ao criar uma conta, você concorda com os Termos e a Política de Privacidade.

@@ -7,7 +7,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 
 const Schema = z.object({
   email: z.string().email(),
-  name: z.string().min(1).max(120),
+  name: z.string().trim().min(1).max(120),
 });
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -24,10 +24,11 @@ export async function signupAction(formData: FormData): Promise<Result> {
   const supabase = await createServerSupabase();
   const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
   const emailRedirectTo = new URL("/auth/callback", appUrl);
+  // Hard-code the post-signup destination: signup always lands on org creation.
   emailRedirectTo.searchParams.set("next", "/create-org");
 
   const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email,
+    email: parsed.data.email.trim().toLowerCase(),
     options: {
       emailRedirectTo: emailRedirectTo.toString(),
       shouldCreateUser: true,
@@ -36,7 +37,8 @@ export async function signupAction(formData: FormData): Promise<Result> {
   });
 
   if (error) {
-    return { ok: false, error: error.message };
+    // Generic error: don't leak provider wording to the UI.
+    return { ok: false, error: "Não foi possível enviar o link. Tente novamente em instantes." };
   }
   return { ok: true };
 }

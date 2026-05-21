@@ -23,13 +23,11 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
       const result = await loginAction(formData);
       if (result.ok) {
         toast.success("Link de acesso enviado", {
-          description: "Verifique seu email para entrar.",
+          description: "Se houver uma conta para esse email, você receberá um link.",
         });
-        if (next) {
-          router.push(`/auth/check-email?email=${encodeURIComponent(email)}&next=${next}`);
-        } else {
-          router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
-        }
+        const params = new URLSearchParams({ email });
+        if (next) params.set("next", next);
+        router.push(`/auth/check-email?${params.toString()}`);
       } else {
         setError(result.error);
       }
@@ -37,13 +35,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
   }
 
   return (
-    <form
-      action={onSubmit}
-      className="space-y-4"
-      onSubmit={() => {
-        /* form action handles it */
-      }}
-    >
+    <form action={onSubmit} className="space-y-4">
       <input type="hidden" name="next" value={next ?? ""} />
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
@@ -62,7 +54,14 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
       </div>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar link de acesso"}
+        {pending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            <span className="sr-only">Enviando link</span>
+          </>
+        ) : (
+          "Enviar link de acesso"
+        )}
       </Button>
     </form>
   );

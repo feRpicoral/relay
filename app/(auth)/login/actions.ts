@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 
+import { safeNextPath } from "@/lib/auth/safe-redirect";
 import { requireEnv } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -11,6 +12,12 @@ const Schema = z.object({
 });
 
 type Result = { ok: true } | { ok: false; error: string };
+
+/**
+ * Generic message returned for both the "ok" path and the "email not found"
+ * path so login can't be used to enumerate which emails have accounts.
+ */
+const GENERIC_SUCCESS: Result = { ok: true };
 
 export async function loginAction(formData: FormData): Promise<Result> {
   const parsed = Schema.safeParse({
@@ -24,19 +31,23 @@ export async function loginAction(formData: FormData): Promise<Result> {
   const supabase = await createServerSupabase();
   const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
   const emailRedirectTo = new URL("/auth/callback", appUrl);
-  if (parsed.data.next) emailRedirectTo.searchParams.set("next", parsed.data.next);
+  const next = safeNextPath(parsed.data.next);
+  if (next) emailRedirectTo.searchParams.set("next", next);
 
   const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email,
+    email: parsed.data.email.trim().toLowerCase(),
     options: { emailRedirectTo: emailRedirectTo.toString(), shouldCreateUser: false },
   });
 
   if (error) {
+    // Don't distinguish "email not found" from "ok": revealing it would let an
+    // attacker enumerate registered users. The link is simply never delivered.
     if (error.message.toLowerCase().includes("not found")) {
-      return { ok: false, error: "Não encontramos esse email. Crie uma conta primeiro." };
+      return GENERIC_SUCCESS;
     }
-    return { ok: false, error: error.message };
+    // Avoid leaking the raw provider error to the UI for unexpected cases.
+    return { ok: false, error: "Não foi possível enviar o link. Tente novamente em instantes." };
   }
 
-  return { ok: true };
+  return GENERIC_SUCCESS;
 }
