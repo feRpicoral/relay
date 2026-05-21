@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -134,14 +135,19 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
                     Atualizado em {new Date(doc.updatedAt).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => onDelete(doc.id)}
-                  disabled={pending}
-                >
-                  <Trash2 className="text-muted-foreground h-4 w-4" />
-                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button variant="ghost" size="icon-sm" disabled={pending}>
+                      <Trash2 className="text-muted-foreground h-4 w-4" />
+                      <span className="sr-only">Remover documento</span>
+                    </Button>
+                  }
+                  title="Remover documento?"
+                  description={`"${doc.title}" será removido permanentemente. Essa ação não pode ser desfeita.`}
+                  confirmLabel="Remover"
+                  pending={pending}
+                  onConfirm={() => onDelete(doc.id)}
+                />
               </CardHeader>
               <div className="text-muted-foreground line-clamp-4 px-6 pb-6 text-sm">{doc.body}</div>
             </Card>

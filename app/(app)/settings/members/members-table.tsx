@@ -2,13 +2,21 @@
 
 import { MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,21 +49,6 @@ export function MembersTable({
   memberships: MemberRow[];
   invites: InviteRow[];
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-
-  function handle(fn: () => Promise<{ ok: true } | { ok: false; error: string }>, success: string) {
-    startTransition(async () => {
-      const result = await fn();
-      if (result.ok) {
-        toast.success(success);
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -63,67 +56,9 @@ export function MembersTable({
           <CardTitle>Membros</CardTitle>
         </CardHeader>
         <div className="divide-border divide-y">
-          {memberships.map((m) => {
-            const isSelf = m.userId === m.currentUserId;
-            const initials = (m.name ?? m.email).slice(0, 2).toUpperCase();
-            return (
-              <div key={m.id} className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {m.name ?? m.email}{" "}
-                      {isSelf ? <span className="text-muted-foreground ml-1">(você)</span> : null}
-                    </p>
-                    <p className="text-muted-foreground text-xs">{m.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant={m.role === "ADMIN" ? "default" : "secondary"}>
-                    {m.role === "ADMIN" ? "Admin" : "Membro"}
-                  </Badge>
-                  {!isSelf ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" disabled={pending}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handle(
-                              () =>
-                                changeRoleAction({
-                                  membershipId: m.id,
-                                  role: m.role === "ADMIN" ? "MEMBER" : "ADMIN",
-                                }),
-                              "Papel atualizado",
-                            )
-                          }
-                        >
-                          {m.role === "ADMIN" ? "Tornar Membro" : "Tornar Admin"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() =>
-                            handle(
-                              () => removeMemberAction({ membershipId: m.id }),
-                              "Membro removido",
-                            )
-                          }
-                        >
-                          Remover
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
+          {memberships.map((m) => (
+            <MemberRowItem key={m.id} member={m} />
+          ))}
         </div>
       </Card>
 
@@ -134,29 +69,165 @@ export function MembersTable({
           </CardHeader>
           <div className="divide-border divide-y">
             {invites.map((i) => (
-              <div key={i.id} className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <p className="text-sm font-medium">{i.email}</p>
-                  <p className="text-muted-foreground text-xs">
-                    Convidado como {i.role === "ADMIN" ? "Admin" : "Membro"}, expira{" "}
-                    {new Date(i.expiresAt).toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    handle(() => revokeInviteAction({ inviteId: i.id }), "Convite revogado")
-                  }
-                  disabled={pending}
-                >
-                  Revogar
-                </Button>
-              </div>
+              <InviteRowItem key={i.id} invite={i} />
             ))}
           </div>
         </Card>
       ) : null}
+    </div>
+  );
+}
+
+function MemberRowItem({ member }: { member: MemberRow }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [removeOpen, setRemoveOpen] = useState(false);
+
+  const isSelf = member.userId === member.currentUserId;
+  const initials = (member.name ?? member.email).slice(0, 2).toUpperCase();
+
+  function changeRole() {
+    startTransition(async () => {
+      const result = await changeRoleAction({
+        membershipId: member.id,
+        role: member.role === "ADMIN" ? "MEMBER" : "ADMIN",
+      });
+      if (result.ok) {
+        toast.success("Papel atualizado");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  function remove() {
+    startTransition(async () => {
+      const result = await removeMemberAction({ membershipId: member.id });
+      if (result.ok) {
+        toast.success("Membro removido");
+        setRemoveOpen(false);
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  return (
+    <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center gap-3">
+        <Avatar>
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="text-sm font-medium">
+            {member.name ?? member.email}{" "}
+            {isSelf ? <span className="text-muted-foreground ml-1">(você)</span> : null}
+          </p>
+          <p className="text-muted-foreground text-xs">{member.email}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge variant={member.role === "ADMIN" ? "default" : "secondary"}>
+          {member.role === "ADMIN" ? "Admin" : "Membro"}
+        </Badge>
+        {!isSelf ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" disabled={pending}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={changeRole}>
+                {member.role === "ADMIN" ? "Tornar Membro" : "Tornar Admin"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={(e) => {
+                  // Prevent the menu close from cancelling the dialog open.
+                  e.preventDefault();
+                  setRemoveOpen(true);
+                }}
+              >
+                Remover
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+      </div>
+      <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover membro?</DialogTitle>
+            <DialogDescription>
+              {member.name ?? member.email} perderá acesso imediatamente. Para reentrar, precisará
+              de um novo convite.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRemoveOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={remove} disabled={pending}>
+              Remover
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function InviteRowItem({ invite }: { invite: InviteRow }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [revokeOpen, setRevokeOpen] = useState(false);
+
+  function revoke() {
+    startTransition(async () => {
+      const result = await revokeInviteAction({ inviteId: invite.id });
+      if (result.ok) {
+        toast.success("Convite revogado");
+        setRevokeOpen(false);
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  return (
+    <div className="flex items-center justify-between px-6 py-4">
+      <div>
+        <p className="text-sm font-medium">{invite.email}</p>
+        <p className="text-muted-foreground text-xs">
+          Convidado como {invite.role === "ADMIN" ? "Admin" : "Membro"}, expira{" "}
+          {new Date(invite.expiresAt).toLocaleDateString("pt-BR")}
+        </p>
+      </div>
+      <Dialog open={revokeOpen} onOpenChange={setRevokeOpen}>
+        <Button variant="ghost" size="sm" onClick={() => setRevokeOpen(true)} disabled={pending}>
+          Revogar
+        </Button>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Revogar convite?</DialogTitle>
+            <DialogDescription>
+              O link enviado para {invite.email} deixará de funcionar. Você pode reenviar depois.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRevokeOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={revoke} disabled={pending}>
+              Revogar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

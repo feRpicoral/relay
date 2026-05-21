@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -47,22 +48,18 @@ export function ConnectedPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  function onDisconnect() {
-    if (
-      !window.confirm(
-        "Desconectar Twilio? Vamos liberar os números do trunk e remover o LiveKit outbound trunk dessa org.",
-      )
-    ) {
-      return;
-    }
-    startTransition(async () => {
-      const result = await disconnectTwilioAction();
-      if (result.ok) {
-        toast.success("Twilio desconectado");
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
+  async function onDisconnect() {
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        const result = await disconnectTwilioAction();
+        if (result.ok) {
+          toast.success("Twilio desconectado");
+          router.refresh();
+        } else {
+          toast.error(result.error);
+        }
+        resolve();
+      });
     });
   }
 
@@ -79,16 +76,19 @@ export function ConnectedPanel({
               <p className="text-muted-foreground font-mono text-xs">{accountSid}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDisconnect}
-            disabled={pending}
-            className="text-destructive"
-          >
-            <Link2Off className="h-4 w-4" />
-            Desconectar
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button variant="ghost" size="sm" disabled={pending} className="text-destructive">
+                <Link2Off className="h-4 w-4" />
+                Desconectar
+              </Button>
+            }
+            title="Desconectar Twilio?"
+            description="Vamos liberar os números do trunk e remover o LiveKit outbound trunk dessa org. As chamadas em curso continuam, mas novas ligações via essa Twilio param até reconectar."
+            confirmLabel="Desconectar"
+            pending={pending}
+            onConfirm={onDisconnect}
+          />
         </CardHeader>
         <div className="text-muted-foreground grid gap-1 px-6 pb-6 font-mono text-xs">
           <div>
@@ -163,16 +163,20 @@ function NumberItem({
     });
   }
 
-  function onDetach() {
+  async function onDetach() {
     if (!number.phoneNumberId) return;
-    startTransition(async () => {
-      const result = await detachNumberAction({ phoneNumberId: number.phoneNumberId! });
-      if (result.ok) {
-        toast.success(`${number.e164} desconectado`);
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
+    const phoneNumberId = number.phoneNumberId;
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        const result = await detachNumberAction({ phoneNumberId });
+        if (result.ok) {
+          toast.success(`${number.e164} desconectado`);
+          router.refresh();
+        } else {
+          toast.error(result.error);
+        }
+        resolve();
+      });
     });
   }
 
@@ -193,10 +197,19 @@ function NumberItem({
       </div>
       <div className="flex items-center gap-2">
         {attached ? (
-          <Button variant="ghost" size="sm" onClick={onDetach} disabled={pending}>
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-            Desconectar
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button variant="ghost" size="sm" disabled={pending}>
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                Desconectar
+              </Button>
+            }
+            title={`Desconectar ${formatPhone(number.e164)}?`}
+            description="O número deixa de ser atendido pelo Relay imediatamente. Você pode reconectá-lo a qualquer momento."
+            confirmLabel="Desconectar"
+            pending={pending}
+            onConfirm={onDetach}
+          />
         ) : (
           <>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId} disabled={pending}>
