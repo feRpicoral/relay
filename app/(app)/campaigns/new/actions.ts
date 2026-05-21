@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
+import { parseCsvRows } from "@/lib/csv";
 import { getDb } from "@/lib/db/with-org";
 
 type Result = { ok: true; campaignId: string; leadsAdded: number } | { ok: false; error: string };
@@ -100,33 +101,28 @@ interface Lead {
 }
 
 /**
- * Minimal CSV parser: comma-separated, expects a header row with at least a
- * `phone` column and optional `name`. Does not handle quoted fields or
- * embedded commas — campaigns import data we control. Swap in papaparse if
- * that assumption ever breaks.
+ * Pulls `phone` (required) and optional `name` out of an RFC 4180-ish CSV.
+ * Quoted fields with embedded commas, CRLF endings, BOM, and doubled-up
+ * quotes are handled by `parseCsvRows`. Rows without a valid E.164 phone are
+ * silently skipped — campaigns ingest user-supplied data and we don't want a
+ * single bad row to fail the whole import.
  */
 function parseCsv(csv: string): Lead[] {
-  const rows = csv
-    .trim()
-    .split(/\r?\n/)
-    .filter((r) => r.trim().length > 0);
+  const rows = parseCsvRows(csv).filter((r) => r.some((c) => c.trim().length > 0));
   if (rows.length === 0) return [];
   const headerRow = rows[0];
   if (!headerRow) return [];
-  const header = headerRow.split(",").map((c) => c.trim().toLowerCase());
+  const header = headerRow.map((c) => c.trim().toLowerCase());
   const phoneIdx = header.indexOf("phone");
   const nameIdx = header.indexOf("name");
   if (phoneIdx === -1) return [];
 
   const out: Lead[] = [];
   for (const row of rows.slice(1)) {
-    const cells = row.split(",").map((c) => c.trim());
-    const phone = cells[phoneIdx];
+    const phone = row[phoneIdx]?.trim();
     if (!phone || !E164.test(phone)) continue;
-    out.push({
-      phone,
-      name: nameIdx >= 0 ? cells[nameIdx] : undefined,
-    });
+    const name = nameIdx >= 0 ? row[nameIdx]?.trim() : undefined;
+    out.push({ phone, name: name || undefined });
   }
   return out;
 }
