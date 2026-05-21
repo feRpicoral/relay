@@ -45,8 +45,13 @@ export function InviteMemberForm() {
         <CardDescription>Envie um link de convite por email. Expira em 7 dias.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-end gap-3 md:flex-row">
-          <div className="w-full space-y-2 md:flex-1">
+        {/*
+          CSS grid gives a single, deterministic row alignment instead of
+          flex+items-end (which floated the labels at different Y heights
+          because the bare Button has no label sibling).
+        */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_10rem_auto] md:items-end">
+          <div className="space-y-2">
             <Label htmlFor="invite-email">Email</Label>
             <Input
               id="invite-email"
@@ -57,14 +62,14 @@ export function InviteMemberForm() {
               disabled={pending}
             />
           </div>
-          <div className="w-full space-y-2 md:w-40">
+          <div className="space-y-2">
             <Label htmlFor="invite-role">Papel</Label>
             <Select
               value={role}
               onValueChange={(v) => setRole(v as "ADMIN" | "MEMBER")}
               disabled={pending}
             >
-              <SelectTrigger id="invite-role">
+              <SelectTrigger id="invite-role" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
