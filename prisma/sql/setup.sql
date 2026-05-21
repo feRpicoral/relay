@@ -113,6 +113,36 @@ BEGIN
 END$$;
 
 -- -----------------------------------------------------------------------------
+-- 3b. Supabase Realtime publication
+--
+-- Subscriptions in the dashboard (`useRealtimeRow` / `useRealtimeList`) rely
+-- on Supabase forwarding postgres changes over WebSockets. Tables aren't in
+-- `supabase_realtime` by default — they have to be added explicitly. Without
+-- this block, the live monitor never updates and the live page never redirects
+-- to /calls/{id} when the call ends.
+-- -----------------------------------------------------------------------------
+
+DO $$
+DECLARE
+  t text;
+  realtime_tables text[] := ARRAY[
+    'calls',
+    'transcripts',
+    'call_metrics',
+    'tool_calls'
+  ];
+BEGIN
+  FOREACH t IN ARRAY realtime_tables LOOP
+    BEGIN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I;', t);
+    EXCEPTION WHEN duplicate_object THEN
+      -- Already in the publication, fine.
+      NULL;
+    END;
+  END LOOP;
+END$$;
+
+-- -----------------------------------------------------------------------------
 -- 4. Users / Organizations / Memberships
 -- -----------------------------------------------------------------------------
 
