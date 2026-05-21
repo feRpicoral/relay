@@ -1,9 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { listEventTypes, validateApiKey } from "@/lib/calendar/calcom";
+import { encryptSecret } from "@/lib/crypto";
 import { getDb } from "@/lib/db/with-org";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -28,21 +30,23 @@ export async function connectCalcomAction(input: z.infer<typeof ConnectSchema>):
   }
 
   const db = getDb(session.orgId);
+  const apiKeyEncrypted = encryptSecret(parsed.data.apiKey);
   await db.calcomConnection.upsert({
     where: { orgId: session.orgId },
     create: {
       orgId: session.orgId,
-      apiKey: parsed.data.apiKey,
+      apiKeyEncrypted,
       calcomUserEmail: me.email,
       timezone: me.timezone,
     },
     update: {
-      apiKey: parsed.data.apiKey,
+      apiKeyEncrypted,
       calcomUserEmail: me.email,
       timezone: me.timezone,
     },
   });
 
+  revalidatePath("/settings/calendar");
   return { ok: true };
 }
 

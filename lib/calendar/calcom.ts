@@ -1,3 +1,4 @@
+import { decryptSecret } from "@/lib/crypto";
 import { getPrisma } from "@/lib/db/client";
 import type { OrgId } from "@/lib/db/types";
 import { envOr } from "@/lib/env";
@@ -78,9 +79,9 @@ async function loadConnection(orgId: OrgId): Promise<{
   timezone: string;
 }> {
   const conn = await getPrisma().calcomConnection.findUnique({ where: { orgId } });
-  if (!conn) throw new CalcomNotConfiguredError();
+  if (!conn || !conn.apiKeyEncrypted) throw new CalcomNotConfiguredError();
   return {
-    apiKey: conn.apiKey,
+    apiKey: decryptSecret(conn.apiKeyEncrypted),
     eventTypeId: conn.defaultEventTypeId,
     timezone: conn.timezone,
   };

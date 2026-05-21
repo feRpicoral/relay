@@ -350,7 +350,10 @@ model CallMetric {
 model CalcomConnection {
   id                 String       @id @default(uuid()) @db.Uuid
   orgId              String       @unique @map("org_id") @db.Uuid
-  apiKey             String       @map("api_key") @db.Text
+  // Cal.com personal API key, encrypted at rest via lib/crypto (AES-256-GCM,
+  // key from ENCRYPTION_KEY). Pre-encryption rows are NULL and treated as
+  // not-connected; the user must reconnect via Settings to repopulate.
+  apiKeyEncrypted    String?      @map("api_key_encrypted") @db.Text
   calcomUserEmail    String?      @map("calcom_user_email")
   defaultEventTypeId Int?         @map("default_event_type_id")
   timezone           String       @default("America/Sao_Paulo")
