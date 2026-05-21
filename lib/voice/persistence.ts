@@ -1,13 +1,25 @@
 import { getPrisma } from "@/lib/db/client";
-import { asCallId, asOrgId, type CallId, type OrgId } from "@/lib/db/types";
+import {
+  type AgentId,
+  asCallId,
+  type CallId,
+  type CampaignAttemptId,
+  type OrgId,
+  type PhoneNumberId,
+} from "@/lib/db/types";
 import { getDb } from "@/lib/db/with-org";
 
 import type { LatencyMetric, ToolCallRecord, TranscriptDelta } from "./types";
 
 interface CreateInboundCallInput {
-  orgId: string;
-  agentId: string;
-  phoneNumberId: string | null;
+  /**
+   * Optional explicit row id. When set, `livekitRoomName` can be precomputed
+   * from `buildRoomName(id)`, avoiding a two-phase create-then-update.
+   */
+  id?: string;
+  orgId: OrgId;
+  agentId: AgentId;
+  phoneNumberId: PhoneNumberId | null;
   callerE164: string;
   calleeE164: string;
   twilioCallSid?: string;
@@ -18,8 +30,13 @@ export async function createInboundCall(input: CreateInboundCallInput): Promise<
   callId: CallId;
   orgId: OrgId;
 }> {
-  const call = await getPrisma().call.create({
+  const db = getDb(input.orgId);
+  // `orgId` is required by Prisma's generated types even though the getDb
+  // extension also injects it at runtime; we pass it explicitly so the
+  // compile-time check still passes.
+  const call = await db.call.create({
     data: {
+      id: input.id,
       orgId: input.orgId,
       agentId: input.agentId,
       phoneNumberId: input.phoneNumberId,
@@ -31,23 +48,24 @@ export async function createInboundCall(input: CreateInboundCallInput): Promise<
       livekitRoomName: input.livekitRoomName,
     },
   });
-  return { callId: asCallId(call.id), orgId: asOrgId(call.orgId) };
+  return { callId: asCallId(call.id), orgId: input.orgId };
 }
 
 interface CreateOutboundCallInput {
-  orgId: string;
-  agentId: string;
+  orgId: OrgId;
+  agentId: AgentId;
   callerE164: string;
   calleeE164: string;
   livekitRoomName?: string;
-  campaignAttemptId?: string;
+  campaignAttemptId?: CampaignAttemptId;
 }
 
 export async function createOutboundCall(input: CreateOutboundCallInput): Promise<{
   callId: CallId;
   orgId: OrgId;
 }> {
-  const call = await getPrisma().call.create({
+  const db = getDb(input.orgId);
+  const call = await db.call.create({
     data: {
       orgId: input.orgId,
       agentId: input.agentId,
@@ -60,24 +78,28 @@ export async function createOutboundCall(input: CreateOutboundCallInput): Promis
   });
 
   if (input.campaignAttemptId) {
-    await getPrisma().campaignAttempt.update({
+    // Org-scoped via getDb; updateMany so a forged attemptId from another org
+    // simply changes zero rows instead of cross-tenant updating.
+    await db.campaignAttempt.updateMany({
       where: { id: input.campaignAttemptId },
       data: { callId: call.id },
     });
   }
 
-  return { callId: asCallId(call.id), orgId: asOrgId(call.orgId) };
+  return { callId: asCallId(call.id), orgId: input.orgId };
 }
 
-export async function markCallAnswered(callId: string): Promise<void> {
-  await getPrisma().call.update({
+export async function markCallAnswered(orgId: OrgId, callId: CallId): Promise<void> {
+  const db = getDb(orgId);
+  await db.call.updateMany({
     where: { id: callId },
     data: { status: "IN_PROGRESS", answeredAt: new Date() },
   });
 }
 
 export async function markCallEnded(
-  callId: string,
+  orgId: OrgId,
+  callId: CallId,
   args: {
     status?: "COMPLETED" | "FAILED" | "NO_ANSWER" | "VOICEMAIL";
     durationMs?: number;
@@ -85,8 +107,9 @@ export async function markCallEnded(
     costCents?: number;
   } = {},
 ): Promise<void> {
+  const db = getDb(orgId);
   const endedAt = new Date();
-  await getPrisma().call.update({
+  await db.call.updateMany({
     where: { id: callId },
     data: {
       status: args.status ?? "COMPLETED",
@@ -177,4 +200,17 @@ export async function recordLatency(
       metadata: metric.metadata,
     },
   });
+}
+
+/**
+ * Service-role lookup used only by the LiveKit webhook receiver to resolve
+ * which tenant a room belongs to before falling back into org-scoped queries.
+ */
+export async function findCallById(callId: string): Promise<{ orgId: OrgId } | null> {
+  const call = await getPrisma().call.findUnique({
+    where: { id: callId },
+    select: { orgId: true },
+  });
+  if (!call) return null;
+  return { orgId: call.orgId as OrgId };
 }

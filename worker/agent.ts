@@ -26,7 +26,7 @@ import * as silero from "@livekit/agents-plugin-silero";
 import { z } from "zod";
 
 import { calcom } from "@/lib/calendar/calcom";
-import { asCallId, asOrgId } from "@/lib/db/types";
+import { asAgentId, asCallId, asOrgId, asPhoneNumberId } from "@/lib/db/types";
 import { envOr, requireEnv } from "@/lib/env";
 import { loadAgentContext, resolvePhoneNumber } from "@/lib/voice/agent-context";
 import { estimateCallCostCents } from "@/lib/voice/cost";
@@ -71,9 +71,9 @@ export default defineAgent({
         return;
       }
       const created = await createInboundCall({
-        orgId: phone.orgId,
-        agentId: phone.agentId,
-        phoneNumberId: phone.id,
+        orgId: asOrgId(phone.orgId),
+        agentId: asAgentId(phone.agentId),
+        phoneNumberId: asPhoneNumberId(phone.id),
         callerE164: sipFrom,
         calleeE164: sipTo,
         livekitRoomName: ctx.room.name,
@@ -111,7 +111,7 @@ export default defineAgent({
     const callIdBranded = asCallId(callId);
     const orgIdBranded = asOrgId(orgId);
 
-    await markCallAnswered(callId);
+    await markCallAnswered(orgIdBranded, callIdBranded);
     await recordCallEvent(orgIdBranded, callIdBranded, "ROOM_CREATED", {
       roomName: ctx.room.name,
     });
@@ -441,7 +441,11 @@ export default defineAgent({
       ttsProvider: agentCtx.ttsProvider,
       language: agentCtx.language,
     });
-    await markCallEnded(callId, { status: "COMPLETED", durationMs, costCents });
+    await markCallEnded(orgIdBranded, callIdBranded, {
+      status: "COMPLETED",
+      durationMs,
+      costCents,
+    });
     await recordCallEvent(orgIdBranded, callIdBranded, "HANGUP", { durationMs });
     await triggerPostCallAnalysis(callId);
   },

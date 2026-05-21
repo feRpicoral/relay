@@ -1,15 +1,19 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { customAlphabet } from "nanoid";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/db/client";
 import { getDb } from "@/lib/db/with-org";
 import { sendInviteEmail } from "@/lib/email/invite";
 import { requireEnv } from "@/lib/env";
 
 const tokenGen = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 32);
+
+/** How long an invite link stays valid. */
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const InviteSchema = z.object({
   email: z.string().email(),
@@ -24,22 +28,23 @@ export async function inviteMemberAction(input: z.infer<typeof InviteSchema>): P
   if (!parsed.success) return { ok: false, error: "Email inválido." };
 
   const db = getDb(session.orgId);
+  const normalizedEmail = parsed.data.email.toLowerCase();
 
   const existingMember = await db.membership.findFirst({
-    where: { user: { email: parsed.data.email.toLowerCase() } },
+    where: { user: { email: normalizedEmail } },
   });
   if (existingMember) {
     return { ok: false, error: "Esse email já faz parte da organização." };
   }
 
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
   const token = tokenGen();
 
   const invite = await db.invite.upsert({
-    where: { orgId_email: { orgId: session.orgId, email: parsed.data.email.toLowerCase() } },
+    where: { orgId_email: { orgId: session.orgId, email: normalizedEmail } },
     create: {
       orgId: session.orgId,
-      email: parsed.data.email.toLowerCase(),
+      email: normalizedEmail,
       role: parsed.data.role,
       token,
       createdByUserId: session.userId,
@@ -65,9 +70,17 @@ export async function inviteMemberAction(input: z.infer<typeof InviteSchema>): P
       acceptUrl: acceptUrl.toString(),
     });
   } catch (err) {
+    // The invite row exists; the user can re-trigger the email by re-inviting.
+    // We surface a partial-success message so the admin knows to retry.
     console.warn("[invite] email send failed:", err);
+    revalidatePath("/settings/members");
+    return {
+      ok: false,
+      error: "Convite criado, mas o email falhou. Reenvie em alguns instantes.",
+    };
   }
 
+  revalidatePath("/settings/members");
   return { ok: true };
 }
 
@@ -83,22 +96,40 @@ export async function changeRoleAction(input: z.infer<typeof ChangeRoleSchema>):
 
   const db = getDb(session.orgId);
 
-  const membership = await db.membership.findUnique({ where: { id: parsed.data.membershipId } });
-  if (!membership) return { ok: false, error: "Membro não encontrado." };
-  if (membership.userId === session.userId) {
-    return { ok: false, error: "Você não pode mudar seu próprio papel." };
+  // Wrap the last-admin check + the role update in one serializable transaction
+  // so two concurrent demotions can't race past the count check and leave the
+  // org with zero admins.
+  try {
+    await db.$transaction(
+      async (tx) => {
+        const membership = await tx.membership.findUnique({
+          where: { id: parsed.data.membershipId },
+        });
+        if (!membership) throw new MemberNotFoundError();
+        if (membership.userId === session.userId) {
+          throw new CannotChangeSelfError();
+        }
+        if (parsed.data.role === "MEMBER" && membership.role === "ADMIN") {
+          const adminCount = await tx.membership.count({ where: { role: "ADMIN" } });
+          if (adminCount <= 1) throw new LastAdminError();
+        }
+        await tx.membership.update({
+          where: { id: parsed.data.membershipId },
+          data: { role: parsed.data.role },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+  } catch (err) {
+    if (err instanceof MemberNotFoundError) return { ok: false, error: "Membro não encontrado." };
+    if (err instanceof CannotChangeSelfError) {
+      return { ok: false, error: "Você não pode mudar seu próprio papel." };
+    }
+    if (err instanceof LastAdminError) return { ok: false, error: "Mantenha pelo menos um admin." };
+    throw err;
   }
 
-  // Don't allow removing the last admin.
-  if (parsed.data.role === "MEMBER" && membership.role === "ADMIN") {
-    const adminCount = await db.membership.count({ where: { role: "ADMIN" } });
-    if (adminCount <= 1) return { ok: false, error: "Mantenha pelo menos um admin." };
-  }
-
-  await db.membership.update({
-    where: { id: parsed.data.membershipId },
-    data: { role: parsed.data.role },
-  });
+  revalidatePath("/settings/members");
   return { ok: true };
 }
 
@@ -110,21 +141,36 @@ export async function removeMemberAction(input: z.infer<typeof RemoveSchema>): P
   if (!parsed.success) return { ok: false, error: "Entrada inválida." };
 
   const db = getDb(session.orgId);
-  const membership = await db.membership.findUnique({ where: { id: parsed.data.membershipId } });
-  if (!membership) return { ok: false, error: "Membro não encontrado." };
-  if (membership.userId === session.userId) {
-    return { ok: false, error: "Você não pode se remover." };
-  }
-  if (membership.role === "ADMIN") {
-    const adminCount = await db.membership.count({ where: { role: "ADMIN" } });
-    if (adminCount <= 1) return { ok: false, error: "Mantenha pelo menos um admin." };
+
+  try {
+    await db.$transaction(
+      async (tx) => {
+        const membership = await tx.membership.findUnique({
+          where: { id: parsed.data.membershipId },
+        });
+        if (!membership) throw new MemberNotFoundError();
+        if (membership.userId === session.userId) throw new CannotChangeSelfError();
+        if (membership.role === "ADMIN") {
+          const adminCount = await tx.membership.count({ where: { role: "ADMIN" } });
+          if (adminCount <= 1) throw new LastAdminError();
+        }
+        await tx.membership.delete({ where: { id: parsed.data.membershipId } });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+  } catch (err) {
+    if (err instanceof MemberNotFoundError) return { ok: false, error: "Membro não encontrado." };
+    if (err instanceof CannotChangeSelfError) {
+      return { ok: false, error: "Você não pode se remover." };
+    }
+    if (err instanceof LastAdminError) return { ok: false, error: "Mantenha pelo menos um admin." };
+    throw err;
   }
 
-  await db.membership.delete({ where: { id: parsed.data.membershipId } });
-
-  // Drop their app_metadata.active_org_id if it pointed to this org.
-  // Service role required, but we don't have user IDs to clear individually safely here.
-  // Their next login will redirect to /create-org since no membership exists.
+  // Note: we do not clear the removed user's `app_metadata.active_org_id`. The
+  // layout's membership lookup fails on their next request and bounces them to
+  // /create-org, which is the correct end state.
+  revalidatePath("/settings/members");
   return { ok: true };
 }
 
@@ -137,11 +183,31 @@ export async function revokeInviteAction(
   const parsed = RevokeInviteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Entrada inválida." };
 
+  // Org-scoped delete: `deleteMany` returns count 0 if no row matched, which
+  // is fine — the row was either already gone or belonged to another org. We
+  // do NOT fall back to a service-role delete; that path could be abused to
+  // delete a different org's invite.
   const db = getDb(session.orgId);
-  await db.invite.delete({ where: { id: parsed.data.inviteId } }).catch(() => null);
-  // Suppress prisma's "Record to delete does not exist"; use getPrisma() so RLS isn't an issue.
-  await getPrisma()
-    .invite.delete({ where: { id: parsed.data.inviteId } })
-    .catch(() => null);
+  await db.invite.deleteMany({ where: { id: parsed.data.inviteId } });
+  revalidatePath("/settings/members");
   return { ok: true };
+}
+
+class MemberNotFoundError extends Error {
+  constructor() {
+    super("member_not_found");
+    this.name = "MemberNotFoundError";
+  }
+}
+class CannotChangeSelfError extends Error {
+  constructor() {
+    super("cannot_change_self");
+    this.name = "CannotChangeSelfError";
+  }
+}
+class LastAdminError extends Error {
+  constructor() {
+    super("last_admin");
+    this.name = "LastAdminError";
+  }
 }

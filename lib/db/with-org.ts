@@ -83,7 +83,12 @@ export function getDb(orgId: OrgId) {
             const update = (a.update as AnyArgs | undefined) ?? {};
             a.where = { ...where, orgId };
             a.create = { ...create, orgId };
-            a.update = { ...update };
+            // Strip any caller-supplied `orgId` from `update`. If a caller
+            // passes `update: { orgId: otherOrg }` they would otherwise change
+            // an existing row's tenancy — silent cross-tenant write.
+            const { orgId: _strippedUpdateOrgId, ...updateWithoutOrgId } = update;
+            void _strippedUpdateOrgId;
+            a.update = updateWithoutOrgId;
           }
           return query(args);
         },

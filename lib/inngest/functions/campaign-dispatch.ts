@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/db/client";
+import { asAgentId, asOrgId } from "@/lib/db/types";
 import { buildRoomName, createRoom, placeOutboundSipCall } from "@/lib/voice/livekit";
 import { createOutboundCall } from "@/lib/voice/persistence";
 
@@ -47,8 +48,8 @@ export const campaignDispatch = inngest.createFunction(
 
     const { callId } = await step.run("create-call", async () => {
       return createOutboundCall({
-        orgId: lead.orgId,
-        agentId: lead.campaign.agentId,
+        orgId: asOrgId(lead.orgId),
+        agentId: asAgentId(lead.campaign.agentId),
         callerE164: lead.campaign.fromPhoneNumberE164,
         calleeE164: lead.phoneE164,
       });
@@ -65,22 +66,27 @@ export const campaignDispatch = inngest.createFunction(
     });
 
     await step.run("mark-attempting", async () => {
-      await getPrisma().campaignLead.update({
-        where: { id: leadId },
-        data: {
-          status: "CALLING",
-          attempts: { increment: 1 },
-          lastAttemptAt: new Date(),
-        },
-      });
-      await getPrisma().campaignAttempt.create({
-        data: {
-          orgId: lead.orgId,
-          campaignId: lead.campaignId,
-          leadId: lead.id,
-          callId,
-        },
-      });
+      // Atomic: lead transition + attempt row must land together. Inngest
+      // retries the whole step on failure, and the lead.update happens against
+      // the same transaction so the attempt row can't be orphaned.
+      await getPrisma().$transaction([
+        getPrisma().campaignLead.update({
+          where: { id: leadId },
+          data: {
+            status: "CALLING",
+            attempts: { increment: 1 },
+            lastAttemptAt: new Date(),
+          },
+        }),
+        getPrisma().campaignAttempt.create({
+          data: {
+            orgId: lead.orgId,
+            campaignId: lead.campaignId,
+            leadId: lead.id,
+            callId,
+          },
+        }),
+      ]);
     });
 
     await step.run("livekit-sip-outbound", async () => {

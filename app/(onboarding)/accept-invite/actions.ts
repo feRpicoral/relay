@@ -7,7 +7,9 @@ import { createServerSupabase } from "@/lib/supabase/server";
 type Result = { ok: true } | { ok: false; error: string };
 
 export async function acceptInviteAction(token: string): Promise<Result> {
-  if (!token) return { ok: false, error: "Token ausente." };
+  if (!token || token.length < 8 || token.length > 200) {
+    return { ok: false, error: "Token ausente." };
+  }
 
   const supabase = await createServerSupabase();
   const {
@@ -24,18 +26,32 @@ export async function acceptInviteAction(token: string): Promise<Result> {
     return { ok: false, error: "Esse convite é pra outro email." };
   }
 
-  await prisma.$transaction(async (tx) => {
+  // Idempotent inside a transaction:
+  // - Membership upsert deduplicates if accept-invite is called twice in a row.
+  // - invite.update filters on acceptedAt: null so concurrent accepts can't
+  //   both flip the row; only the first transaction succeeds.
+  const { acceptResult } = await prisma.$transaction(async (tx) => {
     await tx.membership.upsert({
       where: { orgId_userId: { orgId: invite.orgId, userId: user.id } },
       create: { orgId: invite.orgId, userId: user.id, role: invite.role },
       update: {},
     });
-    await tx.invite.update({
-      where: { id: invite.id },
+    const updated = await tx.invite.updateMany({
+      where: { id: invite.id, acceptedAt: null },
       data: { acceptedAt: new Date() },
     });
+    return { acceptResult: updated.count };
   });
 
-  await setActiveOrg(user.id, invite.orgId);
+  if (acceptResult === 0) {
+    // Another request beat us to it; treat as success since the user is now
+    // a member (the upsert covered that path).
+  }
+
+  try {
+    await setActiveOrg(user.id, invite.orgId);
+  } catch (err) {
+    console.warn("[accept-invite] setActiveOrg failed", err);
+  }
   return { ok: true };
 }
