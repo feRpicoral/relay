@@ -6,6 +6,17 @@ import { useEffect, useRef, useState } from "react";
 import { Waveform } from "@/components/call/waveform";
 import { Badge } from "@/components/ui/badge";
 
+// LiveKit's RemoteTrack carries an `attach()` method that returns an HTML
+// audio/video element wired up for autoplay. We use it instead of building our
+// own <audio> with srcObject because browser autoplay policies silently drop
+// MediaStream playback without the right element setup.
+interface AttachableTrack {
+  kind: string;
+  mediaStreamTrack: MediaStreamTrack;
+  attach: () => HTMLMediaElement;
+  detach: () => HTMLMediaElement[];
+}
+
 interface TestCallSessionProps {
   livekitUrl: string | null;
   roomName: string | null;
@@ -27,6 +38,7 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [micState, setMicState] = useState<"idle" | "live" | "blocked">("idle");
   const roomRef = useRef<unknown | null>(null);
+  const attachedElementsRef = useRef<HTMLMediaElement[]>([]);
 
   useEffect(() => {
     if (!livekitUrl || !roomName || !token || !active) return;
@@ -51,30 +63,23 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
         newAnalyser.fftSize = 512;
         setAnalyser(newAnalyser);
 
-        const onTrack = (track: { kind: string; mediaStreamTrack: MediaStreamTrack }) => {
+        const onTrack = (track: AttachableTrack) => {
           if (track.kind !== Track.Kind.Audio) return;
+          // attach() returns an <audio> wired for autoplay; we have to put it
+          // in the DOM (some browsers silently mute disconnected media).
+          const element = track.attach();
+          element.style.display = "none";
+          document.body.appendChild(element);
+          attachedElementsRef.current.push(element);
+          // Feed the same stream to the analyser for the waveform display.
           const stream = new MediaStream([track.mediaStreamTrack]);
-          // Play the agent audio through the speakers AND feed the analyser
-          // (`MediaStreamSource` doesn't emit audio on its own).
-          const playback = new Audio();
-          playback.srcObject = stream;
-          playback.autoplay = true;
-          void playback.play().catch(() => undefined);
           const source = ctx!.createMediaStreamSource(stream);
           source.connect(newAnalyser);
         };
 
-        room.on(
-          RoomEvent.TrackSubscribed,
-          (track: { kind: string; mediaStreamTrack: MediaStreamTrack }) => onTrack(track),
-        );
+        room.on(RoomEvent.TrackSubscribed, (track: AttachableTrack) => onTrack(track));
         room.remoteParticipants.forEach(
-          (p: {
-            audioTrackPublications: Map<
-              string,
-              { track?: { kind: string; mediaStreamTrack: MediaStreamTrack } }
-            >;
-          }) => {
+          (p: { audioTrackPublications: Map<string, { track?: AttachableTrack }> }) => {
             p.audioTrackPublications.forEach((pub) => {
               if (pub.track) onTrack(pub.track);
             });
@@ -107,6 +112,12 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
 
     return () => {
       cancelled = true;
+      // Pull elements off the DOM before disconnecting so a quick re-render
+      // (StrictMode double-invoke in dev) doesn't leave orphan <audio> tags.
+      for (const el of attachedElementsRef.current) {
+        el.remove();
+      }
+      attachedElementsRef.current = [];
       (async () => {
         if (roomRef.current) {
           const room = roomRef.current as { disconnect: () => Promise<void> };
