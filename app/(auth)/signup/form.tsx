@@ -2,37 +2,37 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Result } from "@/lib/types/result";
 
 import { signupAction } from "./actions";
 
 export function SignupForm() {
-  const [pending, startTransition] = useTransition();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  function onSubmit(formData: FormData) {
-    setError(null);
-    startTransition(async () => {
-      const result = await signupAction(formData);
-      if (result.ok) {
-        toast.success("Link de confirmação enviado");
-        router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
-      } else {
-        setError(result.error);
-      }
-    });
-  }
+  const [state, formAction, pending] = useActionState<Result | null, FormData>(
+    async (_prev, formData) => signupAction(formData),
+    null,
+  );
+
+  useEffect(() => {
+    if (state && state.ok) {
+      toast.success("Link de confirmação enviado");
+      router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
+    }
+  }, [state, email, router]);
+
+  const error = state && !state.ok ? state.error : null;
 
   return (
-    <form action={onSubmit} className="space-y-4">
+    <form action={formAction} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name">Nome</Label>
         <Input

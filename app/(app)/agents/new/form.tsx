@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,37 +16,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { Result } from "@/lib/types/result";
 
 import { createAgentAction } from "./actions";
 
+type State = Result<{ agentId: string }> | null;
+
 export function NewAgentForm() {
-  const [pending, startTransition] = useTransition();
   const router = useRouter();
   const [language, setLanguage] = useState<"PT_BR" | "EN_US">("PT_BR");
   const [name, setName] = useState("Recepcionista");
   const [persona, setPersona] = useState("");
   const [greeting, setGreeting] = useState("Olá! Obrigada por ligar. Como posso ajudar?");
 
-  function onSubmit() {
-    startTransition(async () => {
-      const result = await createAgentAction({ name, language, personaPrompt: persona, greeting });
-      if (result.ok) {
-        toast.success("Agente criado");
-        router.push(`/agents/${result.agentId}`);
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
+  const [state, runSubmit, pending] = useActionState<State>(
+    async () => createAgentAction({ name, language, personaPrompt: persona, greeting }),
+    null,
+  );
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Agente criado");
+      router.push(`/agents/${state.agentId}`);
+    } else {
+      toast.error(state.error);
+    }
+  }, [state, router]);
 
   return (
-    <form
-      className="space-y-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
-    >
+    <form action={() => runSubmit()} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="name">Nome do agente</Label>
         <Input

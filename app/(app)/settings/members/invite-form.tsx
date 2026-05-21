@@ -2,7 +2,7 @@
 
 import { Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,27 +16,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Result } from "@/lib/types/result";
 
 import { inviteMemberAction } from "./actions";
 
 export function InviteMemberForm() {
-  const [pending, startTransition] = useTransition();
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [role, setRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
 
-  function onSubmit() {
-    startTransition(async () => {
-      const result = await inviteMemberAction({ email, role });
-      if (result.ok) {
-        toast.success("Convite enviado", { description: email });
-        setEmail("");
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
+  const [state, formAction, pending] = useActionState<Result | null, FormData>(
+    async (_prev, formData) => {
+      const email = String(formData.get("email") ?? "").trim();
+      return inviteMemberAction({ email, role });
+    },
+    null,
+  );
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Convite enviado");
+      router.refresh();
+    } else {
+      toast.error(state.error);
+    }
+  }, [state, router]);
+
+  // Derive the input's remount key from the action state: every successful
+  // submit produces a new state reference, so the input resets to "" without
+  // setState-in-effect (banned by React 19's lint rule).
+  const resetKey = state && state.ok ? 1 : 0;
 
   return (
     <Card>
@@ -50,15 +59,20 @@ export function InviteMemberForm() {
           flex+items-end (which floated the labels at different Y heights
           because the bare Button has no label sibling).
         */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_10rem_auto] md:items-end">
+        <form
+          action={formAction}
+          className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_10rem_auto] md:items-end"
+        >
           <div className="space-y-2">
             <Label htmlFor="invite-email">Email</Label>
             <Input
+              key={resetKey}
               id="invite-email"
+              name="email"
               type="email"
               placeholder="colega@empresa.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              defaultValue=""
+              required
               disabled={pending}
             />
           </div>
@@ -78,11 +92,11 @@ export function InviteMemberForm() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={onSubmit} disabled={pending || !email}>
+          <Button type="submit" disabled={pending}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Enviar
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );

@@ -2,40 +2,37 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Result } from "@/lib/types/result";
 
 import { connectCalcomAction } from "./actions";
 
 export function ConnectForm() {
-  const [pending, startTransition] = useTransition();
   const router = useRouter();
   const [apiKey, setApiKey] = useState("");
 
-  function onConnect() {
-    startTransition(async () => {
-      const result = await connectCalcomAction({ apiKey });
-      if (result.ok) {
-        toast.success("Cal.com conectado");
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
+  const [state, runConnect, pending] = useActionState<Result | null>(
+    async () => connectCalcomAction({ apiKey }),
+    null,
+  );
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Cal.com conectado");
+      router.refresh();
+    } else {
+      toast.error(state.error);
+    }
+  }, [state, router]);
 
   return (
-    <form
-      className="space-y-3"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onConnect();
-      }}
-    >
+    <form action={() => runConnect()} className="space-y-3">
       <div className="space-y-1.5">
         <Label htmlFor="calcom-api-key">Cal.com API key</Label>
         <Input

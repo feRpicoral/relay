@@ -2,42 +2,39 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Result } from "@/lib/types/result";
 
 import { connectTwilioAction } from "./actions";
 
 export function ConnectForm() {
-  const [pending, startTransition] = useTransition();
   const [accountSid, setAccountSid] = useState("");
   const [apiKeySid, setApiKeySid] = useState("");
   const [apiKeySecret, setApiKeySecret] = useState("");
   const router = useRouter();
 
-  function onSubmit() {
-    startTransition(async () => {
-      const result = await connectTwilioAction({ accountSid, apiKeySid, apiKeySecret });
-      if (result.ok) {
-        toast.success("Twilio conectado");
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
+  const [state, runConnect, pending] = useActionState<Result | null>(
+    async () => connectTwilioAction({ accountSid, apiKeySid, apiKeySecret }),
+    null,
+  );
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Twilio conectado");
+      router.refresh();
+    } else {
+      toast.error(state.error);
+    }
+  }, [state, router]);
 
   return (
-    <form
-      className="grid w-full max-w-md gap-3 text-left"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
-    >
+    <form action={() => runConnect()} className="grid w-full max-w-md gap-3 text-left">
       <div className="space-y-1.5">
         <Label htmlFor="accountSid">Account SID</Label>
         <Input

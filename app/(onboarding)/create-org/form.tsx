@@ -2,39 +2,40 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Result } from "@/lib/types/result";
 
 import { createOrgAction } from "./actions";
 
+type State = Result<{ orgId: string }> | null;
+
 export function CreateOrgForm() {
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  function onSubmit(formData: FormData) {
-    setError(null);
-    startTransition(async () => {
-      const result = await createOrgAction(formData);
-      if (result.ok) {
-        toast.success("Organização criada");
-        // No router.refresh() here: it would re-render the current (create-org)
-        // page during transition, which the user is about to leave anyway, and
-        // useTransition would keep the spinner active until that refetch
-        // finished. push() alone runs the RSC for /dashboard once.
-        router.push("/dashboard");
-      } else {
-        setError(result.error);
-      }
-    });
-  }
+  const [state, formAction, pending] = useActionState<State, FormData>(
+    async (_prev, formData) => createOrgAction(formData),
+    null,
+  );
+
+  useEffect(() => {
+    if (state && state.ok) {
+      toast.success("Organização criada");
+      // No router.refresh() here: push() alone runs the RSC for /dashboard;
+      // refresh would re-render the current (create-org) page mid-transition
+      // and keep the spinner active until that re-fetch finished.
+      router.push("/dashboard");
+    }
+  }, [state, router]);
+
+  const error = state && !state.ok ? state.error : null;
 
   return (
-    <form action={onSubmit} className="space-y-4">
+    <form action={formAction} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name">Nome da organização</Label>
         <Input
