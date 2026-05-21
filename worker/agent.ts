@@ -27,7 +27,7 @@ import { z } from "zod";
 
 import { calcom } from "@/lib/calendar/calcom";
 import { asAgentId, asCallId, asOrgId, asPhoneNumberId } from "@/lib/db/types";
-import { envOr, requireEnv } from "@/lib/env";
+import { requireEnv } from "@/lib/env";
 import { loadAgentContext, resolvePhoneNumber } from "@/lib/voice/agent-context";
 import { estimateCallCostCents } from "@/lib/voice/cost";
 import { getSipClient } from "@/lib/voice/livekit";
@@ -42,13 +42,16 @@ import {
 } from "@/lib/voice/persistence";
 import { triggerPostCallAnalysis } from "@/lib/voice/post-call-trigger";
 import { buildGreeting, buildSystemPrompt } from "@/lib/voice/prompts";
+import {
+  AGENT_PARTICIPANT_IDENTITY_PREFIX,
+  MAX_AVAILABILITY_CANDIDATES,
+  MAX_FREEFORM_REASON_LEN,
+  PROVIDER_VERSIONS,
+} from "@/lib/voice/provider-versions";
 import { runInstrumentedTool } from "@/lib/voice/tool-instrumentation";
 import { lookupKb } from "@/lib/voice/tools/lookup-kb";
 
 const { AgentSessionEventTypes } = voice;
-
-/** Cap on slot candidates returned to the LLM. Keeps tool output compact. */
-const MAX_AVAILABILITY_CANDIDATES = 5;
 
 export default defineAgent({
   entry: async (ctx: JobContext) => {
@@ -163,7 +166,7 @@ export default defineAgent({
           durationMin: z.number().int().positive(),
           patientName: z.string().min(2).max(120),
           patientPhone: z.string().min(8).max(20),
-          reason: z.string().max(280).optional(),
+          reason: z.string().max(MAX_FREEFORM_REASON_LEN).optional(),
         }),
         async execute(input) {
           return runInstrumentedTool({
@@ -207,7 +210,7 @@ export default defineAgent({
       transfer_to_human: llmModule.tool({
         description:
           "Transfer the call to the human fallback number. Use only when you cannot help or the caller explicitly asks for a person.",
-        parameters: z.object({ reason: z.string().min(2).max(280) }),
+        parameters: z.object({ reason: z.string().min(2).max(MAX_FREEFORM_REASON_LEN) }),
         async execute({ reason }) {
           const startedAt = new Date();
           await recordCallEvent(orgIdBranded, callIdBranded, "TRANSFER_REQUESTED", { reason });
@@ -307,14 +310,14 @@ export default defineAgent({
     // params that AgentSession's VAD-driven turn loop expects.
     const stt = new deepgram.STT({
       apiKey: requireEnv("DEEPGRAM_API_KEY"),
-      model: envOr("DEEPGRAM_MODEL", "nova-3") as deepgram.STTOptions["model"],
+      model: PROVIDER_VERSIONS.deepgram() as deepgram.STTOptions["model"],
       language: language === "pt-BR" ? "pt-BR" : "en-US",
     });
 
     const llm = new openai.LLM({
       apiKey: requireEnv("ANTHROPIC_API_KEY"),
       baseURL: "https://api.anthropic.com/v1/",
-      model: envOr("ANTHROPIC_MODEL_FAST", "claude-haiku-4-5-20251001"),
+      model: PROVIDER_VERSIONS.anthropicFast(),
     });
 
     const tts =
@@ -322,12 +325,12 @@ export default defineAgent({
         ? new elevenlabs.TTS({
             apiKey: requireEnv("ELEVENLABS_API_KEY"),
             voiceId: agentCtx.voiceId,
-            model: "eleven_flash_v2_5",
+            model: PROVIDER_VERSIONS.elevenlabs(),
             languageCode: language === "pt-BR" ? "pt" : "en",
           })
         : new cartesia.TTS({
             apiKey: requireEnv("CARTESIA_API_KEY"),
-            model: envOr("CARTESIA_MODEL", "sonic-3"),
+            model: PROVIDER_VERSIONS.cartesia(),
             voice: agentCtx.voiceId,
             language: language === "pt-BR" ? "pt" : "en",
           });
@@ -427,7 +430,7 @@ export default defineAgent({
       const onParticipantLeft = (p: { identity?: string }) => {
         // The SIP participant disconnecting ends the call. The agent's own
         // participant identity won't trigger this since it's the local.
-        if (p.identity?.startsWith("agent")) return;
+        if (p.identity?.startsWith(AGENT_PARTICIPANT_IDENTITY_PREFIX)) return;
         finish();
       };
       ctx.room.once("disconnected", finish);

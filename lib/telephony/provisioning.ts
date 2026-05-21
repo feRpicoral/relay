@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
+import { ORG_NAME_PREFIX_LEN } from "@/lib/constants";
 import { getPrisma } from "@/lib/db/client";
 import { type AgentId, asAgentId, type OrgId } from "@/lib/db/types";
 
@@ -106,7 +107,7 @@ async function ensureTwilioTrunk(orgId: OrgId): Promise<{
     // Create with domainName explicit. Twilio leaves it null otherwise and
     // LiveKit later rejects with "no outbound address specified".
     const trunk = await client.trunking.v1.trunks.create({
-      friendlyName: `${RELAY_TRUNK_FRIENDLY_PREFIX}${orgId.slice(0, 8)}`,
+      friendlyName: `${RELAY_TRUNK_FRIENDLY_PREFIX}${orgId.slice(0, ORG_NAME_PREFIX_LEN)}`,
       domainName: desiredDomain,
     });
     trunkSid = trunk.sid;

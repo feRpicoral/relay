@@ -8,9 +8,9 @@ import { optionalEnv } from "@/lib/env";
  * IDs are UUIDs (not slugs), so caching them in source code is a recipe for
  * "voice ID must be a valid UUID" failures down the line.
  */
+import { PROVIDER_VERSIONS } from "./provider-versions";
 
 const CARTESIA_BASE = "https://api.cartesia.ai";
-const CARTESIA_VERSION = "2024-11-13";
 
 export interface CartesiaVoice {
   id: string;
@@ -61,7 +61,7 @@ export async function listCartesiaVoices(opts?: { language?: string }): Promise<
     const res = await fetch(`${CARTESIA_BASE}/voices?limit=100`, {
       headers: {
         "X-API-Key": apiKey,
-        "Cartesia-Version": CARTESIA_VERSION,
+        "Cartesia-Version": PROVIDER_VERSIONS.cartesiaApiVersion(),
       },
       // The page that calls this is server-rendered per request; opt out of
       // Next's data cache so users see the latest catalog when Cartesia adds

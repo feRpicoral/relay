@@ -3,6 +3,7 @@ import "server-only";
 import { ListUpdate } from "@livekit/protocol";
 import { SipClient } from "livekit-server-sdk";
 
+import { ORG_NAME_PREFIX_LEN, SIP_TRANSPORT_UDP } from "@/lib/constants";
 import { requireEnv } from "@/lib/env";
 
 let cachedClient: SipClient | null = null;
@@ -68,13 +69,13 @@ export async function createOutboundTrunk(args: {
   // and require explicit setup for TLS. UDP works against any new Twilio
   // trunk out of the box.
   const trunk = await client().createSipOutboundTrunk(
-    `relay-org-${args.orgId.slice(0, 8)}`,
+    `relay-org-${args.orgId.slice(0, ORG_NAME_PREFIX_LEN)}`,
     args.twilioDomain,
     args.numbers,
     {
       authUsername: args.authUsername,
       authPassword: args.authPassword,
-      transport: 1, // SIPTransport.SIP_TRANSPORT_UDP
+      transport: SIP_TRANSPORT_UDP,
     },
   );
   return trunk.sipTrunkId;

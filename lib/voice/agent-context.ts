@@ -1,5 +1,7 @@
+import { DEFAULT_TIMEZONE } from "@/lib/constants";
 import { getPrisma } from "@/lib/db/client";
 
+import { MAX_KB_CHUNKS_PER_AGENT } from "./provider-versions";
 import { type AgentContext, BusinessHoursSchema } from "./types";
 
 /**
@@ -15,7 +17,7 @@ export async function loadAgentContext(callId: string): Promise<AgentContext | n
         include: {
           knowledgeDocs: {
             orderBy: { createdAt: "asc" },
-            take: 20,
+            take: MAX_KB_CHUNKS_PER_AGENT,
           },
         },
       },
@@ -31,7 +33,7 @@ export async function loadAgentContext(callId: string): Promise<AgentContext | n
   const businessHoursParsed = BusinessHoursSchema.safeParse(call.agent.businessHours);
   const businessHours = businessHoursParsed.success
     ? businessHoursParsed.data
-    : { timezone: "America/Sao_Paulo" };
+    : { timezone: DEFAULT_TIMEZONE };
 
   return {
     callId: call.id,

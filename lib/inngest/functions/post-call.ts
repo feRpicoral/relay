@@ -2,7 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { getPrisma } from "@/lib/db/client";
-import { envOr } from "@/lib/env";
+import { requireEnv } from "@/lib/env";
+import { PROVIDER_VERSIONS } from "@/lib/voice/provider-versions";
 
 import { inngest } from "../client";
 
@@ -57,7 +58,7 @@ export const postCallAnalysis = inngest.createFunction(
     }
 
     const result = await step.run("summarize", async () => {
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "" });
+      const anthropic = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
       const transcript = call.transcripts
         .map((t) => `${t.speaker === "AGENT" ? "Agente" : "Cliente"}: ${t.text}`)
         .join("\n");
@@ -65,10 +66,8 @@ export const postCallAnalysis = inngest.createFunction(
         .map((t) => `- ${t.name}(${JSON.stringify(t.inputJson)})`)
         .join("\n");
 
-      const model = envOr("ANTHROPIC_MODEL_SUMMARY", "claude-sonnet-4-6");
-
       const message = await anthropic.messages.create({
-        model,
+        model: PROVIDER_VERSIONS.anthropicSummary(),
         max_tokens: 1024,
         system:
           "Você é um analista de chamadas. Dada uma transcrição entre um agente de IA e um cliente, gera um resumo factual em português, classifica o desfecho, o sentimento, e extrai os tópicos. Não invente fatos. Use somente a transcrição fornecida.",
