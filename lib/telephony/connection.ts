@@ -38,14 +38,18 @@ export async function getConnectionStatus(orgId: OrgId): Promise<ConnectionStatu
 }
 
 /**
- * Validate the supplied credentials by hitting Twilio's account endpoint, then
- * persist them encrypted. Replaces any existing connection (one per org).
+ * Validate the supplied credentials by listing phone numbers on the account,
+ * then persist them encrypted. Replaces any existing connection (one per org).
+ *
+ * Note on endpoint choice: a Standard API key (the type the form asks for) is
+ * rejected with 20003 against `/2010-04-01/Accounts/{sid}.json` because that
+ * resource requires a Main API key. `incomingPhoneNumbers.list` is the
+ * cheapest endpoint a Standard key can hit, and it exercises both the
+ * credential and the binding to the right Account SID.
  */
 export async function connect(orgId: OrgId, creds: TwilioCredentials): Promise<void> {
   const client = buildTwilioClient(creds);
-  // The cheapest endpoint that exercises auth: fetching the account itself.
-  // Throws on bad creds, suspended accounts, or wrong account SID.
-  await client.api.v2010.accounts(creds.accountSid).fetch();
+  await client.incomingPhoneNumbers.list({ limit: 1 });
 
   const authTokenEncrypted = encryptSecret(creds.apiKeySecret);
   await getPrisma().twilioConnection.upsert({

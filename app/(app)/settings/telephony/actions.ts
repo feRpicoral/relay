@@ -45,7 +45,14 @@ export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>):
       };
     }
     if (e.code === 20003) {
-      return { ok: false, error: "API Key sem permissão pra acessar o Account SID informado." };
+      // 20003 also fires when a Standard key is used against a Main-only
+      // endpoint (e.g. /Accounts/{sid}.json). We use phone-number listing
+      // instead, but surface this hint just in case Twilio changes scope.
+      return {
+        ok: false,
+        error:
+          "API Key sem permissão pra acessar a conta. Confirme que ela é Standard (não Restricted) e foi criada na mesma conta do Account SID.",
+      };
     }
     return {
       ok: false,
