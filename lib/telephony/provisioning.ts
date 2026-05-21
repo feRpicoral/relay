@@ -69,21 +69,38 @@ async function ensureTwilioTrunk(orgId: OrgId): Promise<{
   const conn = await getPrisma().twilioConnection.findUniqueOrThrow({ where: { orgId } });
 
   let trunkSid = conn.twilioTrunkSid;
-  let domainName: string;
+  // Twilio's SDK types domainName as optional and on the fetch path the field
+  // is sometimes returned undefined. Always source it from our cache first;
+  // only re-fetch when we don't have it yet.
+  let domainName: string | undefined = conn.twilioTrunkDomain ?? undefined;
 
-  if (trunkSid) {
+  if (trunkSid && !domainName) {
     const existing = await client.trunking.v1.trunks(trunkSid).fetch();
-    domainName = existing.domainName;
-  } else {
+    domainName = existing.domainName ?? undefined;
+    if (domainName) {
+      await getPrisma().twilioConnection.update({
+        where: { orgId },
+        data: { twilioTrunkDomain: domainName },
+      });
+    }
+  }
+
+  if (!trunkSid) {
     const trunk = await client.trunking.v1.trunks.create({
       friendlyName: `${RELAY_TRUNK_FRIENDLY_PREFIX}${orgId.slice(0, 8)}`,
     });
     trunkSid = trunk.sid;
-    domainName = trunk.domainName;
+    domainName = trunk.domainName ?? undefined;
     await getPrisma().twilioConnection.update({
       where: { orgId },
-      data: { twilioTrunkSid: trunkSid, twilioTrunkDomain: domainName },
+      data: { twilioTrunkSid: trunkSid, twilioTrunkDomain: domainName ?? null },
     });
+  }
+
+  if (!domainName) {
+    throw new Error(
+      `Twilio trunk ${trunkSid} has no Termination URI. Open Twilio Console, Voice, Manage, SIP Trunking, open this trunk, and confirm it has a Termination URI like <name>.pstn.twilio.com.`,
+    );
   }
 
   // Origination URL: where Twilio sends inbound PSTN calls. Point at our shared
