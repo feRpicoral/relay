@@ -40,7 +40,15 @@ export async function startTestCall(args: {
     calleeE164: phone?.e164 ?? "+0000000TEST",
   });
 
+  // Patch the room name onto the Call row now that we have the callId.
+  // TestCallSession on the live page reads `livekitRoomName` to know which
+  // room to join; without this, the publisher useEffect bails on the null
+  // check and the operator never gets a mic prompt.
   const roomName = buildRoomName(callId);
+  await getPrisma().call.update({
+    where: { id: callId },
+    data: { livekitRoomName: roomName },
+  });
   await createRoom(roomName, {
     callId,
     orgId: args.orgId,
