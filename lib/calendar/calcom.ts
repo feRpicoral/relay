@@ -3,8 +3,10 @@ import type { OrgId } from "@/lib/db/types";
 import { envOr } from "@/lib/env";
 
 const CALCOM_BASE = envOr("CALCOM_API_BASE", "https://api.cal.com/v2");
-// Cal.com pins certain endpoints to specific cal-api-version dates. Most don't
-// require the header at all; `/slots` does and must be exactly this date.
+// Cal.com versions each endpoint independently via the cal-api-version header.
+// Omitting it returns a legacy shape (object-wrapped instead of flat array),
+// which is what triggered `b.map is not a function` on the event-type picker.
+const EVENT_TYPES_API_VERSION = "2024-06-14";
 const SLOTS_API_VERSION = "2024-09-04";
 
 interface AvailabilityInput {
@@ -95,10 +97,10 @@ export async function listEventTypes(orgId: OrgId): Promise<CalcomEventType[]> {
   const conn = await loadConnection(orgId);
   const data = await callApi<{ data: CalcomEventType[] }>(
     "/event-types",
-    { method: "GET" },
+    { method: "GET", headers: { "cal-api-version": EVENT_TYPES_API_VERSION } },
     conn.apiKey,
   );
-  return data.data ?? [];
+  return Array.isArray(data.data) ? data.data : [];
 }
 
 export const calcom = {
