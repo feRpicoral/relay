@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -13,7 +14,7 @@ const E164 = z.string().regex(E164_REGEX, "Use formato E.164: +5511999998888");
 
 const SettingsSchema = z.object({
   agentId: z.string().uuid(),
-  name: z.string().min(2).max(120),
+  name: z.string().trim().min(2).max(120),
   language: z.enum(["PT_BR", "EN_US", "AUTO"]),
   personaPrompt: z.string().max(4000),
   greeting: z.string().max(280),
@@ -42,6 +43,8 @@ export async function updateAgentSettingsAction(
       enabled: parsed.data.enabled,
     },
   });
+  revalidatePath("/agents");
+  revalidatePath(`/agents/${parsed.data.agentId}`);
   return { ok: true };
 }
 
@@ -61,6 +64,7 @@ export async function updateAgentVoiceAction(input: z.infer<typeof VoiceSchema>)
     where: { id: parsed.data.agentId },
     data: { voiceId: parsed.data.voiceId, ttsProvider: parsed.data.ttsProvider },
   });
+  revalidatePath(`/agents/${parsed.data.agentId}`);
   return { ok: true };
 }
 
@@ -81,12 +85,13 @@ export async function updateBusinessHoursAction(
     where: { id: parsed.data.agentId },
     data: { businessHours: parsed.data.hours },
   });
+  revalidatePath(`/agents/${parsed.data.agentId}`);
   return { ok: true };
 }
 
 const DocCreateSchema = z.object({
   agentId: z.string().uuid(),
-  title: z.string().min(2).max(200),
+  title: z.string().trim().min(2).max(200),
   body: z.string().min(2).max(50_000),
 });
 
@@ -106,10 +111,11 @@ export async function createKnowledgeDocAction(
       body: parsed.data.body,
     },
   });
+  revalidatePath(`/agents/${parsed.data.agentId}`);
   return { ok: true };
 }
 
-const DocDeleteSchema = z.object({ docId: z.string().uuid() });
+const DocDeleteSchema = z.object({ docId: z.string().uuid(), agentId: z.string().uuid() });
 
 export async function deleteKnowledgeDocAction(
   input: z.infer<typeof DocDeleteSchema>,
@@ -119,7 +125,8 @@ export async function deleteKnowledgeDocAction(
   if (!parsed.success) return { ok: false, error: "Entrada inválida." };
 
   const db = getDb(session.orgId);
-  await db.knowledgeDoc.delete({ where: { id: parsed.data.docId } });
+  await db.knowledgeDoc.deleteMany({ where: { id: parsed.data.docId } });
+  revalidatePath(`/agents/${parsed.data.agentId}`);
   return { ok: true };
 }
 
@@ -131,6 +138,18 @@ export async function deleteAgentAction(input: z.infer<typeof DeleteAgentSchema>
   if (!parsed.success) return { ok: false, error: "Entrada inválida." };
 
   const db = getDb(session.orgId);
-  await db.agent.delete({ where: { id: parsed.data.agentId } });
+  // The Agent FK cascades on call/phone-number/knowledge-doc/campaign delete.
+  // We surface a friendly error if any of those constraints reject so the user
+  // doesn't see an opaque Prisma error.
+  try {
+    await db.agent.delete({ where: { id: parsed.data.agentId } });
+  } catch (err) {
+    console.warn("[deleteAgentAction] delete failed", err);
+    return {
+      ok: false,
+      error: "Não foi possível remover o agente. Verifique se há chamadas ou campanhas ativas.",
+    };
+  }
+  revalidatePath("/agents");
   return { ok: true };
 }

@@ -53,7 +53,7 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
 
   function onDelete(id: string) {
     startTransition(async () => {
-      const result = await deleteKnowledgeDocAction({ docId: id });
+      const result = await deleteKnowledgeDocAction({ docId: id, agentId });
       if (result.ok) {
         toast.success("Removido");
         router.refresh();

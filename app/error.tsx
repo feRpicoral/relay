@@ -1,11 +1,17 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export default function GlobalError({
+/**
+ * Segment-level error boundary. Catches errors thrown by RSCs/client
+ * components below this segment. The root-layout error boundary lives in
+ * `app/global-error.tsx`.
+ */
+export default function SegmentError({
   error,
   reset,
 }: {
@@ -13,8 +19,9 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surface to Sentry, module init handles the rest.
-    console.error("[error boundary]", error);
+    // Next.js error boundaries don't auto-forward to Sentry; explicit capture
+    // is required.
+    Sentry.captureException(error);
   }, [error]);
 
   return (

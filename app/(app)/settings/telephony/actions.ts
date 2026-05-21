@@ -1,8 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
+import { asAgentId } from "@/lib/db/types";
 import { connect, disconnect } from "@/lib/telephony/connection";
 import { attachNumber, detachNumber, fullCleanup } from "@/lib/telephony/provisioning";
 
@@ -30,6 +32,7 @@ export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>):
 
   try {
     await connect(session.orgId, parsed.data);
+    revalidatePath("/settings/telephony");
   } catch (err) {
     // Twilio's RestException carries status, code, moreInfo, and a message.
     // We log the full thing so it lands in Vercel runtime logs for debugging,
@@ -74,6 +77,7 @@ export async function disconnectTwilioAction(): Promise<Result> {
     console.warn("[telephony] fullCleanup partial failure on disconnect:", err);
   }
   await disconnect(session.orgId);
+  revalidatePath("/settings/telephony");
   return { ok: true };
 }
 
@@ -93,12 +97,13 @@ export async function attachNumberAction(input: z.infer<typeof AttachSchema>): P
     await attachNumber({
       orgId: session.orgId,
       twilioSid: parsed.data.twilioSid,
-      agentId: parsed.data.agentId as Parameters<typeof attachNumber>[0]["agentId"],
+      agentId: asAgentId(parsed.data.agentId),
       label: parsed.data.label,
     });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+  revalidatePath("/settings/telephony");
   return { ok: true };
 }
 
@@ -113,5 +118,6 @@ export async function detachNumberAction(input: z.infer<typeof DetachSchema>): P
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+  revalidatePath("/settings/telephony");
   return { ok: true };
 }

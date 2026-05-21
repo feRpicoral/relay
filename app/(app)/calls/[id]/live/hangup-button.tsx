@@ -13,7 +13,7 @@ export function HangupButton({ callId }: { callId: string }) {
 
   function onClick() {
     startTransition(async () => {
-      const result = await hangupAction(callId);
+      const result = await hangupAction({ callId });
       if (result.ok) {
         toast.success("Chamada encerrada");
       } else {

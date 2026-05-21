@@ -363,7 +363,15 @@ export default defineAgent({
         startMs: offsetMs,
         endMs: offsetMs,
         isFinal: true,
-      }).catch((err: unknown) => console.warn("[agent] transcript persist failed", err));
+      }).catch((err: unknown) => {
+        console.warn("[agent] transcript persist failed", err);
+        // Surface the failure to the call-detail page via CallEvent.ERROR so
+        // ops can see DB blips correlated with calls.
+        void recordCallEvent(orgIdBranded, callIdBranded, "ERROR", {
+          where: "appendTranscript",
+          message: err instanceof Error ? err.message : String(err),
+        }).catch(() => undefined);
+      });
     });
 
     // Per-leg latency from the framework's metrics events.
@@ -372,23 +380,30 @@ export default defineAgent({
       const ttft = typeof m.ttft === "number" ? m.ttft : null;
       const ttfb = typeof m.ttfb === "number" ? m.ttfb : null;
       const e2e = typeof m.e2eLatencyMs === "number" ? m.e2eLatencyMs : null;
+      const onLatencyErr = (where: string) => (err: unknown) => {
+        console.warn(`[agent] recordLatency ${where} failed`, err);
+        void recordCallEvent(orgIdBranded, callIdBranded, "ERROR", {
+          where: `recordLatency.${where}`,
+          message: err instanceof Error ? err.message : String(err),
+        }).catch(() => undefined);
+      };
       if (ttft != null) {
         void recordLatency(orgIdBranded, callIdBranded, {
           leg: "LLM_TTFT",
           valueMs: Math.round(ttft * 1000),
-        });
+        }).catch(onLatencyErr("LLM_TTFT"));
       }
       if (ttfb != null) {
         void recordLatency(orgIdBranded, callIdBranded, {
           leg: "TTS_TTFA",
           valueMs: Math.round(ttfb * 1000),
-        });
+        }).catch(onLatencyErr("TTS_TTFA"));
       }
       if (e2e != null) {
         void recordLatency(orgIdBranded, callIdBranded, {
           leg: "END_TO_END",
           valueMs: Math.round(e2e),
-        });
+        }).catch(onLatencyErr("END_TO_END"));
       }
     });
 
