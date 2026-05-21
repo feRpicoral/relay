@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 
+import { consumeToken, OTP_LIMIT } from "@/lib/auth/rate-limit";
 import { safeNextPath } from "@/lib/auth/safe-redirect";
 import { requireEnv } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -28,6 +30,14 @@ export async function loginAction(formData: FormData): Promise<Result> {
     return { ok: false, error: "Email inválido." };
   }
 
+  // Rate-limit per email and per IP. Both reveal the same generic message so
+  // an attacker can't tell whether they hit the cap or whether the email exists.
+  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const emailOk = consumeToken(`otp:email:${normalizedEmail}`, OTP_LIMIT);
+  const ipOk = consumeToken(`otp:ip:${ip}`, OTP_LIMIT);
+  if (!emailOk || !ipOk) return GENERIC_SUCCESS;
+
   const supabase = await createServerSupabase();
   const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
   const emailRedirectTo = new URL("/auth/callback", appUrl);
@@ -35,7 +45,7 @@ export async function loginAction(formData: FormData): Promise<Result> {
   if (next) emailRedirectTo.searchParams.set("next", next);
 
   const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email.trim().toLowerCase(),
+    email: normalizedEmail,
     options: { emailRedirectTo: emailRedirectTo.toString(), shouldCreateUser: false },
   });
 

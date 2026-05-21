@@ -59,8 +59,17 @@ export async function deleteRoom(roomName: string) {
   });
 }
 
+/** Room name convention shared by worker, webhook handler, and test-call. */
+const ROOM_PREFIX = "call-";
+
 export function buildRoomName(callId: string): string {
-  return `call-${callId}`;
+  return `${ROOM_PREFIX}${callId}`;
+}
+
+/** Returns the callId encoded in a Relay-managed room name, or null. */
+export function parseCallIdFromRoomName(roomName: string | null | undefined): string | null {
+  if (!roomName || !roomName.startsWith(ROOM_PREFIX)) return null;
+  return roomName.slice(ROOM_PREFIX.length);
 }
 
 export function getSipClient(): SipClient {

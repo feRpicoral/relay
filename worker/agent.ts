@@ -281,6 +281,16 @@ export default defineAgent({
             if (!identity || !room) {
               throw new Error("Missing participant identity or room name for transfer.");
             }
+            // Defense-in-depth: validate both halves of the SIP URI before
+            // building it. DB-stored values are trusted at write-time but we
+            // do not want a corrupted `fallbackTransferE164` or `twilioTrunkDomain`
+            // to redirect calls to an attacker-controlled host.
+            if (!/^\+[1-9]\d{6,17}$/.test(transferTo)) {
+              throw new Error(`Invalid E.164 for transfer: ${transferTo}`);
+            }
+            if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(sipHost)) {
+              throw new Error(`Invalid SIP host for transfer: ${sipHost}`);
+            }
             await getSipClient().transferSipParticipant(
               room,
               identity,
