@@ -49,16 +49,28 @@ export async function POST(request: NextRequest) {
     const orgId = asOrgId(call.orgId);
     const callIdBranded = asCallId(callId);
 
+    // LiveKit attaches a delivery id; reuse it as the CallEvent externalId so
+    // retries (5xx → LiveKit re-fires) are deduplicated by the DB.
+    const externalId = event.id ? `livekit:${event.id}` : undefined;
+
     switch (event.event) {
       case "participant_joined":
-        await recordCallEvent(orgId, callIdBranded, "PARTICIPANT_JOINED", {
-          identity: event.participant?.identity,
-        });
+        await recordCallEvent(
+          orgId,
+          callIdBranded,
+          "PARTICIPANT_JOINED",
+          { identity: event.participant?.identity },
+          externalId,
+        );
         break;
       case "participant_left":
-        await recordCallEvent(orgId, callIdBranded, "PARTICIPANT_LEFT", {
-          identity: event.participant?.identity,
-        });
+        await recordCallEvent(
+          orgId,
+          callIdBranded,
+          "PARTICIPANT_LEFT",
+          { identity: event.participant?.identity },
+          externalId,
+        );
         break;
       case "room_finished": {
         // Idempotent finalize: only the first webhook to win the status race

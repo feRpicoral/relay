@@ -310,10 +310,15 @@ model CallEvent {
   callId       String        @map("call_id") @db.Uuid
   type         CallEventType
   payload      Json?
+  // Idempotency key for events received from external systems (currently
+  // LiveKit webhooks). Same delivery id is sent on retries, so a unique
+  // constraint dedupes them.
+  externalId   String?       @map("external_id")
   occurredAt   DateTime      @default(now()) @map("occurred_at")
   organization Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   call         Call          @relation(fields: [callId], references: [id], onDelete: Cascade)
 
+  @@unique([externalId])
   @@index([callId, occurredAt])
   @@map("call_events")
 }

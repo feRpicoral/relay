@@ -178,11 +178,31 @@ export async function recordCallEvent(
     | "HANGUP"
     | "ERROR",
   payload?: Record<string, unknown>,
+  /**
+   * Idempotency key from an external delivery system (LiveKit webhooks). Same
+   * key on a redelivery is dropped via the unique constraint on
+   * `CallEvent.externalId`, so the timeline doesn't accumulate duplicates.
+   */
+  externalId?: string,
 ): Promise<void> {
   const db = getDb(orgId);
-  await db.callEvent.create({
-    data: { orgId, callId, type, payload },
-  });
+  try {
+    await db.callEvent.create({
+      data: { orgId, callId, type, payload, externalId },
+    });
+  } catch (err) {
+    // P2002 on externalId is the expected "already seen" path — swallow it
+    // because the row already exists. Anything else propagates.
+    if (
+      externalId &&
+      err instanceof Error &&
+      "code" in err &&
+      (err as { code?: string }).code === "P2002"
+    ) {
+      return;
+    }
+    throw err;
+  }
 }
 
 export async function recordLatency(
