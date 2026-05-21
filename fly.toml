@@ -10,7 +10,10 @@ primary_region = "dfw"
 dockerfile = "Dockerfile"
 
 [deploy]
-strategy = "immediate"
+# `rolling` so an active worker isn't killed mid-call: Fly boots a new machine
+# first, then drains the old one. `immediate` is faster but drops in-flight
+# calls, which is the wrong tradeoff for a voice product.
+strategy = "rolling"
 
 # LiveKit Cloud distributes inbound rooms across whichever workers are
 # connected, so we don't need a Fly HA pair. Deploy with `fly deploy --ha=false`
@@ -20,3 +23,14 @@ strategy = "immediate"
 cpu_kind = "shared"
 cpus = 1
 memory_mb = 1024
+
+# Per-machine process check: `pgrep` succeeds while tsx is up. The worker has
+# no HTTP listener, so this is the cheapest reliable liveness signal short of
+# wiring a heartbeat endpoint.
+[[checks]]
+name = "worker-process"
+type = "exec"
+command = "pgrep -f tsx"
+interval = "30s"
+timeout = "5s"
+grace_period = "30s"

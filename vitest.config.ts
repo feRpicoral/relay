@@ -10,7 +10,10 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.{test,spec}.ts", "tests/**/*.{test,spec}.ts"],
+    // Include worker/* so any future worker-side unit tests land in CI. The
+    // worker entry itself isn't tested (it boots a LiveKit agent on import),
+    // but extracted helpers like tool-instrumentation.ts can be.
+    include: ["lib/**/*.{test,spec}.ts", "worker/**/*.{test,spec}.ts", "tests/**/*.{test,spec}.ts"],
     exclude: ["node_modules", ".next", "e2e"],
     globals: true,
   },

@@ -1,4 +1,8 @@
-import "server-only";
+// Intentionally NOT importing "server-only" here. The worker (run via tsx,
+// no Next webpack) loads this module transitively through the Twilio decrypt
+// path, and "server-only" throws on import outside a Next Server Component
+// boundary. Keep this file pure Node so both the web app and the worker can
+// use it.
 
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
 
