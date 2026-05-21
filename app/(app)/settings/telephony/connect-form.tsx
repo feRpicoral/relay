@@ -66,7 +66,7 @@ export function ConnectForm() {
           id="apiKeySecret"
           type="password"
           value={apiKeySecret}
-          onChange={(e) => setApiKeySecret(e.target.value)}
+          onChange={(e) => setApiKeySecret(e.target.value.trim())}
           placeholder="(visible once at creation in Twilio Console)"
           required
           disabled={pending}

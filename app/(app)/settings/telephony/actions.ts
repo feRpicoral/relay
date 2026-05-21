@@ -31,13 +31,26 @@ export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>):
   try {
     await connect(session.orgId, parsed.data);
   } catch (err) {
-    // Twilio errors come through as Error with .status / .code. Surface the
-    // human-readable message when available.
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("Authenticate")) {
-      return { ok: false, error: "Credenciais Twilio inválidas. Confirme Account SID + API Key." };
+    // Twilio's RestException carries status, code, moreInfo, and a message.
+    // We log the full thing so it lands in Vercel runtime logs for debugging,
+    // and surface the most useful piece to the UI.
+    console.error("[telephony] connectTwilioAction failed:", err);
+    const e = err as { status?: number; code?: number; moreInfo?: string; message?: string };
+    const message = e.message ?? String(err);
+    if (e.status === 401 || /Authenticate|Unauthorized|Invalid Access Token/i.test(message)) {
+      return {
+        ok: false,
+        error:
+          "Twilio rejeitou as credenciais (401). Verifique se: (a) o Account SID é o da conta dona da API Key, (b) o Twilio Client SID começa com SK, (c) o Secret é o mostrado UMA vez na criação (não o auth token mestre).",
+      };
     }
-    return { ok: false, error: `Falha ao validar com Twilio: ${message}` };
+    if (e.code === 20003) {
+      return { ok: false, error: "API Key sem permissão pra acessar o Account SID informado." };
+    }
+    return {
+      ok: false,
+      error: `Twilio: ${message}${e.moreInfo ? ` (${e.moreInfo})` : ""}`,
+    };
   }
   return { ok: true };
 }
