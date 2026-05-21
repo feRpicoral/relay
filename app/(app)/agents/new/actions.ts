@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { DEFAULT_OPEN_HOURS, DEFAULT_TIMEZONE } from "@/lib/constants";
 import { getDb } from "@/lib/db/with-org";
+import type { Result } from "@/lib/types/result";
 
 const Schema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -14,9 +15,9 @@ const Schema = z.object({
   greeting: z.string().max(280).default(""),
 });
 
-type Result = { ok: true; agentId: string } | { ok: false; error: string };
-
-export async function createAgentAction(input: z.infer<typeof Schema>): Promise<Result> {
+export async function createAgentAction(
+  input: z.infer<typeof Schema>,
+): Promise<Result<{ agentId: string }>> {
   const session = await requireAdmin();
   const parsed = Schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados inválidos." };

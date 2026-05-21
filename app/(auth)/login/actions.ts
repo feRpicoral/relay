@@ -7,13 +7,12 @@ import { consumeToken, OTP_LIMIT } from "@/lib/auth/rate-limit";
 import { safeNextPath } from "@/lib/auth/safe-redirect";
 import { requireEnv } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
+import type { Result } from "@/lib/types/result";
 
 const Schema = z.object({
   email: z.string().email(),
   next: z.string().optional(),
 });
-
-type Result = { ok: true } | { ok: false; error: string };
 
 /**
  * Generic message returned for both the "ok" path and the "email not found"

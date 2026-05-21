@@ -6,8 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { parseCsvRows } from "@/lib/csv";
 import { getDb } from "@/lib/db/with-org";
-
-type Result = { ok: true; campaignId: string; leadsAdded: number } | { ok: false; error: string };
+import type { Result } from "@/lib/types/result";
 
 /** Cap the CSV body to keep the action from buffering an unbounded blob. */
 const MAX_CSV_BYTES = 2 * 1024 * 1024; // 2 MiB
@@ -27,7 +26,9 @@ const Schema = z.object({
   concurrencyLimit: z.number().int().min(1).max(10).default(2),
 });
 
-export async function createCampaignAction(input: z.infer<typeof Schema>): Promise<Result> {
+export async function createCampaignAction(
+  input: z.infer<typeof Schema>,
+): Promise<Result<{ campaignId: string; leadsAdded: number }>> {
   const session = await requireAdmin();
   const parsed = Schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados inválidos." };

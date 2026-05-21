@@ -9,6 +9,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 import { sendInviteEmail } from "@/lib/email/invite";
 import { requireEnv } from "@/lib/env";
+import type { Result } from "@/lib/types/result";
 
 const tokenGen = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 32);
 
@@ -19,8 +20,6 @@ const InviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(["ADMIN", "MEMBER"]),
 });
-
-type Result = { ok: true } | { ok: false; error: string };
 
 export async function inviteMemberAction(input: z.infer<typeof InviteSchema>): Promise<Result> {
   const session = await requireAdmin();

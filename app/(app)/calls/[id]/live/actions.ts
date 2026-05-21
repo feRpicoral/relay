@@ -5,9 +5,8 @@ import { z } from "zod";
 
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
+import type { Result } from "@/lib/types/result";
 import { deleteRoom } from "@/lib/voice/livekit";
-
-type Result = { ok: true } | { ok: false; error: string };
 
 const Schema = z.object({ callId: z.string().uuid() });
 

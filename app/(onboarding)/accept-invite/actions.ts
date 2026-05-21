@@ -3,8 +3,7 @@
 import { setActiveOrg } from "@/lib/auth/active-org";
 import { getPrisma } from "@/lib/db/client";
 import { createServerSupabase } from "@/lib/supabase/server";
-
-type Result = { ok: true } | { ok: false; error: string };
+import type { Result } from "@/lib/types/result";
 
 export async function acceptInviteAction(token: string): Promise<Result> {
   if (!token || token.length < 8 || token.length > 200) {

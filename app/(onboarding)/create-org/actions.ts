@@ -8,6 +8,7 @@ import { setActiveOrg } from "@/lib/auth/active-org";
 import { getPrisma } from "@/lib/db/client";
 import { slugify } from "@/lib/slug";
 import { createServerSupabase } from "@/lib/supabase/server";
+import type { Result } from "@/lib/types/result";
 
 const Schema = z.object({ name: z.string().trim().min(2).max(120) });
 const slugSuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
@@ -15,9 +16,7 @@ const slugSuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
 /** Slug-collision retry budget. Each attempt re-rolls the random suffix. */
 const SLUG_MAX_ATTEMPTS = 5;
 
-type Result = { ok: true; orgId: string } | { ok: false; error: string };
-
-export async function createOrgAction(formData: FormData): Promise<Result> {
+export async function createOrgAction(formData: FormData): Promise<Result<{ orgId: string }>> {
   const parsed = Schema.safeParse({ name: formData.get("name") });
   if (!parsed.success) return { ok: false, error: "Nome inválido." };
 

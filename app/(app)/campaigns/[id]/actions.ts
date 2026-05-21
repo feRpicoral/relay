@@ -6,8 +6,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
-
-type Result = { ok: true } | { ok: false; error: string };
+import type { Result } from "@/lib/types/result";
 
 const Schema = z.object({ campaignId: z.string().uuid() });
 

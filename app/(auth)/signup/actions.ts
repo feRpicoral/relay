@@ -6,13 +6,12 @@ import { z } from "zod";
 import { consumeToken, OTP_LIMIT } from "@/lib/auth/rate-limit";
 import { requireEnv } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server";
+import type { Result } from "@/lib/types/result";
 
 const Schema = z.object({
   email: z.string().email(),
   name: z.string().trim().min(1).max(120),
 });
-
-type Result = { ok: true } | { ok: false; error: string };
 
 const GENERIC_SUCCESS: Result = { ok: true };
 

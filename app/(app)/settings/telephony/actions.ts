@@ -7,8 +7,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { asAgentId } from "@/lib/db/types";
 import { connect, disconnect } from "@/lib/telephony/connection";
 import { attachNumber, detachNumber, fullCleanup } from "@/lib/telephony/provisioning";
-
-type Result = { ok: true } | { ok: false; error: string };
+import type { Result } from "@/lib/types/result";
 
 const ConnectSchema = z.object({
   // Twilio Account SIDs always start with "AC" followed by 32 hex chars.

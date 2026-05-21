@@ -7,8 +7,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listEventTypes, validateApiKey } from "@/lib/calendar/calcom";
 import { encryptSecret } from "@/lib/crypto";
 import { getDb } from "@/lib/db/with-org";
-
-type Result = { ok: true } | { ok: false; error: string };
+import type { Result } from "@/lib/types/result";
 
 const ConnectSchema = z.object({
   apiKey: z.string().min(8).max(200),
@@ -68,7 +67,7 @@ export async function setDefaultEventTypeAction(
 }
 
 export async function listEventTypesAction(): Promise<
-  { ok: true; eventTypes: Array<{ id: number; title: string }> } | { ok: false; error: string }
+  Result<{ eventTypes: Array<{ id: number; title: string }> }>
 > {
   const session = await requireAdmin();
   try {
