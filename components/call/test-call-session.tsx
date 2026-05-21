@@ -42,7 +42,24 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
     let audioCtx: AudioContext | null = null;
     const attachedEls: HTMLMediaElement[] = [];
 
-    (async () => {
+    // StrictMode in dev double-invokes effects. WebRTC connect/publish is not
+    // idempotent — the first run's RTCPeerConnection ends up half-closed
+    // mid-negotiation when the cleanup fires, producing "could not createOffer
+    // with closed peer connection" and the audio never makes it back to the
+    // browser. Delaying setup by a tick lets the StrictMode cleanup mark
+    // cancelled=true before any LiveKit work starts; only the surviving mount
+    // actually negotiates.
+    const setupTimer = setTimeout(() => {
+      void runSetup();
+    }, 100);
+
+    async function runSetup() {
+      if (cancelled) return;
+      // Capture non-null props for use inside this async closure (the outer
+      // null-guard at the top of the effect doesn't narrow inside callbacks).
+      const url = livekitUrl;
+      const tk = token;
+      if (!url || !tk) return;
       const livekit = await import("livekit-client");
       if (cancelled) return;
       const { Room, RoomEvent, Track, createLocalAudioTrack } = livekit;
@@ -76,7 +93,7 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
       r.on(RoomEvent.TrackSubscribed, (track: AttachableTrack) => onTrack(track));
 
       try {
-        await r.connect(livekitUrl, token);
+        await r.connect(url, tk);
       } catch (err) {
         console.warn("[test-call-session] connect failed:", err);
         return;
@@ -121,10 +138,11 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
         console.warn("[test-call-session] mic capture blocked:", err);
         setMicState("blocked");
       }
-    })();
+    }
 
     return () => {
       cancelled = true;
+      clearTimeout(setupTimer);
       for (const el of attachedEls) el.remove();
       // Fire-and-forget; do NOT await — useEffect cleanup must be sync.
       if (room) {
