@@ -11,10 +11,14 @@ type Result = { ok: true } | { ok: false; error: string };
 const ConnectSchema = z.object({
   // Twilio Account SIDs always start with "AC" followed by 32 hex chars.
   accountSid: z.string().regex(/^AC[a-f0-9]{32}$/i, "Account SID inválido (formato ACxxxxxxxx)."),
-  // API Key SIDs start with "SK".
-  apiKeySid: z.string().regex(/^SK[a-f0-9]{32}$/i, "API Key SID inválido (formato SKxxxxxxxx)."),
+  // Twilio Client SID (the "SID" shown in the API Key creation dialog) starts
+  // with "SK". Internally Twilio still calls this the API Key SID, but the
+  // Console label is "Twilio Client SID".
+  apiKeySid: z
+    .string()
+    .regex(/^SK[a-f0-9]{32}$/i, "Twilio Client SID inválido (formato SKxxxxxxxx)."),
   // Secret is a long opaque string. Don't try to validate format beyond length.
-  apiKeySecret: z.string().min(20, "API Key Secret muito curto."),
+  apiKeySecret: z.string().min(20, "Secret muito curto."),
 });
 
 export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>): Promise<Result> {

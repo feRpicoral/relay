@@ -170,10 +170,10 @@ This one is different from the others: **you (the Relay operator) don't need a T
 Tenant flow (do this once per workspace, in the Relay dashboard):
 
 1. Go to **Settings, Telefonia** in Relay. The screen shows a connection form with three fields.
-2. In a separate tab, open [Twilio Console](https://console.twilio.com), **Account, API Keys & tokens, Create API key**, type **Standard**, friendly name `Relay`. The page shows three identifiers — paste them into Relay matching exactly:
-   - **API Key SID** (starts with `SK`) → "API Key SID" field
-   - **Secret** (long opaque string, shown only once at creation) → "API Key Secret" field
-   - **Account SID** (starts with `AC`, visible at the top of any Twilio Console page) → "Account SID" field
+2. In a separate tab, open [Twilio Console](https://console.twilio.com), **Account, API Keys & tokens, Create API key**, type **Standard**, friendly name `Relay`. The creation dialog shows two values; copy both, plus your Account SID from the top of any Console page:
+   - **Twilio Client SID** (starts with `SK`) → "Twilio Client SID" field in Relay
+   - **Secret** (random characters, shown only once at creation) → "Secret" field in Relay
+   - **Account SID** (starts with `AC`, top of any Twilio Console page) → "Account SID" field in Relay
 3. Submit. Relay validates against `/v2010/accounts/{sid}.json`, stores the secret encrypted (`lib/crypto.ts`, AES-256-GCM with `ENCRYPTION_KEY`), and lists the Twilio numbers in your account.
 4. For each number you want a Relay agent to answer, click **Conectar** and pick the agent. Relay then:
    - Creates a Twilio Elastic SIP Trunk on your account (first attach only)

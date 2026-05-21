@@ -50,7 +50,7 @@ export function ConnectForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="apiKeySid">API Key SID</Label>
+        <Label htmlFor="apiKeySid">Twilio Client SID</Label>
         <Input
           id="apiKeySid"
           value={apiKeySid}
@@ -61,7 +61,7 @@ export function ConnectForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="apiKeySecret">API Key Secret</Label>
+        <Label htmlFor="apiKeySecret">Secret</Label>
         <Input
           id="apiKeySecret"
           type="password"
