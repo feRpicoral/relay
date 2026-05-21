@@ -58,3 +58,14 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 export function daysAgo(days: number): Date {
   return new Date(Date.now() - days * MS_PER_DAY);
 }
+
+/**
+ * Format a millisecond duration as `m:ss`. Used by audio-player, transcript
+ * stream/history — anywhere we render a position inside a call.
+ */
+export function formatTimestamp(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}

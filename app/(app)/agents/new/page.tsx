@@ -1,14 +1,11 @@
-import { redirect } from "next/navigation";
-
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
-import { requireSession } from "@/lib/auth/session";
+import { requireAdmin } from "@/lib/auth/session";
 
 import { NewAgentForm } from "./form";
 
 export default async function NewAgentPage() {
-  const session = await requireSession();
-  if (session.role !== "ADMIN") redirect("/agents");
+  await requireAdmin();
 
   return (
     <>

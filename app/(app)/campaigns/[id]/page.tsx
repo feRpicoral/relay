@@ -5,54 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { requireSession } from "@/lib/auth/session";
+import {
+  CAMPAIGN_STATUS_LABEL,
+  CAMPAIGN_STATUS_VARIANT,
+  LEAD_STATUS_LABEL,
+  LEAD_STATUS_VARIANT,
+  TERMINAL_LEAD_STATUSES,
+} from "@/lib/campaigns/labels";
 import { getDb } from "@/lib/db/with-org";
 import { formatPhone } from "@/lib/utils";
 
 import { CampaignActions } from "./actions-bar";
-
-const STATUS_VARIANT: Record<
-  string,
-  "default" | "secondary" | "success" | "warning" | "destructive"
-> = {
-  DRAFT: "secondary",
-  RUNNING: "default",
-  PAUSED: "warning",
-  COMPLETED: "success",
-  CANCELED: "destructive",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Rascunho",
-  RUNNING: "Rodando",
-  PAUSED: "Pausada",
-  COMPLETED: "Concluída",
-  CANCELED: "Cancelada",
-};
-
-const LEAD_LABEL: Record<string, string> = {
-  PENDING: "Pendente",
-  CALLING: "Ligando",
-  ATTEMPTED: "Esgotada",
-  REACHED: "Atendeu",
-  NO_ANSWER: "Sem resposta",
-  VOICEMAIL: "Caixa postal",
-  FAILED: "Falhou",
-  EXCLUDED: "Excluída",
-};
-
-const LEAD_VARIANT: Record<
-  string,
-  "default" | "secondary" | "success" | "warning" | "destructive"
-> = {
-  PENDING: "secondary",
-  CALLING: "default",
-  ATTEMPTED: "secondary",
-  REACHED: "success",
-  NO_ANSWER: "warning",
-  VOICEMAIL: "warning",
-  FAILED: "destructive",
-  EXCLUDED: "secondary",
-};
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -70,9 +33,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const total = campaign.leads.length;
   const reached = campaign.leads.filter((l) => l.status === "REACHED").length;
   const callsInFlight = campaign.leads.filter((l) => l.status === "CALLING").length;
-  const completed = campaign.leads.filter((l) =>
-    ["REACHED", "ATTEMPTED", "FAILED", "EXCLUDED"].includes(l.status),
-  ).length;
+  const completed = campaign.leads.filter((l) => TERMINAL_LEAD_STATUSES.includes(l.status)).length;
   const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
 
   return (
@@ -82,8 +43,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         description={`Agente ${campaign.agent.name}, de ${campaign.fromPhoneNumberE164}`}
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant={STATUS_VARIANT[campaign.status] ?? "secondary"}>
-              {STATUS_LABEL[campaign.status] ?? campaign.status}
+            <Badge variant={CAMPAIGN_STATUS_VARIANT[campaign.status] ?? "secondary"}>
+              {CAMPAIGN_STATUS_LABEL[campaign.status] ?? campaign.status}
             </Badge>
             <CampaignActions campaignId={campaign.id} status={campaign.status} />
           </div>
@@ -118,8 +79,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
                     {formatPhone(lead.phoneE164)}, tentativas: {lead.attempts}
                   </p>
                 </div>
-                <Badge variant={LEAD_VARIANT[lead.status] ?? "secondary"}>
-                  {LEAD_LABEL[lead.status] ?? lead.status}
+                <Badge variant={LEAD_STATUS_VARIANT[lead.status] ?? "secondary"}>
+                  {LEAD_STATUS_LABEL[lead.status] ?? lead.status}
                 </Badge>
               </div>
             ))}

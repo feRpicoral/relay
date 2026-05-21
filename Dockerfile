@@ -12,8 +12,11 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@4.14.1 --activate
 
 COPY package.json yarn.lock .yarnrc.yml ./
-RUN yarn install --immutable
-
+# Prisma 7's `postinstall: prisma generate` (declared in package.json) runs as
+# part of `yarn install`, so the schema + config + tsconfig must be present
+# BEFORE the install — otherwise generate fails with "Could not find Prisma
+# Schema" and the whole install aborts. Prisma 6 used to no-op silently in
+# this case; Prisma 7 errors out.
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY tsconfig.json ./
@@ -21,7 +24,7 @@ COPY tsconfig.json ./
 # satisfies the throw; the generated client uses the real DATABASE_URL via the
 # adapter at runtime.
 ENV DIRECT_URL=postgresql://buildtime/placeholder
-RUN yarn prisma generate
+RUN yarn install --immutable
 
 COPY lib ./lib
 COPY worker ./worker

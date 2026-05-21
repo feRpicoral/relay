@@ -1,16 +1,13 @@
-import { redirect } from "next/navigation";
-
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
-import { requireSession } from "@/lib/auth/session";
+import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 
 import { NewCampaignForm } from "./form";
 
 export default async function NewCampaignPage() {
-  const session = await requireSession();
-  if (session.role !== "ADMIN") redirect("/campaigns");
+  const session = await requireAdmin();
 
   const db = getDb(session.orgId);
   const [agents, phones] = await Promise.all([

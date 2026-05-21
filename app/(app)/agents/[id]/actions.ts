@@ -4,11 +4,12 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
+import { E164_REGEX } from "@/lib/validation/phone";
 import { BusinessHoursSchema } from "@/lib/voice/types";
 
 type Result = { ok: true } | { ok: false; error: string };
 
-const E164 = z.string().regex(/^\+\d{6,18}$/, "Use formato E.164: +5511999998888");
+const E164 = z.string().regex(E164_REGEX, "Use formato E.164: +5511999998888");
 
 const SettingsSchema = z.object({
   agentId: z.string().uuid(),

@@ -8,33 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { requireSession } from "@/lib/auth/session";
+import { OUTCOME_LABEL, SENTIMENT_LABEL, SENTIMENT_VARIANT } from "@/lib/calls/labels";
 import { getDb } from "@/lib/db/with-org";
 import { cn, currency, formatDuration, formatPhone } from "@/lib/utils";
 
 import { CallDetailBody } from "./detail-body";
-
-const OUTCOME_LABEL: Record<string, string> = {
-  SCHEDULED: "Agendou",
-  QUALIFIED: "Qualificou",
-  TRANSFERRED: "Transferiu",
-  NOT_QUALIFIED: "Não qualificou",
-  NO_ANSWER: "Não atendeu",
-  OTHER: "Outro",
-};
-
-const SENTIMENT_LABEL: Record<string, string> = {
-  POSITIVE: "Positivo",
-  NEUTRAL: "Neutro",
-  NEGATIVE: "Negativo",
-  MIXED: "Misto",
-};
-
-const SENTIMENT_VARIANT: Record<string, "success" | "secondary" | "destructive" | "warning"> = {
-  POSITIVE: "success",
-  NEUTRAL: "secondary",
-  NEGATIVE: "destructive",
-  MIXED: "warning",
-};
 
 export default async function CallDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

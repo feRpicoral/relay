@@ -1,14 +1,11 @@
-import { redirect } from "next/navigation";
-
-import { requireSession } from "@/lib/auth/session";
+import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 
 import { InviteMemberForm } from "./invite-form";
 import { MembersTable } from "./members-table";
 
 export default async function MembersPage() {
-  const session = await requireSession();
-  if (session.role !== "ADMIN") redirect("/dashboard");
+  const session = await requireAdmin();
 
   const db = getDb(session.orgId);
   const [memberships, invites] = await Promise.all([

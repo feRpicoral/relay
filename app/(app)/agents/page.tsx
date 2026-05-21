@@ -1,7 +1,6 @@
 import { Bot, Plus } from "lucide-react";
 import Link from "next/link";
 
-import { CallStatusBadge } from "@/components/call/call-status-badge";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,10 +88,6 @@ export default async function AgentsPage() {
           </div>
         )}
       </div>
-      {/* Suppress unused import warning. */}
-      <span className="hidden">
-        <CallStatusBadge status="COMPLETED" />
-      </span>
     </>
   );
 }

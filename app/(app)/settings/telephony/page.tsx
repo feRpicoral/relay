@@ -1,8 +1,7 @@
 import { Phone } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { Empty } from "@/components/ui/empty";
-import { requireSession } from "@/lib/auth/session";
+import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 import { getConnectionStatus } from "@/lib/telephony/connection";
 import { type AvailableNumber, listAvailableNumbers } from "@/lib/telephony/provisioning";
@@ -11,8 +10,7 @@ import { ConnectForm } from "./connect-form";
 import { ConnectedPanel } from "./connected-panel";
 
 export default async function TelephonyPage() {
-  const session = await requireSession();
-  if (session.role !== "ADMIN") redirect("/settings");
+  const session = await requireAdmin();
 
   const status = await getConnectionStatus(session.orgId);
   if (!status.connected) {

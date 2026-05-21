@@ -7,26 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { requireSession } from "@/lib/auth/session";
+import { CAMPAIGN_STATUS_LABEL, CAMPAIGN_STATUS_VARIANT } from "@/lib/campaigns/labels";
 import { getDb } from "@/lib/db/with-org";
-
-const STATUS_VARIANT: Record<
-  string,
-  "default" | "secondary" | "success" | "warning" | "destructive"
-> = {
-  DRAFT: "secondary",
-  RUNNING: "default",
-  PAUSED: "warning",
-  COMPLETED: "success",
-  CANCELED: "destructive",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Rascunho",
-  RUNNING: "Rodando",
-  PAUSED: "Pausada",
-  COMPLETED: "Concluída",
-  CANCELED: "Cancelada",
-};
 
 export default async function CampaignsPage() {
   const session = await requireSession();
@@ -81,8 +63,8 @@ export default async function CampaignsPage() {
                         tentativas
                       </p>
                     </div>
-                    <Badge variant={STATUS_VARIANT[c.status] ?? "secondary"}>
-                      {STATUS_LABEL[c.status] ?? c.status}
+                    <Badge variant={CAMPAIGN_STATUS_VARIANT[c.status] ?? "secondary"}>
+                      {CAMPAIGN_STATUS_LABEL[c.status] ?? c.status}
                     </Badge>
                   </div>
                 </Link>

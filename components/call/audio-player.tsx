@@ -5,10 +5,10 @@ import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { cn, formatTimestamp } from "@/lib/utils";
 
-const MS_PER_SECOND = 1000;
 const PERCENT_DIVISOR = 100;
+const MS_PER_SECOND = 1000;
 
 interface AudioPlayerProps {
   src: string | null;
@@ -84,21 +84,14 @@ export function AudioPlayer({ src, className, onTimeUpdate }: AudioPlayerProps) 
       <Button type="button" variant="secondary" size="icon-sm" onClick={toggle}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
-      <span className="text-muted-foreground font-mono text-xs">{formatTime(currentMs)}</span>
+      <span className="text-muted-foreground font-mono text-xs">{formatTimestamp(currentMs)}</span>
       <Slider
         value={[durationMs ? (currentMs / durationMs) * PERCENT_DIVISOR : 0]}
         onValueChange={([v]) => seek(v ?? 0)}
         className="flex-1"
         max={PERCENT_DIVISOR}
       />
-      <span className="text-muted-foreground font-mono text-xs">{formatTime(durationMs)}</span>
+      <span className="text-muted-foreground font-mono text-xs">{formatTimestamp(durationMs)}</span>
     </div>
   );
-}
-
-function formatTime(ms: number): string {
-  const s = Math.floor(ms / MS_PER_SECOND);
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${r.toString().padStart(2, "0")}`;
 }

@@ -1,20 +1,18 @@
 import { CalendarCheck2, ExternalLink } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
-import { requireSession } from "@/lib/auth/session";
+import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 
 import { ConnectForm } from "./connect-form";
 import { DefaultEventTypePicker } from "./event-type-picker";
 
 export default async function CalendarSettingsPage() {
-  const session = await requireSession();
-  if (session.role !== "ADMIN") redirect("/settings");
+  const session = await requireAdmin();
 
   const db = getDb(session.orgId);
   const connection = await db.calcomConnection.findUnique({ where: { orgId: session.orgId } });

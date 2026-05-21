@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeList } from "@/hooks/use-realtime";
-import { cn } from "@/lib/utils";
+import { cn, formatTimestamp } from "@/lib/utils";
 
 interface TranscriptRow {
   id: string;
@@ -107,11 +107,4 @@ function TranscriptTurn({ row }: { row: TranscriptRow }) {
       <p>{row.text}</p>
     </div>
   );
-}
-
-function formatTimestamp(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${r.toString().padStart(2, "0")}`;
 }

@@ -13,8 +13,7 @@ export function CampaignActions({ campaignId, status }: { campaignId: string; st
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  function handle<T>(fn: () => Promise<{ ok: true } | { ok: false; error: string }>, msg: string) {
-    void ({} as T);
+  function handle(fn: () => Promise<{ ok: true } | { ok: false; error: string }>, msg: string) {
     startTransition(async () => {
       const result = await fn();
       if (result.ok) {
