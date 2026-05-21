@@ -20,6 +20,20 @@ export interface CartesiaVoice {
   description: string | null;
 }
 
+/**
+ * Shape consumed by the agent voice-picker UI. The catalog lives in this
+ * module (Cartesia-only today; ElevenLabs would be a sibling), so the UI type
+ * lives here too — no separate `lib/voice/voices.ts` needed.
+ */
+export interface VoiceOption {
+  provider: "cartesia" | "elevenlabs";
+  voiceId: string;
+  label: string;
+  language: "pt-BR" | "en-US";
+  gender: "female" | "male" | "neutral";
+  description?: string;
+}
+
 interface CartesiaVoiceRaw {
   id: string;
   name?: string | null;

@@ -31,12 +31,19 @@ const NONCE_LENGTH = 12;
 // the salt alongside ciphertext for no real security gain.
 const SALT = "relay.encryption.v1";
 
+// scrypt is intentionally slow (~100ms per call). The derived key is
+// deterministic from ENCRYPTION_KEY + SALT, so we compute it once per process
+// and cache. ENCRYPTION_KEY rotation requires a redeploy anyway.
+let cachedKey: Buffer | null = null;
+
 function key(): Buffer {
+  if (cachedKey) return cachedKey;
   const secret = requireEnv("ENCRYPTION_KEY");
   if (secret.length < 32) {
     throw new Error("ENCRYPTION_KEY must be at least 32 characters.");
   }
-  return scryptSync(secret, SALT, KEY_LENGTH);
+  cachedKey = scryptSync(secret, SALT, KEY_LENGTH);
+  return cachedKey;
 }
 
 export function encryptSecret(plaintext: string): string {

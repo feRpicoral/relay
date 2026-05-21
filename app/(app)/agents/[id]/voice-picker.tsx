@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { VoiceOption } from "@/lib/voice/voices";
+import type { VoiceOption } from "@/lib/voice/cartesia-voices";
 
 import { updateAgentVoiceAction } from "./actions";
 
