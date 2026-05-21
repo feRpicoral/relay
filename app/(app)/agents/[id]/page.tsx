@@ -8,8 +8,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
+import { listCartesiaVoices } from "@/lib/voice/cartesia-voices";
 import { BusinessHoursSchema } from "@/lib/voice/types";
-import { VOICES } from "@/lib/voice/voices";
 
 import { BusinessHoursForm } from "./hours-form";
 import { KnowledgeBase } from "./knowledge-base";
@@ -83,7 +83,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
                 language={agent.language}
                 currentVoiceId={agent.voiceId}
                 currentProvider={agent.ttsProvider}
-                voices={availableVoices()}
+                voices={await loadCartesiaVoicesForLang(agent.language)}
               />
             </Card>
           </TabsContent>
@@ -147,7 +147,17 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
  * env var is unset, we filter them out, preventing a state where the UI sets
  * `ttsProvider = ELEVENLABS` against a worker that can't synthesize.
  */
-function availableVoices() {
-  const elevenlabsEnabled = Boolean(process.env.ELEVENLABS_API_KEY);
-  return elevenlabsEnabled ? VOICES : VOICES.filter((v) => v.provider !== "elevenlabs");
+async function loadCartesiaVoicesForLang(language: "PT_BR" | "EN_US" | "AUTO") {
+  const langPrefix = language === "EN_US" ? "en" : "pt";
+  const voices = await listCartesiaVoices({ language: langPrefix });
+  // AUTO falls back to pt-br voices for now since that's the primary use case;
+  // the agent picks language at conversation start regardless.
+  return voices.map((v) => ({
+    provider: "cartesia" as const,
+    voiceId: v.id,
+    label: v.label,
+    language: language === "EN_US" ? ("en-US" as const) : ("pt-BR" as const),
+    gender: (v.gender as "female" | "male" | "neutral") ?? "neutral",
+    description: v.description ?? undefined,
+  }));
 }

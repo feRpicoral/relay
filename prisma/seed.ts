@@ -319,7 +319,11 @@ async function main() {
           name: "Recepcionista Mariana",
           language: "PT_BR",
           ttsProvider: "CARTESIA",
-          voiceId: "pt-br-mariana",
+          // Empty intentionally — the seed has no live Cartesia access, so we
+          // can't pick a real UUID here. After seeding, open the agent's Voz
+          // tab and pick one; until then TTS will fail with "voice ID must be
+          // a valid UUID" in the worker logs.
+          voiceId: "",
           greeting: "Olá! Obrigada por ligar para a Clínica Lumen. Como posso ajudar?",
           personaPrompt:
             "Você é Mariana, recepcionista virtual da Clínica Lumen, especializada em ortopedia. Seja calorosa, eficiente e direta. Sempre confirme detalhes antes de agendar.",
