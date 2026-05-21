@@ -122,7 +122,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `LIVEKIT_API_SECRET`                    | from LiveKit Cloud project                                                  | same                            | yes       |
 | `LIVEKIT_URL`                           | `wss://<project>.livekit.cloud`                                             | same                            | no        |
 | `LIVEKIT_SIP_INBOUND_TRUNK_ID`          | id of the shared LiveKit inbound trunk (E.164 allow-list managed by app)    | same                            | no        |
-| `ENCRYPTION_KEY`                        | 32+ char random for `lib/crypto.ts` AES-256-GCM (`openssl rand -base64 48`) | same                            | yes       |
+| `ENCRYPTION_KEY`                        | 32+ char random for `lib/crypto.ts` AES-256-GCM (`openssl rand -base64 48`) | **same value as production**    | yes       |
 | `CALCOM_API_BASE`                       | `https://api.cal.com/v2`                                                    | same                            | no        |
 | `INNGEST_EVENT_KEY`                     | from `app.inngest.com`                                                      | from `inngest-cli dev`          | yes       |
 | `INNGEST_SIGNING_KEY`                   | from `app.inngest.com`                                                      | from `inngest-cli dev`          | yes       |
@@ -132,7 +132,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | `NEXT_PUBLIC_POSTHOG_KEY` _(optional)_  | from PostHog                                                                | same or unset                   | no        |
 | `NEXT_PUBLIC_POSTHOG_HOST` _(optional)_ | `https://us.i.posthog.com`                                                  | same                            | no        |
 
-Twilio credentials are stored per-org in the database (`TwilioConnection`), not in env vars. Each org admin pastes an API Key in **Settings, Telefonia**; the app then provisions the org's Elastic SIP Trunk, registers a per-org LiveKit outbound trunk, and keeps the shared inbound trunk's allow-list in sync.
+Twilio credentials are stored per-org in the database (`TwilioConnection`), not in env vars. Each org admin pastes an API Key in **Settings, Telefonia**; the app then provisions the org's Elastic SIP Trunk, registers a per-org LiveKit outbound trunk, and keeps the shared inbound trunk's allow-list in sync. `ENCRYPTION_KEY` **must be identical between local and production** — secrets written in one environment can't be decrypted by the other if the keys differ, so rotating it requires re-pasting every Twilio connection.
 
 One value differs between local and production: **`DATABASE_URL`** uses the transaction pooler in production (every serverless invocation opens a fresh connection) and the session pooler locally (longer-lived, supports prepared statements, plays nicely on IPv4 home networks).
 
@@ -169,9 +169,12 @@ This one is different from the others: **you (the Relay operator) don't need a T
 
 Tenant flow (do this once per workspace, in the Relay dashboard):
 
-1. Go to **Settings, Telefonia** in Relay. The screen shows a connection form.
-2. In a separate tab, open [Twilio Console](https://console.twilio.com), **Account, API Keys & tokens, Create API key**, type **Standard**, friendly name `Relay`. Copy the **SID**, **Secret**, and the **Account SID** from the top of the console.
-3. Paste all three into the Relay form. Relay validates the credentials, stores the secret encrypted (`lib/crypto.ts`, AES-256-GCM with `ENCRYPTION_KEY`), and lists the Twilio numbers in your account.
+1. Go to **Settings, Telefonia** in Relay. The screen shows a connection form with three fields.
+2. In a separate tab, open [Twilio Console](https://console.twilio.com), **Account, API Keys & tokens, Create API key**, type **Standard**, friendly name `Relay`. The page shows three identifiers — paste them into Relay matching exactly:
+   - **API Key SID** (starts with `SK`) → "API Key SID" field
+   - **Secret** (long opaque string, shown only once at creation) → "API Key Secret" field
+   - **Account SID** (starts with `AC`, visible at the top of any Twilio Console page) → "Account SID" field
+3. Submit. Relay validates against `/v2010/accounts/{sid}.json`, stores the secret encrypted (`lib/crypto.ts`, AES-256-GCM with `ENCRYPTION_KEY`), and lists the Twilio numbers in your account.
 4. For each number you want a Relay agent to answer, click **Conectar** and pick the agent. Relay then:
    - Creates a Twilio Elastic SIP Trunk on your account (first attach only)
    - Sets the trunk's Origination URL to your LiveKit inbound SIP host
