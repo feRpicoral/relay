@@ -19,7 +19,6 @@ interface TranscriptRow {
 
 interface TranscriptStreamProps {
   callId: string;
-  orgId: string;
   initial: Array<{
     id: string;
     speaker: "USER" | "AGENT" | "SYSTEM";
@@ -31,7 +30,7 @@ interface TranscriptStreamProps {
   }>;
 }
 
-export function TranscriptStream({ callId, orgId, initial }: TranscriptStreamProps) {
+export function TranscriptStream({ callId, initial }: TranscriptStreamProps) {
   const initialRows: TranscriptRow[] = useMemo(
     () =>
       initial.map((r) => ({
@@ -49,9 +48,10 @@ export function TranscriptStream({ callId, orgId, initial }: TranscriptStreamPro
 
   const rows = useRealtimeList<TranscriptRow>({
     table: "transcripts",
-    filter: `org_id=eq.${orgId}`,
+    filter: `call_id=eq.${callId}`,
+    channelKey: `transcript-stream:${callId}`,
     initial: initialRows,
-  }).filter((r) => r.call_id === callId);
+  });
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {

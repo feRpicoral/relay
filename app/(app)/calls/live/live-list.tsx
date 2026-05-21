@@ -23,6 +23,7 @@ export function LiveCallsList({ orgId, initial }: { orgId: string; initial: Call
   const rows = useRealtimeList<CallRow>({
     table: "calls",
     filter: `org_id=eq.${orgId}`,
+    channelKey: `live-list:${orgId}`,
     initial,
   });
 

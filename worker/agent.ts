@@ -42,9 +42,13 @@ import {
 } from "@/lib/voice/persistence";
 import { triggerPostCallAnalysis } from "@/lib/voice/post-call-trigger";
 import { buildGreeting, buildSystemPrompt } from "@/lib/voice/prompts";
+import { runInstrumentedTool } from "@/lib/voice/tool-instrumentation";
 import { lookupKb } from "@/lib/voice/tools/lookup-kb";
 
 const { AgentSessionEventTypes } = voice;
+
+/** Cap on slot candidates returned to the LLM. Keeps tool output compact. */
+const MAX_AVAILABILITY_CANDIDATES = 5;
 
 export default defineAgent({
   entry: async (ctx: JobContext) => {
@@ -120,7 +124,10 @@ export default defineAgent({
     const systemPrompt = buildSystemPrompt({ ...agentCtx, language });
     const callStartedAt = Date.now();
 
-    // Tools
+    // Tools. The three observability-only tools share the same instrumentation
+    // wrapper; transfer_to_human stays inline because it has bespoke
+    // "fallback not configured" branches that return a result object instead
+    // of throwing.
     const tools = {
       check_availability: llmModule.tool({
         description:
@@ -130,38 +137,22 @@ export default defineAgent({
           to: z.string().describe("ISO 8601 datetime of the latest acceptable slot"),
           durationMin: z.number().int().positive().describe("Appointment length in minutes"),
         }),
-        async execute({ from, to, durationMin }) {
-          const startedAt = new Date();
-          try {
-            const slots = await calcom.getAvailableSlots({
-              orgId: orgIdBranded,
-              fromIso: from,
-              toIso: to,
-              durationMin,
-            });
-            const output = { slots: slots.slice(0, 5) };
-            const endedAt = new Date();
-            await recordToolCall(orgIdBranded, callIdBranded, {
-              name: "check_availability",
-              inputJson: { from, to, durationMin },
-              outputJson: output,
-              startedAt,
-              endedAt,
-              durationMs: endedAt.getTime() - startedAt.getTime(),
-            });
-            return output;
-          } catch (err) {
-            const endedAt = new Date();
-            await recordToolCall(orgIdBranded, callIdBranded, {
-              name: "check_availability",
-              inputJson: { from, to, durationMin },
-              errorMessage: err instanceof Error ? err.message : String(err),
-              startedAt,
-              endedAt,
-              durationMs: endedAt.getTime() - startedAt.getTime(),
-            });
-            throw err;
-          }
+        async execute(input) {
+          return runInstrumentedTool({
+            orgId: orgIdBranded,
+            callId: callIdBranded,
+            name: "check_availability",
+            input,
+            execute: async () => {
+              const slots = await calcom.getAvailableSlots({
+                orgId: orgIdBranded,
+                fromIso: input.from,
+                toIso: input.to,
+                durationMin: input.durationMin,
+              });
+              return { slots: slots.slice(0, MAX_AVAILABILITY_CANDIDATES) };
+            },
+          });
         },
       }),
 
@@ -175,39 +166,23 @@ export default defineAgent({
           reason: z.string().max(280).optional(),
         }),
         async execute(input) {
-          const startedAt = new Date();
-          try {
-            const booking = await calcom.bookAppointment({
-              orgId: orgIdBranded,
-              slotIso: input.slotIso,
-              durationMin: input.durationMin,
-              patientName: input.patientName,
-              patientPhone: input.patientPhone,
-              reason: input.reason,
-            });
-            const output = { confirmationId: booking.id, status: booking.status };
-            const endedAt = new Date();
-            await recordToolCall(orgIdBranded, callIdBranded, {
-              name: "book_appointment",
-              inputJson: input,
-              outputJson: output,
-              startedAt,
-              endedAt,
-              durationMs: endedAt.getTime() - startedAt.getTime(),
-            });
-            return output;
-          } catch (err) {
-            const endedAt = new Date();
-            await recordToolCall(orgIdBranded, callIdBranded, {
-              name: "book_appointment",
-              inputJson: input,
-              errorMessage: err instanceof Error ? err.message : String(err),
-              startedAt,
-              endedAt,
-              durationMs: endedAt.getTime() - startedAt.getTime(),
-            });
-            throw err;
-          }
+          return runInstrumentedTool({
+            orgId: orgIdBranded,
+            callId: callIdBranded,
+            name: "book_appointment",
+            input,
+            execute: async () => {
+              const booking = await calcom.bookAppointment({
+                orgId: orgIdBranded,
+                slotIso: input.slotIso,
+                durationMin: input.durationMin,
+                patientName: input.patientName,
+                patientPhone: input.patientPhone,
+                reason: input.reason,
+              });
+              return { confirmationId: booking.id, status: booking.status };
+            },
+          });
         },
       }),
 
@@ -215,19 +190,17 @@ export default defineAgent({
         description:
           "Search the business knowledge base (FAQ, hours, policies). Use BEFORE answering any question not in your context.",
         parameters: z.object({ query: z.string().min(2).max(500) }),
-        async execute({ query }) {
-          const startedAt = new Date();
-          const chunks = await lookupKb(orgIdBranded, query);
-          const endedAt = new Date();
-          await recordToolCall(orgIdBranded, callIdBranded, {
+        async execute(input) {
+          return runInstrumentedTool({
+            orgId: orgIdBranded,
+            callId: callIdBranded,
             name: "lookup_kb",
-            inputJson: { query },
-            outputJson: { chunks },
-            startedAt,
-            endedAt,
-            durationMs: endedAt.getTime() - startedAt.getTime(),
+            input,
+            execute: async () => {
+              const chunks = await lookupKb(orgIdBranded, input.query);
+              return { chunks };
+            },
           });
-          return { chunks };
         },
       }),
 
@@ -423,31 +396,58 @@ export default defineAgent({
     await session.start({ agent, room: ctx.room });
     await session.say(buildGreeting(agentCtx));
 
-    // Wait for hangup
+    // Wait for hangup. Both events can fire (e.g. SIP participant leaves, then
+    // room finishes), so we guard against double-resolve and remove the
+    // listener once one wins. Without `off()` the participantDisconnected
+    // handler would linger in the worker process and double-handle on any
+    // late-arriving event.
     await new Promise<void>((resolve) => {
-      const finish = () => resolve();
-      ctx.room.once("disconnected", finish);
-      ctx.room.on("participantDisconnected", (p: { identity?: string }) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        ctx.room.off("participantDisconnected", onParticipantLeft);
+        resolve();
+      };
+      const onParticipantLeft = (p: { identity?: string }) => {
         // The SIP participant disconnecting ends the call. The agent's own
         // participant identity won't trigger this since it's the local.
         if (p.identity?.startsWith("agent")) return;
         finish();
-      });
+      };
+      ctx.room.once("disconnected", finish);
+      ctx.room.on("participantDisconnected", onParticipantLeft);
     });
 
+    // Post-hangup finalization MUST not throw unhandled: this worker process
+    // serves multiple calls in sequence and an unhandled rejection here
+    // crashes the entire worker. We wrap each side-effect individually so a
+    // single failure doesn't skip the others.
     const durationMs = Date.now() - callStartedAt;
     const costCents = estimateCallCostCents({
       durationMs,
       ttsProvider: agentCtx.ttsProvider,
       language: agentCtx.language,
     });
-    await markCallEnded(orgIdBranded, callIdBranded, {
-      status: "COMPLETED",
-      durationMs,
-      costCents,
-    });
-    await recordCallEvent(orgIdBranded, callIdBranded, "HANGUP", { durationMs });
-    await triggerPostCallAnalysis(callId);
+    try {
+      await markCallEnded(orgIdBranded, callIdBranded, {
+        status: "COMPLETED",
+        durationMs,
+        costCents,
+      });
+    } catch (err) {
+      console.warn("[agent] markCallEnded failed", err);
+    }
+    try {
+      await recordCallEvent(orgIdBranded, callIdBranded, "HANGUP", { durationMs });
+    } catch (err) {
+      console.warn("[agent] recordCallEvent HANGUP failed", err);
+    }
+    // Fire-and-forget the post-call analysis: it has its own Inngest retries
+    // and we don't want to block worker teardown on it.
+    void triggerPostCallAnalysis(callId).catch((err: unknown) =>
+      console.warn("[agent] triggerPostCallAnalysis failed", err),
+    );
   },
 });
 

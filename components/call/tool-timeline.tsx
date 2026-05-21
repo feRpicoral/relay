@@ -20,7 +20,6 @@ interface ToolRow {
 
 interface ToolTimelineProps {
   callId: string;
-  orgId: string;
   initial: Array<{
     id: string;
     name: string;
@@ -33,7 +32,7 @@ interface ToolTimelineProps {
   }>;
 }
 
-export function ToolTimeline({ callId, orgId, initial }: ToolTimelineProps) {
+export function ToolTimeline({ callId, initial }: ToolTimelineProps) {
   const initialRows: ToolRow[] = useMemo(
     () =>
       initial.map((r) => ({
@@ -52,9 +51,10 @@ export function ToolTimeline({ callId, orgId, initial }: ToolTimelineProps) {
 
   const rows = useRealtimeList<ToolRow>({
     table: "tool_calls",
-    filter: `org_id=eq.${orgId}`,
+    filter: `call_id=eq.${callId}`,
+    channelKey: `tool-timeline:${callId}`,
     initial: initialRows,
-  }).filter((r) => r.call_id === callId);
+  });
 
   if (rows.length === 0) {
     return <p className="text-muted-foreground text-sm">Nenhuma ferramenta usada nesta chamada.</p>;

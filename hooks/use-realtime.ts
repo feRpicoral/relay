@@ -9,28 +9,44 @@ type RowFor<T> = T & { id: string };
 interface UseRealtimeListOptions<T> {
   table: string;
   filter?: string;
-  orderBy?: "asc" | "desc";
+  /**
+   * Unique key for this subscription. Two components that subscribe to the
+   * same table + filter would otherwise share a channel and step on each
+   * other's teardown. Pass something stable per use site (component name +
+   * relevant id).
+   */
+  channelKey: string;
   initial: RowFor<T>[];
 }
 
 /**
- * Subscribe to inserts/updates on a Supabase table. Returns a state array that
- * automatically appends new rows and replaces updated ones.
+ * Subscribe to inserts/updates/deletes on a Supabase table. Returns a state
+ * array that automatically appends new rows, replaces updated ones, and drops
+ * deleted ones.
  *
- * `filter` example: `org_id=eq.<uuid>` or `call_id=eq.<uuid>`. See Supabase docs.
+ * `filter` example: `org_id=eq.<uuid>` or `call_id=eq.<uuid>`. See Supabase
+ * docs. Prefer the narrowest filter the subscriber actually needs; broad
+ * `org_id` filters force the client to re-render on every row in the org.
+ *
+ * The `initial` snapshot is treated as a static SSR seed — callers that want
+ * a fresh snapshot on, say, a different callId must remount the consumer via
+ * a `key` prop.
  */
 export function useRealtimeList<T>({
   table,
   filter,
+  channelKey,
   initial,
 }: UseRealtimeListOptions<T>): RowFor<T>[] {
-  const [rows, setRows] = useState<RowFor<T>[]>(initial as RowFor<T>[]);
-  const seen = useRef(new Set<string>(rows.map((r) => r.id)));
+  const [rows, setRows] = useState<RowFor<T>[]>(initial);
+  const seen = useRef(new Set<string>(initial.map((r) => r.id)));
 
   useEffect(() => {
     const supabase = getBrowserSupabase();
+    // Namespacing with `channelKey` prevents two mounted components from
+    // sharing a channel and tearing each other down on unmount.
     const channel = supabase
-      .channel(`rt:${table}:${filter ?? "all"}`)
+      .channel(`rt:${channelKey}:${table}:${filter ?? "all"}`)
       .on(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "postgres_changes" as any,
@@ -49,12 +65,30 @@ export function useRealtimeList<T>({
           setRows((prev) => prev.map((r) => (r.id === payload.new.id ? payload.new : r)));
         },
       )
-      .subscribe();
+      .on(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "postgres_changes" as any,
+        { event: "DELETE", schema: "public", table, filter },
+        (payload: { old: RowFor<T> }) => {
+          const id = payload.old?.id;
+          if (!id) return;
+          seen.current.delete(id);
+          setRows((prev) => prev.filter((r) => r.id !== id));
+        },
+      )
+      .subscribe((status: string, err?: Error) => {
+        // Realtime errors (RLS reject, missing publication) are otherwise
+        // silent. Surface them so misconfiguration is visible.
+        if (err) console.warn("[use-realtime] subscribe error", { table, filter, err });
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("[use-realtime] channel status", { table, filter, status });
+        }
+      });
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
-  }, [table, filter]);
+  }, [table, filter, channelKey]);
 
   return rows;
 }
@@ -78,10 +112,12 @@ export function useRealtimeRow<T>({ table, id, initial }: UseRealtimeRowOptions<
         { event: "UPDATE", schema: "public", table, filter: `id=eq.${id}` },
         (payload: { new: T }) => setRow(payload.new),
       )
-      .subscribe();
+      .subscribe((status: string, err?: Error) => {
+        if (err) console.warn("[use-realtime] row subscribe error", { table, id, err });
+      });
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [table, id]);
 

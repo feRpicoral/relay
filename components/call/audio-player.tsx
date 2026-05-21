@@ -1,17 +1,14 @@
 "use client";
 
 import { Pause, Play } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
-export interface AudioPlayerHandle {
-  seek: (ms: number) => void;
-  play: () => void;
-  pause: () => void;
-}
+const MS_PER_SECOND = 1000;
+const PERCENT_DIVISOR = 100;
 
 interface AudioPlayerProps {
   src: string | null;
@@ -25,24 +22,21 @@ export function AudioPlayer({ src, className, onTimeUpdate }: AudioPlayerProps) 
   const [currentMs, setCurrentMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
 
-  useEffect(() => {
-    onTimeUpdate?.(currentMs);
-  }, [currentMs, onTimeUpdate]);
-
   function toggle() {
     const a = audioRef.current;
     if (!a) return;
     if (playing) {
       a.pause();
     } else {
-      a.play().catch(() => undefined);
+      // Surface autoplay-policy failures by reverting the playing state.
+      a.play().catch(() => setPlaying(false));
     }
   }
 
   function seek(percent: number) {
     const a = audioRef.current;
     if (!a || !durationMs) return;
-    a.currentTime = (percent / 100) * (durationMs / 1000);
+    a.currentTime = (percent / PERCENT_DIVISOR) * (durationMs / MS_PER_SECOND);
   }
 
   if (!src) {
@@ -71,18 +65,31 @@ export function AudioPlayer({ src, className, onTimeUpdate }: AudioPlayerProps) 
         preload="metadata"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onLoadedMetadata={(e) => setDurationMs(e.currentTarget.duration * 1000)}
-        onTimeUpdate={(e) => setCurrentMs(e.currentTarget.currentTime * 1000)}
+        onLoadedMetadata={(e) => {
+          // Streamed audio without a known length reports Infinity here, which
+          // would poison every percent math downstream.
+          const d = e.currentTarget.duration;
+          setDurationMs(Number.isFinite(d) ? d * MS_PER_SECOND : 0);
+        }}
+        onTimeUpdate={(e) => {
+          const ms = e.currentTarget.currentTime * MS_PER_SECOND;
+          setCurrentMs(ms);
+          // Fire the callback synchronously from the DOM event instead of
+          // bouncing through a useEffect: the effect-as-callback pattern fires
+          // on every parent re-render and creates an extra render cycle per
+          // tick.
+          onTimeUpdate?.(ms);
+        }}
       />
       <Button type="button" variant="secondary" size="icon-sm" onClick={toggle}>
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
       <span className="text-muted-foreground font-mono text-xs">{formatTime(currentMs)}</span>
       <Slider
-        value={[durationMs ? (currentMs / durationMs) * 100 : 0]}
+        value={[durationMs ? (currentMs / durationMs) * PERCENT_DIVISOR : 0]}
         onValueChange={([v]) => seek(v ?? 0)}
         className="flex-1"
-        max={100}
+        max={PERCENT_DIVISOR}
       />
       <span className="text-muted-foreground font-mono text-xs">{formatTime(durationMs)}</span>
     </div>
@@ -90,7 +97,7 @@ export function AudioPlayer({ src, className, onTimeUpdate }: AudioPlayerProps) 
 }
 
 function formatTime(ms: number): string {
-  const s = Math.floor(ms / 1000);
+  const s = Math.floor(ms / MS_PER_SECOND);
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${m}:${r.toString().padStart(2, "0")}`;

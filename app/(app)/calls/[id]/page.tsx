@@ -141,7 +141,6 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             <div className="px-6 pb-6">
               <ToolTimeline
                 callId={call.id}
-                orgId={call.orgId}
                 initial={call.toolCalls.map((t) => ({
                   id: t.id,
                   name: t.name,

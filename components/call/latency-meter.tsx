@@ -33,11 +33,10 @@ const LEG_BUDGET: Record<MetricRow["leg"], number> = {
 
 interface LatencyMeterProps {
   callId: string;
-  orgId: string;
   initial: Array<{ id: string; leg: MetricRow["leg"]; valueMs: number; occurredAt: string }>;
 }
 
-export function LatencyMeter({ callId, orgId, initial }: LatencyMeterProps) {
+export function LatencyMeter({ callId, initial }: LatencyMeterProps) {
   const initialRows: MetricRow[] = useMemo(
     () =>
       initial.map((r) => ({
@@ -50,11 +49,14 @@ export function LatencyMeter({ callId, orgId, initial }: LatencyMeterProps) {
     [initial, callId],
   );
 
+  // Scope realtime to this call so we don't re-render on every other call's
+  // metrics across the org.
   const rows = useRealtimeList<MetricRow>({
     table: "call_metrics",
-    filter: `org_id=eq.${orgId}`,
+    filter: `call_id=eq.${callId}`,
+    channelKey: `latency-meter:${callId}`,
     initial: initialRows,
-  }).filter((r) => r.call_id === callId);
+  });
 
   const aggregates = useMemo(() => {
     const out: Record<string, { last: number; avg: number; p95: number }> = {};

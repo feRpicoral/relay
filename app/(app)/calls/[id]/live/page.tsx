@@ -103,7 +103,6 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
             <div className="px-6 pb-6">
               <LatencyMeter
                 callId={call.id}
-                orgId={call.orgId}
                 initial={call.metrics.map((m) => ({
                   id: m.id,
                   leg: m.leg,
@@ -122,7 +121,6 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
             <div className="px-6 pb-6">
               <ToolTimeline
                 callId={call.id}
-                orgId={call.orgId}
                 initial={call.toolCalls.map((t) => ({
                   id: t.id,
                   name: t.name,
@@ -148,7 +146,6 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
           <div className="flex-1 overflow-hidden">
             <TranscriptStream
               callId={call.id}
-              orgId={call.orgId}
               initial={call.transcripts.map((t) => ({
                 id: t.id,
                 speaker: t.speaker,
