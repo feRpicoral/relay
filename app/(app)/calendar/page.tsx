@@ -7,6 +7,9 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
+import { BookAppointmentInputSchema, BookAppointmentOutputSchema } from "@/lib/voice/tool-schemas";
+
+const RECENT_BOOKINGS_LIMIT = 20;
 
 export default async function CalendarPage() {
   const session = await requireSession();
@@ -17,7 +20,7 @@ export default async function CalendarPage() {
     db.toolCall.findMany({
       where: { name: "book_appointment" },
       orderBy: { startedAt: "desc" },
-      take: 20,
+      take: RECENT_BOOKINGS_LIMIT,
       include: {
         call: { select: { id: true, callerE164: true } },
       },
@@ -63,8 +66,16 @@ export default async function CalendarPage() {
             </CardHeader>
             <div className="divide-border divide-y">
               {recentBookings.map((booking) => {
-                const input = booking.inputJson as Record<string, unknown>;
-                const output = booking.outputJson as Record<string, unknown> | null;
+                // Parse via Zod so a worker-side schema drift surfaces as
+                // "-" instead of crashing the calendar view.
+                const input = BookAppointmentInputSchema.safeParse(booking.inputJson);
+                const output = BookAppointmentOutputSchema.safeParse(booking.outputJson);
+                const patientName = input.success ? input.data.patientName : "Paciente";
+                const slotIso = input.success ? input.data.slotIso : "";
+                const patientPhone = input.success ? input.data.patientPhone : "";
+                const status = output.success ? output.data.status : null;
+                const displayStatus =
+                  status === "ACCEPTED" || status === "CONFIRMED" ? "Confirmada" : (status ?? "-");
                 return (
                   <Link
                     key={booking.id}
@@ -72,16 +83,12 @@ export default async function CalendarPage() {
                     className="hover:bg-accent/40 flex items-center justify-between px-5 py-3 transition-colors"
                   >
                     <div>
-                      <p className="font-medium">{String(input.patientName ?? "Paciente")}</p>
+                      <p className="font-medium">{patientName}</p>
                       <p className="text-muted-foreground text-xs">
-                        {String(input.slotIso ?? "")}, {String(input.patientPhone ?? "")}
+                        {slotIso}, {patientPhone}
                       </p>
                     </div>
-                    <p className="text-muted-foreground text-xs">
-                      {output?.status === "ACCEPTED" || output?.status === "CONFIRMED"
-                        ? "Confirmada"
-                        : ((output?.status as string) ?? "-")}
-                    </p>
+                    <p className="text-muted-foreground text-xs">{displayStatus}</p>
                   </Link>
                 );
               })}
