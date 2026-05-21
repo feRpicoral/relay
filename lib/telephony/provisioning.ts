@@ -30,6 +30,18 @@ export interface AvailableNumber {
 const RELAY_TRUNK_FRIENDLY_PREFIX = "relay-";
 
 /**
+ * Twilio's trunk `domain_name` is not auto-assigned on create — it stays null
+ * unless you set it explicitly. We derive a deterministic, globally-unique
+ * subdomain from the orgId so the same org always gets the same hostname even
+ * if we recreate the trunk later. Format must match `[a-z0-9-]+.pstn.twilio.com`,
+ * start and end alphanumeric, max 64 chars total.
+ */
+function deriveTrunkDomain(orgId: string): string {
+  const slug = orgId.replace(/-/g, "").slice(0, 16).toLowerCase();
+  return `relay-${slug}.pstn.twilio.com`;
+}
+
+/**
  * List the org's Twilio numbers and annotate each with our DB state.
  */
 export async function listAvailableNumbers(orgId: OrgId): Promise<AvailableNumber[]> {
@@ -69,38 +81,44 @@ async function ensureTwilioTrunk(orgId: OrgId): Promise<{
   const conn = await getPrisma().twilioConnection.findUniqueOrThrow({ where: { orgId } });
 
   let trunkSid = conn.twilioTrunkSid;
-  // Twilio's SDK types domainName as optional and on the fetch path the field
-  // is sometimes returned undefined. Always source it from our cache first;
-  // only re-fetch when we don't have it yet.
   let domainName: string | undefined = conn.twilioTrunkDomain ?? undefined;
+  const desiredDomain = deriveTrunkDomain(orgId);
 
   if (trunkSid && !domainName) {
+    // Re-fetch to see if Twilio has the domain set (e.g. user added it
+    // manually in the Console). If still missing, patch it ourselves so the
+    // trunk has a Termination URI we can hand to LiveKit.
     const existing = await client.trunking.v1.trunks(trunkSid).fetch();
     domainName = existing.domainName ?? undefined;
-    if (domainName) {
-      await getPrisma().twilioConnection.update({
-        where: { orgId },
-        data: { twilioTrunkDomain: domainName },
-      });
+    if (!domainName) {
+      const patched = await client.trunking.v1
+        .trunks(trunkSid)
+        .update({ domainName: desiredDomain });
+      domainName = patched.domainName ?? desiredDomain;
     }
+    await getPrisma().twilioConnection.update({
+      where: { orgId },
+      data: { twilioTrunkDomain: domainName },
+    });
   }
 
   if (!trunkSid) {
+    // Create with domainName explicit. Twilio leaves it null otherwise and
+    // LiveKit later rejects with "no outbound address specified".
     const trunk = await client.trunking.v1.trunks.create({
       friendlyName: `${RELAY_TRUNK_FRIENDLY_PREFIX}${orgId.slice(0, 8)}`,
+      domainName: desiredDomain,
     });
     trunkSid = trunk.sid;
-    domainName = trunk.domainName ?? undefined;
+    domainName = trunk.domainName ?? desiredDomain;
     await getPrisma().twilioConnection.update({
       where: { orgId },
-      data: { twilioTrunkSid: trunkSid, twilioTrunkDomain: domainName ?? null },
+      data: { twilioTrunkSid: trunkSid, twilioTrunkDomain: domainName },
     });
   }
 
   if (!domainName) {
-    throw new Error(
-      `Twilio trunk ${trunkSid} has no Termination URI. Open Twilio Console, Voice, Manage, SIP Trunking, open this trunk, and confirm it has a Termination URI like <name>.pstn.twilio.com.`,
-    );
+    throw new Error(`Twilio trunk ${trunkSid} ended up without a domain after patch attempts.`);
   }
 
   // Origination URL: where Twilio sends inbound PSTN calls. Point at our shared
