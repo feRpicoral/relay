@@ -133,6 +133,19 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
         await (
           r as unknown as { localParticipant: { publishTrack: (t: unknown) => Promise<unknown> } }
         ).localParticipant.publishTrack(micTrack);
+
+        // Pipe the mic through the same analyser as the agent's tracks so the
+        // waveform reacts to the user's voice too — otherwise the visualizer
+        // only moves when the agent speaks, which makes it look frozen during
+        // the human's turn and makes it unclear whether the mic is actually
+        // being captured.
+        const micStream = new MediaStream([micTrack.mediaStreamTrack]);
+        // audioCtx is the closure variable seeded above; TS doesn't track
+        // that it's been assigned across the async boundary, hence the
+        // non-null assertion (same pattern as in onTrack).
+        const micSource = audioCtx!.createMediaStreamSource(micStream);
+        micSource.connect(localAnalyser);
+
         setMicState("live");
       } catch (err) {
         console.warn("[test-call-session] mic capture blocked:", err);

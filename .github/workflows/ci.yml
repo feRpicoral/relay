@@ -28,7 +28,6 @@ jobs:
       LIVEKIT_API_KEY: ci-livekit-key
       LIVEKIT_API_SECRET: ci-livekit-secret
       LIVEKIT_URL: wss://ci.livekit.cloud
-      LIVEKIT_SIP_OUTBOUND_TRUNK_ID: ci-trunk
       INNGEST_EVENT_KEY: ci-inngest-event
       INNGEST_SIGNING_KEY: ci-inngest-signing
       RESEND_API_KEY: ci-resend-key

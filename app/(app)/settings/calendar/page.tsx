@@ -17,6 +17,14 @@ export default async function CalendarSettingsPage() {
   const db = getDb(session.orgId);
   const connection = await db.calcomConnection.findUnique({ where: { orgId: session.orgId } });
 
+  // A connection row with no encrypted key is a stale leftover — migration
+  // 0002_calcom_encrypt_api_key dropped the plaintext column without rewriting
+  // existing rows, and the underlying Cal.com client throws
+  // `calcom_not_configured` until the user re-pastes the key. Treat that
+  // state as "not connected" so the ConnectForm shows instead of a broken
+  // event-type picker. Inlined into the JSX below so TS narrows `connection`
+  // inside the truthy branch.
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -25,7 +33,7 @@ export default async function CalendarSettingsPage() {
         className="border-0 px-0"
       />
 
-      {connection ? (
+      {connection && connection.apiKeyEncrypted ? (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-3">

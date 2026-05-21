@@ -377,16 +377,12 @@ Create a trunk under **Twilio Console, Elastic SIP Trunking, Trunks**.
 
 - Assign every Twilio E.164 you've purchased. Each one must match what you connect in Relay's `Settings, Phone numbers`.
 
-**Authentication tab:**
-
-- Create one Credential List with a single credential (random username + strong password). Use it on the Termination tab. The same username/password go into LiveKit's outbound trunk config.
-
 #### LiveKit Cloud
 
 Under **SIP**:
 
 - **Inbound trunk**: name `twilio-inbound`. Direction Inbound. Numbers: paste every Twilio E.164 (comma-separated). Allowed addresses: leave blank. Media encryption SRTP: Disabled (must match Twilio's Secure Trunking). Include headers: No headers.
-- **Outbound trunk**: name `twilio-outbound`. Direction Outbound. Address: Twilio's Termination URI. Auth username + password: the Credential List you created in Twilio. After creating, copy the trunk id into `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`.
+- **Outbound trunks**: Relay provisions one per-org automatically when an admin connects Twilio in `Settings, Telefonia`. The trunk id is stored in `TwilioConnection.livekitOutboundTrunkId` and looked up by the campaign-dispatch job; no global env var is required.
 - **Dispatch rule**: one room per call, default name `call-<sid>`.
 
 Under **Agents**: register a dispatch rule that runs your worker on every new room.
