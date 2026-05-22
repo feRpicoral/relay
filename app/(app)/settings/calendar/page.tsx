@@ -1,4 +1,5 @@
 import { CalendarCheck2, ExternalLink } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { DefaultEventTypePicker } from "./event-type-picker";
 
 export default async function CalendarSettingsPage() {
   const session = await requireAdmin();
+  const t = await getTranslations("settings.calendar");
 
   const db = getDb(session.orgId);
   const connection = await db.calcomConnection.findUnique({ where: { orgId: session.orgId } });
@@ -20,18 +22,11 @@ export default async function CalendarSettingsPage() {
   // A connection row with no encrypted key is a stale leftover — migration
   // 0002_calcom_encrypt_api_key dropped the plaintext column without rewriting
   // existing rows, and the underlying Cal.com client throws
-  // `calcom_not_configured` until the user re-pastes the key. Treat that
-  // state as "not connected" so the ConnectForm shows instead of a broken
-  // event-type picker. Inlined into the JSX below so TS narrows `connection`
-  // inside the truthy branch.
+  // `calcom_not_configured` until the user re-pastes the key.
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Calendário"
-        description="Conecte sua conta Cal.com pra que o agente possa checar disponibilidade e agendar durante a ligação."
-        className="border-0 px-0"
-      />
+      <PageHeader title={t("title")} description={t("description")} className="border-0 px-0" />
 
       {connection && connection.apiKeyEncrypted ? (
         <Card>
@@ -41,19 +36,19 @@ export default async function CalendarSettingsPage() {
                 <CalendarCheck2 className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle>Cal.com conectado</CardTitle>
+                <CardTitle>{t("connect.toastConnected")}</CardTitle>
                 <p className="text-muted-foreground text-xs">
-                  {connection.calcomUserEmail ?? "API key conectada"}, fuso {connection.timezone}
+                  {connection.calcomUserEmail ?? t("connect.apiKeyHint")}, {connection.timezone}
                 </p>
               </div>
             </div>
-            <Badge variant="success">Ativo</Badge>
+            <Badge variant="success">{t("eventType.label")}</Badge>
           </CardHeader>
           <div className="space-y-4 px-6 pb-6">
             <DefaultEventTypePicker currentEventTypeId={connection.defaultEventTypeId} />
             <Button asChild variant="outline" size="sm">
               <a href="https://app.cal.com" target="_blank" rel="noreferrer">
-                Abrir Cal.com
+                Cal.com
                 <ExternalLink className="h-4 w-4" />
               </a>
             </Button>
@@ -62,8 +57,8 @@ export default async function CalendarSettingsPage() {
       ) : (
         <Empty
           icon={<CalendarCheck2 className="h-5 w-5" />}
-          title="Conecte sua conta Cal.com"
-          description="Conecte sua conta Cal.com colando uma API key. Gere em Cal.com em Settings, Security, API Keys."
+          title={t("connect.title")}
+          description={t("connect.apiKeyHint")}
           action={<ConnectForm />}
         />
       )}

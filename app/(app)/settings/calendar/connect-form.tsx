@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +14,7 @@ import type { Result } from "@/lib/types/result";
 import { connectCalcomAction } from "./actions";
 
 export function ConnectForm() {
+  const t = useTranslations("settings.calendar.connect");
   const router = useRouter();
   const [apiKey, setApiKey] = useState("");
 
@@ -24,17 +26,17 @@ export function ConnectForm() {
   useEffect(() => {
     if (!state) return;
     if (state.ok) {
-      toast.success("Cal.com conectado");
+      toast.success(t("toastConnected"));
       router.refresh();
     } else {
       toast.error(state.error);
     }
-  }, [state, router]);
+  }, [state, router, t]);
 
   return (
     <form action={() => runConnect()} className="space-y-3">
       <div className="space-y-1.5">
-        <Label htmlFor="calcom-api-key">Cal.com API key</Label>
+        <Label htmlFor="calcom-api-key">{t("apiKeyLabel")}</Label>
         <Input
           id="calcom-api-key"
           type="password"
@@ -44,12 +46,10 @@ export function ConnectForm() {
           autoComplete="off"
           disabled={pending}
         />
-        <p className="text-muted-foreground text-xs">
-          Gere em Cal.com em Settings, Security, API Keys.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("apiKeyHint")}</p>
       </div>
       <Button type="submit" disabled={pending || !apiKey}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conectar Cal.com"}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
       </Button>
     </form>
   );

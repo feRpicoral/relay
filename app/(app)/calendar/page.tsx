@@ -1,5 +1,6 @@
 import { CalendarCheck2, CalendarPlus } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ const RECENT_BOOKINGS_LIMIT = 20;
 export default async function CalendarPage() {
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("calendar");
+  const tSettings = await getTranslations("settings.calendar");
 
   const [connection, recentBookings] = await Promise.all([
     db.calcomConnection.findUnique({ where: { orgId: session.orgId } }),
@@ -30,13 +33,13 @@ export default async function CalendarPage() {
   return (
     <>
       <PageHeader
-        title="Calendário"
-        description="Agendamentos criados pelos seus agentes durante chamadas."
+        title={t("title")}
+        description={t("description")}
         actions={
           <Button asChild variant="outline">
             <Link href="/settings/calendar">
               <CalendarCheck2 className="h-4 w-4" />
-              Configurar Cal.com
+              {tSettings("connect.submit")}
             </Link>
           </Button>
         }
@@ -45,24 +48,24 @@ export default async function CalendarPage() {
         {!connection ? (
           <Empty
             icon={<CalendarPlus className="h-5 w-5" />}
-            title="Cal.com não conectado"
-            description="Conecte sua conta pra que o agente possa marcar consultas durante a ligação."
+            title={tSettings("connect.title")}
+            description={tSettings("connect.apiKeyHint")}
             action={
               <Button asChild>
-                <Link href="/settings/calendar">Conectar agora</Link>
+                <Link href="/settings/calendar">{tSettings("connect.submit")}</Link>
               </Button>
             }
           />
         ) : recentBookings.length === 0 ? (
           <Empty
             icon={<CalendarCheck2 className="h-5 w-5" />}
-            title="Nenhum agendamento ainda"
-            description="Quando o agente marcar uma consulta, ela aparece aqui."
+            title={t("empty.title")}
+            description={t("empty.description")}
           />
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Agendamentos recentes</CardTitle>
+              <CardTitle>{t("title")}</CardTitle>
             </CardHeader>
             <div className="divide-border divide-y">
               {recentBookings.map((booking) => {
@@ -70,12 +73,11 @@ export default async function CalendarPage() {
                 // "-" instead of crashing the calendar view.
                 const input = BookAppointmentInputSchema.safeParse(booking.inputJson);
                 const output = BookAppointmentOutputSchema.safeParse(booking.outputJson);
-                const patientName = input.success ? input.data.patientName : "Paciente";
+                const patientName = input.success ? input.data.patientName : "—";
                 const slotIso = input.success ? input.data.slotIso : "";
                 const patientPhone = input.success ? input.data.patientPhone : "";
                 const status = output.success ? output.data.status : null;
-                const displayStatus =
-                  status === "ACCEPTED" || status === "CONFIRMED" ? "Confirmada" : (status ?? "-");
+                const displayStatus = status ?? "-";
                 return (
                   <Link
                     key={booking.id}

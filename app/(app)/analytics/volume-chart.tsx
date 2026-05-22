@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Area,
   AreaChart,
@@ -19,8 +20,9 @@ interface VolumeData {
 }
 
 export function VolumeChart({ data }: { data: VolumeData[] }) {
+  const t = useTranslations("analytics");
   if (data.length === 0) {
-    return <Empty title="Sem dados ainda" description="Quando houver chamadas, vê aqui." />;
+    return <Empty title={t("empty")} description={t("empty")} />;
   }
   return (
     <div className="h-64">
@@ -63,7 +65,7 @@ export function VolumeChart({ data }: { data: VolumeData[] }) {
           <Area
             type="monotone"
             dataKey="total"
-            name="Total"
+            name={t("stats.totalCalls")}
             stroke="var(--color-primary)"
             strokeWidth={2}
             fill="url(#vTotal)"
@@ -71,7 +73,7 @@ export function VolumeChart({ data }: { data: VolumeData[] }) {
           <Area
             type="monotone"
             dataKey="scheduled"
-            name="Agendadas"
+            name={t("stats.scheduledRate")}
             stroke="var(--color-success)"
             strokeWidth={2}
             fill="url(#vSched)"

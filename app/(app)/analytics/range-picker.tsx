@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import {
   Select,
@@ -10,14 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const RANGES = [
-  { value: "1d", label: "Últimas 24h" },
-  { value: "7d", label: "Últimos 7 dias" },
-  { value: "30d", label: "Últimos 30 dias" },
-  { value: "90d", label: "Últimos 90 dias" },
-];
+type RangeKey = "7d" | "30d" | "90d";
+
+const RANGES: RangeKey[] = ["7d", "30d", "90d"];
 
 export function RangePicker({ value }: { value: string }) {
+  const t = useTranslations("analytics.rangePicker");
   const router = useRouter();
   const params = useSearchParams();
 
@@ -27,6 +26,12 @@ export function RangePicker({ value }: { value: string }) {
     router.push(`?${usp.toString()}`);
   }
 
+  const labelFor = (key: RangeKey) => {
+    if (key === "7d") return t("days7");
+    if (key === "30d") return t("days30");
+    return t("days90");
+  };
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-44">
@@ -34,8 +39,8 @@ export function RangePicker({ value }: { value: string }) {
       </SelectTrigger>
       <SelectContent>
         {RANGES.map((r) => (
-          <SelectItem key={r.value} value={r.value}>
-            {r.label}
+          <SelectItem key={r} value={r}>
+            {labelFor(r)}
           </SelectItem>
         ))}
       </SelectContent>

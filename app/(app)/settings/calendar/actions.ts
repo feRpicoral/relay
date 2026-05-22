@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -14,9 +15,10 @@ const ConnectSchema = z.object({
 });
 
 export async function connectCalcomAction(input: z.infer<typeof ConnectSchema>): Promise<Result> {
+  const t = await getTranslations("settings.calendar.connect.errors");
   const session = await requireAdmin();
   const parsed = ConnectSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "API key inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidKey") };
 
   let me;
   try {
@@ -24,7 +26,7 @@ export async function connectCalcomAction(input: z.infer<typeof ConnectSchema>):
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Cal.com rejeitou a API key.",
+      error: err instanceof Error ? err.message : t("rejected"),
     };
   }
 
@@ -54,9 +56,10 @@ const EventTypeSchema = z.object({ eventTypeId: z.number().int().positive() });
 export async function setDefaultEventTypeAction(
   input: z.infer<typeof EventTypeSchema>,
 ): Promise<Result> {
+  const t = await getTranslations("settings.calendar.eventType");
   const session = await requireAdmin();
   const parsed = EventTypeSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalid") };
 
   const db = getDb(session.orgId);
   await db.calcomConnection.update({
@@ -69,6 +72,7 @@ export async function setDefaultEventTypeAction(
 export async function listEventTypesAction(): Promise<
   Result<{ eventTypes: Array<{ id: number; title: string }> }>
 > {
+  const t = await getTranslations("settings.calendar.eventType");
   const session = await requireAdmin();
   try {
     const eventTypes = await listEventTypes(session.orgId);
@@ -79,7 +83,7 @@ export async function listEventTypesAction(): Promise<
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Failed to list event types.",
+      error: err instanceof Error ? err.message : t("loadFailed"),
     };
   }
 }

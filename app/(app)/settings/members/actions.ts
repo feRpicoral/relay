@@ -3,6 +3,7 @@
 import { Prisma } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -22,9 +23,10 @@ const InviteSchema = z.object({
 });
 
 export async function inviteMemberAction(input: z.infer<typeof InviteSchema>): Promise<Result> {
+  const t = await getTranslations("settings.members.errors");
   const session = await requireAdmin();
   const parsed = InviteSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Email inválido." };
+  if (!parsed.success) return { ok: false, error: t("invalidEmail") };
 
   const db = getDb(session.orgId);
   const normalizedEmail = parsed.data.email.toLowerCase();
@@ -33,7 +35,7 @@ export async function inviteMemberAction(input: z.infer<typeof InviteSchema>): P
     where: { user: { email: normalizedEmail } },
   });
   if (existingMember) {
-    return { ok: false, error: "Esse email já faz parte da organização." };
+    return { ok: false, error: t("alreadyMember") };
   }
 
   const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
@@ -70,13 +72,9 @@ export async function inviteMemberAction(input: z.infer<typeof InviteSchema>): P
     });
   } catch (err) {
     // The invite row exists; the user can re-trigger the email by re-inviting.
-    // We surface a partial-success message so the admin knows to retry.
     console.warn("[invite] email send failed:", err);
     revalidatePath("/settings/members");
-    return {
-      ok: false,
-      error: "Convite criado, mas o email falhou. Reenvie em alguns instantes.",
-    };
+    return { ok: false, error: t("alreadyInvited") };
   }
 
   revalidatePath("/settings/members");
@@ -89,9 +87,10 @@ const ChangeRoleSchema = z.object({
 });
 
 export async function changeRoleAction(input: z.infer<typeof ChangeRoleSchema>): Promise<Result> {
+  const t = await getTranslations("settings.members.errors");
   const session = await requireAdmin();
   const parsed = ChangeRoleSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidEmail") };
 
   const db = getDb(session.orgId);
 
@@ -120,11 +119,9 @@ export async function changeRoleAction(input: z.infer<typeof ChangeRoleSchema>):
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
   } catch (err) {
-    if (err instanceof MemberNotFoundError) return { ok: false, error: "Membro não encontrado." };
-    if (err instanceof CannotChangeSelfError) {
-      return { ok: false, error: "Você não pode mudar seu próprio papel." };
-    }
-    if (err instanceof LastAdminError) return { ok: false, error: "Mantenha pelo menos um admin." };
+    if (err instanceof MemberNotFoundError) return { ok: false, error: t("memberNotFound") };
+    if (err instanceof CannotChangeSelfError) return { ok: false, error: t("cannotChangeOwnRole") };
+    if (err instanceof LastAdminError) return { ok: false, error: t("lastAdmin") };
     throw err;
   }
 
@@ -135,9 +132,10 @@ export async function changeRoleAction(input: z.infer<typeof ChangeRoleSchema>):
 const RemoveSchema = z.object({ membershipId: z.string().uuid() });
 
 export async function removeMemberAction(input: z.infer<typeof RemoveSchema>): Promise<Result> {
+  const t = await getTranslations("settings.members.errors");
   const session = await requireAdmin();
   const parsed = RemoveSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidEmail") };
 
   const db = getDb(session.orgId);
 
@@ -158,11 +156,9 @@ export async function removeMemberAction(input: z.infer<typeof RemoveSchema>): P
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
   } catch (err) {
-    if (err instanceof MemberNotFoundError) return { ok: false, error: "Membro não encontrado." };
-    if (err instanceof CannotChangeSelfError) {
-      return { ok: false, error: "Você não pode se remover." };
-    }
-    if (err instanceof LastAdminError) return { ok: false, error: "Mantenha pelo menos um admin." };
+    if (err instanceof MemberNotFoundError) return { ok: false, error: t("memberNotFound") };
+    if (err instanceof CannotChangeSelfError) return { ok: false, error: t("cannotRemoveSelf") };
+    if (err instanceof LastAdminError) return { ok: false, error: t("lastAdmin") };
     throw err;
   }
 
@@ -178,14 +174,13 @@ const RevokeInviteSchema = z.object({ inviteId: z.string().uuid() });
 export async function revokeInviteAction(
   input: z.infer<typeof RevokeInviteSchema>,
 ): Promise<Result> {
+  const t = await getTranslations("settings.members.errors");
   const session = await requireAdmin();
   const parsed = RevokeInviteSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidEmail") };
 
   // Org-scoped delete: `deleteMany` returns count 0 if no row matched, which
-  // is fine — the row was either already gone or belonged to another org. We
-  // do NOT fall back to a service-role delete; that path could be abused to
-  // delete a different org's invite.
+  // is fine — the row was either already gone or belonged to another org.
   const db = getDb(session.orgId);
   await db.invite.deleteMany({ where: { id: parsed.data.inviteId } });
   revalidatePath("/settings/members");

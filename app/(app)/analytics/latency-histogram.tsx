@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { Empty } from "@/components/ui/empty";
 import type { OrgId } from "@/lib/db/types";
 import { getDb } from "@/lib/db/with-org";
@@ -11,6 +13,7 @@ export async function LatencyHistogram({
   orgId: OrgId;
   rangeStart: string;
 }) {
+  const t = await getTranslations("analytics");
   const db = getDb(orgId);
   const metrics = await db.callMetric.findMany({
     where: { leg: "END_TO_END", occurredAt: { gte: new Date(rangeStart) } },
@@ -18,12 +21,7 @@ export async function LatencyHistogram({
   });
 
   if (metrics.length === 0) {
-    return (
-      <Empty
-        title="Sem dados de latência"
-        description="Métricas aparecem após a primeira chamada."
-      />
-    );
+    return <Empty title={t("empty")} description={t("empty")} />;
   }
 
   const buckets = [0, 200, 400, 600, 800, 1000, 1200, 1500, 2000, 3000];

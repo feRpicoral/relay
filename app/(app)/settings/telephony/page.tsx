@@ -1,4 +1,5 @@
 import { Phone } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { Empty } from "@/components/ui/empty";
 import { requireAdmin } from "@/lib/auth/session";
@@ -11,14 +12,15 @@ import { ConnectedPanel } from "./connected-panel";
 
 export default async function TelephonyPage() {
   const session = await requireAdmin();
+  const t = await getTranslations("settings.telephony.connect");
 
   const status = await getConnectionStatus(session.orgId);
   if (!status.connected) {
     return (
       <Empty
         icon={<Phone className="h-5 w-5" />}
-        title="Conecte sua conta Twilio"
-        description="Cole um API Key da Twilio. O Relay configura o SIP trunk e provisiona os números automaticamente. Vá em console.twilio.com, Account, API Keys & tokens, criar Standard Key."
+        title={t("title")}
+        description={t("description")}
         action={<ConnectForm />}
       />
     );

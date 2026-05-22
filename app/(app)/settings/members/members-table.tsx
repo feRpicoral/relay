@@ -2,6 +2,7 @@
 
 import { MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -49,11 +50,12 @@ export function MembersTable({
   memberships: MemberRow[];
   invites: InviteRow[];
 }) {
+  const t = useTranslations("settings.members");
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Membros</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
         </CardHeader>
         <div className="divide-border divide-y">
           {memberships.map((m) => (
@@ -65,7 +67,7 @@ export function MembersTable({
       {invites.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Convites pendentes</CardTitle>
+            <CardTitle>{t("table.pendingInvite")}</CardTitle>
           </CardHeader>
           <div className="divide-border divide-y">
             {invites.map((i) => (
@@ -79,6 +81,8 @@ export function MembersTable({
 }
 
 function MemberRowItem({ member }: { member: MemberRow }) {
+  const t = useTranslations("settings.members.table");
+  const tRole = useTranslations("enums.membershipRole");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [removeOpen, setRemoveOpen] = useState(false);
@@ -93,7 +97,7 @@ function MemberRowItem({ member }: { member: MemberRow }) {
         role: member.role === "ADMIN" ? "MEMBER" : "ADMIN",
       });
       if (result.ok) {
-        toast.success("Papel atualizado");
+        toast.success(t("roleUpdated"));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -105,7 +109,7 @@ function MemberRowItem({ member }: { member: MemberRow }) {
     startTransition(async () => {
       const result = await removeMemberAction({ membershipId: member.id });
       if (result.ok) {
-        toast.success("Membro removido");
+        toast.success(t("memberRemoved"));
         setRemoveOpen(false);
         router.refresh();
       } else {
@@ -123,14 +127,14 @@ function MemberRowItem({ member }: { member: MemberRow }) {
         <div>
           <p className="text-sm font-medium">
             {member.name ?? member.email}{" "}
-            {isSelf ? <span className="text-muted-foreground ml-1">(você)</span> : null}
+            {isSelf ? <span className="text-muted-foreground ml-1">({t("you")})</span> : null}
           </p>
           <p className="text-muted-foreground text-xs">{member.email}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
         <Badge variant={member.role === "ADMIN" ? "default" : "secondary"}>
-          {member.role === "ADMIN" ? "Admin" : "Membro"}
+          {tRole(member.role)}
         </Badge>
         {!isSelf ? (
           <DropdownMenu>
@@ -141,7 +145,7 @@ function MemberRowItem({ member }: { member: MemberRow }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={changeRole}>
-                {member.role === "ADMIN" ? "Tornar Membro" : "Tornar Admin"}
+                {member.role === "ADMIN" ? tRole("MEMBER") : tRole("ADMIN")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
@@ -151,7 +155,7 @@ function MemberRowItem({ member }: { member: MemberRow }) {
                   setRemoveOpen(true);
                 }}
               >
-                Remover
+                {t("remove")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -160,18 +164,15 @@ function MemberRowItem({ member }: { member: MemberRow }) {
       <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Remover membro?</DialogTitle>
-            <DialogDescription>
-              {member.name ?? member.email} perderá acesso imediatamente. Para reentrar, precisará
-              de um novo convite.
-            </DialogDescription>
+            <DialogTitle>{t("remove")}</DialogTitle>
+            <DialogDescription>{member.name ?? member.email}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRemoveOpen(false)} disabled={pending}>
-              Cancelar
+              {t("remove")}
             </Button>
             <Button variant="destructive" onClick={remove} disabled={pending}>
-              Remover
+              {t("remove")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -181,6 +182,9 @@ function MemberRowItem({ member }: { member: MemberRow }) {
 }
 
 function InviteRowItem({ invite }: { invite: InviteRow }) {
+  const t = useTranslations("settings.members.table");
+  const tRole = useTranslations("enums.membershipRole");
+  const formatter = useFormatter();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [revokeOpen, setRevokeOpen] = useState(false);
@@ -189,7 +193,7 @@ function InviteRowItem({ invite }: { invite: InviteRow }) {
     startTransition(async () => {
       const result = await revokeInviteAction({ inviteId: invite.id });
       if (result.ok) {
-        toast.success("Convite revogado");
+        toast.success(t("inviteRevoked"));
         setRevokeOpen(false);
         router.refresh();
       } else {
@@ -203,27 +207,25 @@ function InviteRowItem({ invite }: { invite: InviteRow }) {
       <div>
         <p className="text-sm font-medium">{invite.email}</p>
         <p className="text-muted-foreground text-xs">
-          Convidado como {invite.role === "ADMIN" ? "Admin" : "Membro"}, expira{" "}
-          {new Date(invite.expiresAt).toLocaleDateString("pt-BR")}
+          {tRole(invite.role)} ·{" "}
+          {formatter.dateTime(new Date(invite.expiresAt), { dateStyle: "short" })}
         </p>
       </div>
       <Dialog open={revokeOpen} onOpenChange={setRevokeOpen}>
         <Button variant="ghost" size="sm" onClick={() => setRevokeOpen(true)} disabled={pending}>
-          Revogar
+          {t("revokeInvite")}
         </Button>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Revogar convite?</DialogTitle>
-            <DialogDescription>
-              O link enviado para {invite.email} deixará de funcionar. Você pode reenviar depois.
-            </DialogDescription>
+            <DialogTitle>{t("revokeInvite")}</DialogTitle>
+            <DialogDescription>{invite.email}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRevokeOpen(false)} disabled={pending}>
-              Cancelar
+              {t("revokeInvite")}
             </Button>
             <Button variant="destructive" onClick={revoke} disabled={pending}>
-              Revogar
+              {t("revokeInvite")}
             </Button>
           </DialogFooter>
         </DialogContent>

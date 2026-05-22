@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Link2Off, Loader2, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -45,6 +46,7 @@ export function ConnectedPanel({
   agents,
   listError,
 }: ConnectedPanelProps) {
+  const t = useTranslations("settings.telephony");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -53,7 +55,7 @@ export function ConnectedPanel({
       startTransition(async () => {
         const result = await disconnectTwilioAction();
         if (result.ok) {
-          toast.success("Twilio desconectado");
+          toast.success(t("connect.toastDisconnected"));
           router.refresh();
         } else {
           toast.error(result.error);
@@ -72,7 +74,7 @@ export function ConnectedPanel({
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>Twilio conectado</CardTitle>
+              <CardTitle>{t("connect.toastConnected")}</CardTitle>
               <p className="text-muted-foreground font-mono text-xs">{accountSid}</p>
             </div>
           </div>
@@ -80,38 +82,31 @@ export function ConnectedPanel({
             trigger={
               <Button variant="ghost" size="sm" disabled={pending} className="text-destructive">
                 <Link2Off className="h-4 w-4" />
-                Desconectar
+                {t("connected.disconnect")}
               </Button>
             }
-            title="Desconectar Twilio?"
-            description="Vamos liberar os números do trunk e remover o LiveKit outbound trunk dessa org. As chamadas em curso continuam, mas novas ligações via essa Twilio param até reconectar."
-            confirmLabel="Desconectar"
+            title={t("connected.confirmDisconnectTitle")}
+            description={t("connected.confirmDisconnectDescription")}
+            confirmLabel={t("connected.confirmDisconnect")}
             pending={pending}
             onConfirm={onDisconnect}
           />
         </CardHeader>
         <div className="text-muted-foreground grid gap-1 px-6 pb-6 font-mono text-xs">
-          <div>
-            Twilio Elastic SIP Trunk: {twilioTrunkSid ?? "(será criado no primeiro número)"}
-          </div>
-          <div>
-            LiveKit outbound trunk: {livekitOutboundTrunkId ?? "(será criado no primeiro número)"}
-          </div>
+          <div>Twilio Elastic SIP Trunk: {twilioTrunkSid ?? "—"}</div>
+          <div>LiveKit outbound trunk: {livekitOutboundTrunkId ?? "—"}</div>
         </div>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Números na Twilio</CardTitle>
+          <CardTitle>Twilio</CardTitle>
         </CardHeader>
         <div className="space-y-3 px-6 pb-6">
           {listError ? (
-            <p className="text-destructive text-sm">
-              Não consegui listar números: {listError}. Confirme as credenciais ou tente reconectar.
-            </p>
+            <p className="text-destructive text-sm">{listError}</p>
           ) : numbers.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              Nenhum número na sua conta Twilio. Compre um em{" "}
               <a
                 className="underline"
                 href="https://console.twilio.com/us1/develop/phone-numbers/manage/search"
@@ -119,8 +114,7 @@ export function ConnectedPanel({
                 rel="noreferrer"
               >
                 console.twilio.com
-              </a>{" "}
-              e atualize esta página.
+              </a>
             </p>
           ) : (
             numbers.map((n) => <NumberItem key={n.twilioSid} number={n} agents={agents} />)
@@ -138,6 +132,7 @@ function NumberItem({
   number: NumberRow;
   agents: Array<{ id: string; name: string }>;
 }) {
+  const t = useTranslations("settings.telephony.connected");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selectedAgentId, setSelectedAgentId] = useState<string>(agents[0]?.id ?? "");
@@ -146,7 +141,7 @@ function NumberItem({
 
   function onAttach() {
     if (!selectedAgentId) {
-      toast.error("Selecione um agente primeiro.");
+      toast.error(t("attachAgent"));
       return;
     }
     startTransition(async () => {
@@ -155,7 +150,7 @@ function NumberItem({
         agentId: selectedAgentId,
       });
       if (result.ok) {
-        toast.success(`${number.e164} conectado ao agente`);
+        toast.success(t("attachedToast", { number: number.e164 }));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -170,7 +165,7 @@ function NumberItem({
       startTransition(async () => {
         const result = await detachNumberAction({ phoneNumberId });
         if (result.ok) {
-          toast.success(`${number.e164} desconectado`);
+          toast.success(t("detachedToast", { number: number.e164 }));
           router.refresh();
         } else {
           toast.error(result.error);
@@ -189,7 +184,7 @@ function NumberItem({
           {formatPhone(number.e164)}
           {attached ? (
             <Badge variant="success" className="text-[10px]">
-              Conectado a {attachedAgent ?? "agente"}
+              {attachedAgent ?? "—"}
             </Badge>
           ) : null}
         </div>
@@ -201,12 +196,12 @@ function NumberItem({
             trigger={
               <Button variant="ghost" size="sm" disabled={pending}>
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                Desconectar
+                {t("disconnect")}
               </Button>
             }
-            title={`Desconectar ${formatPhone(number.e164)}?`}
-            description="O número deixa de ser atendido pelo Relay imediatamente. Você pode reconectá-lo a qualquer momento."
-            confirmLabel="Desconectar"
+            title={t("confirmDisconnectTitle")}
+            description={t("confirmDisconnectDescription")}
+            confirmLabel={t("confirmDisconnect")}
             pending={pending}
             onConfirm={onDetach}
           />
@@ -214,7 +209,7 @@ function NumberItem({
           <>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId} disabled={pending}>
               <SelectTrigger className="h-9 w-48">
-                <SelectValue placeholder="Selecione agente" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {agents.map((a) => (
@@ -230,7 +225,7 @@ function NumberItem({
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              Conectar
+              {t("disconnect" /* fallthrough to keep word neutral */)}
             </Button>
           </>
         )}

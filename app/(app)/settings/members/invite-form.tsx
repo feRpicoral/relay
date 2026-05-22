@@ -2,6 +2,7 @@
 
 import { Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +22,8 @@ import type { Result } from "@/lib/types/result";
 import { inviteMemberAction } from "./actions";
 
 export function InviteMemberForm() {
+  const t = useTranslations("settings.members.invite");
+  const tRole = useTranslations("enums.membershipRole");
   const router = useRouter();
   const [role, setRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
 
@@ -35,12 +38,12 @@ export function InviteMemberForm() {
   useEffect(() => {
     if (!state) return;
     if (state.ok) {
-      toast.success("Convite enviado");
+      toast.success(t("toastSent"));
       router.refresh();
     } else {
       toast.error(state.error);
     }
-  }, [state, router]);
+  }, [state, router, t]);
 
   // Derive the input's remount key from the action state: every successful
   // submit produces a new state reference, so the input resets to "" without
@@ -50,34 +53,29 @@ export function InviteMemberForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Convidar membro</CardTitle>
-        <CardDescription>Envie um link de convite por email. Expira em 7 dias.</CardDescription>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent>
-        {/*
-          CSS grid gives a single, deterministic row alignment instead of
-          flex+items-end (which floated the labels at different Y heights
-          because the bare Button has no label sibling).
-        */}
         <form
           action={formAction}
           className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_10rem_auto] md:items-end"
         >
           <div className="space-y-2">
-            <Label htmlFor="invite-email">Email</Label>
+            <Label htmlFor="invite-email">{t("emailLabel")}</Label>
             <Input
               key={resetKey}
               id="invite-email"
               name="email"
               type="email"
-              placeholder="colega@empresa.com"
+              placeholder={t("emailPlaceholder")}
               defaultValue=""
               required
               disabled={pending}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="invite-role">Papel</Label>
+            <Label htmlFor="invite-role">{t("roleLabel")}</Label>
             <Select
               value={role}
               onValueChange={(v) => setRole(v as "ADMIN" | "MEMBER")}
@@ -87,14 +85,14 @@ export function InviteMemberForm() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MEMBER">Membro</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
+                <SelectItem value="MEMBER">{tRole("MEMBER")}</SelectItem>
+                <SelectItem value="ADMIN">{tRole("ADMIN")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button type="submit" disabled={pending}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Enviar
+            {t("submit")}
           </Button>
         </form>
       </CardContent>

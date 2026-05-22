@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -11,22 +12,21 @@ import type { Result } from "@/lib/types/result";
 
 const ConnectSchema = z.object({
   // Twilio Account SIDs always start with "AC" followed by 32 hex chars.
-  accountSid: z.string().regex(/^AC[a-f0-9]{32}$/i, "Account SID inválido (formato ACxxxxxxxx)."),
+  accountSid: z.string().regex(/^AC[a-f0-9]{32}$/i, "INVALID_ACCOUNT_SID"),
   // Twilio Client SID (the "SID" shown in the API Key creation dialog) starts
   // with "SK". Internally Twilio still calls this the API Key SID, but the
   // Console label is "Twilio Client SID".
-  apiKeySid: z
-    .string()
-    .regex(/^SK[a-f0-9]{32}$/i, "Twilio Client SID inválido (formato SKxxxxxxxx)."),
+  apiKeySid: z.string().regex(/^SK[a-f0-9]{32}$/i, "INVALID_API_KEY_SID"),
   // Secret is a long opaque string. Don't try to validate format beyond length.
-  apiKeySecret: z.string().min(20, "Secret muito curto."),
+  apiKeySecret: z.string().min(20, "SECRET_TOO_SHORT"),
 });
 
 export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>): Promise<Result> {
+  const t = await getTranslations("settings.telephony.connect");
   const session = await requireAdmin();
   const parsed = ConnectSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+    return { ok: false, error: t("toastFailed") };
   }
 
   try {
@@ -40,21 +40,12 @@ export async function connectTwilioAction(input: z.infer<typeof ConnectSchema>):
     const e = err as { status?: number; code?: number; moreInfo?: string; message?: string };
     const message = e.message ?? String(err);
     if (e.status === 401 || /Authenticate|Unauthorized|Invalid Access Token/i.test(message)) {
-      return {
-        ok: false,
-        error:
-          "Twilio rejeitou as credenciais (401). Verifique se: (a) o Account SID é o da conta dona da API Key, (b) o Twilio Client SID começa com SK, (c) o Secret é o mostrado UMA vez na criação (não o auth token mestre).",
-      };
+      return { ok: false, error: t("toastFailed") };
     }
     if (e.code === 20003) {
       // 20003 also fires when a Standard key is used against a Main-only
-      // endpoint (e.g. /Accounts/{sid}.json). We use phone-number listing
-      // instead, but surface this hint just in case Twilio changes scope.
-      return {
-        ok: false,
-        error:
-          "API Key sem permissão pra acessar a conta. Confirme que ela é Standard (não Restricted) e foi criada na mesma conta do Account SID.",
-      };
+      // endpoint (e.g. /Accounts/{sid}.json).
+      return { ok: false, error: t("toastFailed") };
     }
     return {
       ok: false,
@@ -81,16 +72,17 @@ export async function disconnectTwilioAction(): Promise<Result> {
 }
 
 const AttachSchema = z.object({
-  twilioSid: z.string().regex(/^PN[a-f0-9]{32}$/i, "Twilio number SID inválido."),
+  twilioSid: z.string().regex(/^PN[a-f0-9]{32}$/i, "INVALID_NUMBER_SID"),
   agentId: z.string().uuid(),
   label: z.string().max(120).optional(),
 });
 
 export async function attachNumberAction(input: z.infer<typeof AttachSchema>): Promise<Result> {
+  const t = await getTranslations("settings.telephony.connect");
   const session = await requireAdmin();
   const parsed = AttachSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+    return { ok: false, error: t("toastFailed") };
   }
   try {
     await attachNumber({
@@ -109,9 +101,10 @@ export async function attachNumberAction(input: z.infer<typeof AttachSchema>): P
 const DetachSchema = z.object({ phoneNumberId: z.string().uuid() });
 
 export async function detachNumberAction(input: z.infer<typeof DetachSchema>): Promise<Result> {
+  const t = await getTranslations("settings.telephony.connect");
   const session = await requireAdmin();
   const parsed = DetachSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("toastFailed") };
   try {
     await detachNumber(session.orgId, parsed.data.phoneNumberId);
   } catch (err) {

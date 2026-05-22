@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +14,7 @@ import type { Result } from "@/lib/types/result";
 import { connectTwilioAction } from "./actions";
 
 export function ConnectForm() {
+  const t = useTranslations("settings.telephony.connect");
   const [accountSid, setAccountSid] = useState("");
   const [apiKeySid, setApiKeySid] = useState("");
   const [apiKeySecret, setApiKeySecret] = useState("");
@@ -26,17 +28,17 @@ export function ConnectForm() {
   useEffect(() => {
     if (!state) return;
     if (state.ok) {
-      toast.success("Twilio conectado");
+      toast.success(t("toastConnected"));
       router.refresh();
     } else {
       toast.error(state.error);
     }
-  }, [state, router]);
+  }, [state, router, t]);
 
   return (
     <form action={() => runConnect()} className="grid w-full max-w-md gap-3 text-left">
       <div className="space-y-1.5">
-        <Label htmlFor="accountSid">Account SID</Label>
+        <Label htmlFor="accountSid">{t("accountSidLabel")}</Label>
         <Input
           id="accountSid"
           value={accountSid}
@@ -47,7 +49,7 @@ export function ConnectForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="apiKeySid">Twilio Client SID</Label>
+        <Label htmlFor="apiKeySid">{t("apiKeySidLabel")}</Label>
         <Input
           id="apiKeySid"
           value={apiKeySid}
@@ -58,7 +60,7 @@ export function ConnectForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="apiKeySecret">Secret</Label>
+        <Label htmlFor="apiKeySecret">{t("authTokenLabel")}</Label>
         <Input
           id="apiKeySecret"
           type="password"
@@ -70,7 +72,7 @@ export function ConnectForm() {
         />
       </div>
       <Button type="submit" disabled={pending} className="w-fit">
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conectar"}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
       </Button>
     </form>
   );

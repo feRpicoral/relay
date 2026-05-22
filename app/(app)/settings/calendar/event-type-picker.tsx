@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ export function DefaultEventTypePicker({
 }: {
   currentEventTypeId: number | null;
 }) {
+  const t = useTranslations("settings.calendar.eventType");
   const [pending, startTransition] = useTransition();
   const [eventTypes, setEventTypes] = useState<Array<{ id: number; title: string }>>([]);
   const [value, setValue] = useState(currentEventTypeId?.toString() ?? "");
@@ -42,13 +44,13 @@ export function DefaultEventTypePicker({
   function onSave() {
     const parsed = parseInt(value, 10);
     if (Number.isNaN(parsed)) {
-      toast.error("Selecione um event type.");
+      toast.error(t("invalid"));
       return;
     }
     startTransition(async () => {
       const result = await setDefaultEventTypeAction({ eventTypeId: parsed });
       if (result.ok) {
-        toast.success("Event type atualizado");
+        toast.success(t("saved"));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -59,7 +61,7 @@ export function DefaultEventTypePicker({
   if (loadError) {
     return (
       <div className="space-y-2">
-        <Label>Event type padrão</Label>
+        <Label>{t("title")}</Label>
         <p className="text-destructive text-sm">{loadError}</p>
       </div>
     );
@@ -67,7 +69,7 @@ export function DefaultEventTypePicker({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="event-type-id">Event type padrão</Label>
+      <Label htmlFor="event-type-id">{t("title")}</Label>
       <div className="flex gap-2">
         <Select
           value={value}
@@ -75,7 +77,7 @@ export function DefaultEventTypePicker({
           disabled={pending || eventTypes.length === 0}
         >
           <SelectTrigger id="event-type-id" className="flex-1">
-            <SelectValue placeholder={eventTypes.length === 0 ? "Carregando..." : "Selecione"} />
+            <SelectValue placeholder={eventTypes.length === 0 ? t("loading") : t("label")} />
           </SelectTrigger>
           <SelectContent>
             {eventTypes.map((et) => (
@@ -86,13 +88,10 @@ export function DefaultEventTypePicker({
           </SelectContent>
         </Select>
         <Button onClick={onSave} disabled={pending || !value}>
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
         </Button>
       </div>
-      <p className="text-muted-foreground text-xs">
-        Quando o agente faz <code>book_appointment</code>, usa esse event type. Crie-os em Cal.com
-        Event Types.
-      </p>
+      <p className="text-muted-foreground text-xs">{t("description")}</p>
     </div>
   );
 }
