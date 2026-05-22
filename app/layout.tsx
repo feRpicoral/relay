@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { resolveLocale } from "@/lib/i18n/resolve-locale";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -18,9 +19,16 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // `<html lang>` only — actual translation lookup happens inside each
+  // segment's NextIntlClientProvider. Using the cookie / Accept-Language
+  // resolver here (not the DB tier) keeps the root render cheap; the (app)
+  // layout overrides downstream when the signed-in user has a different
+  // saved preference.
+  const locale = await resolveLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
           GeistSans.variable,
