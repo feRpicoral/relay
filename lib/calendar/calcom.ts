@@ -12,6 +12,7 @@ const CALCOM_BASE = envOr("CALCOM_API_BASE", "https://api.cal.com/v2");
 // which is what triggered `b.map is not a function` on the event-type picker.
 const EVENT_TYPES_API_VERSION = "2024-06-14";
 const SLOTS_API_VERSION = "2024-09-04";
+const BOOKINGS_API_VERSION = "2024-08-13";
 
 /**
  * Cap any Cal.com request: the worker can't block a live call on a slow third
@@ -207,11 +208,21 @@ export const calcom = {
       throw new CalcomError("No default event type configured for this org.");
     }
 
+    // Cal.com v2024-08-13 requires attendee.email even when the booking
+    // originates from a phone call where we never collected one. We don't
+    // want the agent to ask the caller for an email mid-conversation, so we
+    // synthesize a deterministic placeholder from the phone digits. The
+    // domain we use (`no-email.relay.invalid`) is reserved by RFC 6761 and
+    // won't accidentally route to a real inbox.
+    const phoneDigits = input.patientPhone.replace(/\D+/g, "");
+    const syntheticEmail = `${phoneDigits || "anonymous"}@no-email.relay.invalid`;
+
     const body = {
       start: input.slotIso,
       eventTypeId: conn.eventTypeId,
       attendee: {
         name: input.patientName,
+        email: syntheticEmail,
         phoneNumber: input.patientPhone,
         timeZone: conn.timezone,
         language: "pt",
@@ -223,7 +234,13 @@ export const calcom = {
 
     const data = await callApi(
       "/bookings",
-      { method: "POST", body: JSON.stringify(body) },
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        // Missing version → legacy schema → "start is invalid". Pin to the
+        // current bookings API version that matches the body shape above.
+        headers: { "cal-api-version": BOOKINGS_API_VERSION },
+      },
       conn.apiKey,
       BookingResponseSchema,
     );
