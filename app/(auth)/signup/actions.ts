@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { consumeToken, OTP_LIMIT } from "@/lib/auth/rate-limit";
@@ -16,12 +17,13 @@ const Schema = z.object({
 const GENERIC_SUCCESS: Result = { ok: true };
 
 export async function signupAction(formData: FormData): Promise<Result> {
+  const t = await getTranslations("signup.errors");
   const parsed = Schema.safeParse({
     email: formData.get("email"),
     name: formData.get("name"),
   });
   if (!parsed.success) {
-    return { ok: false, error: "Verifique os dados informados." };
+    return { ok: false, error: t("invalidData") };
   }
 
   const normalizedEmail = parsed.data.email.trim().toLowerCase();
@@ -46,8 +48,7 @@ export async function signupAction(formData: FormData): Promise<Result> {
   });
 
   if (error) {
-    // Generic error: don't leak provider wording to the UI.
-    return { ok: false, error: "Não foi possível enviar o link. Tente novamente em instantes." };
+    return { ok: false, error: t("sendFailed") };
   }
   return GENERIC_SUCCESS;
 }

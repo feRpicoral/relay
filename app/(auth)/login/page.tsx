@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { safeNextPath } from "@/lib/auth/safe-redirect";
 
 import { LoginForm } from "./form";
 
-export const metadata: Metadata = { title: "Entrar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("login");
+  return { title: t("metadataTitle") };
+}
 
-/**
- * Map the small set of error codes the auth flow surfaces (via `?error=...`)
- * to user-facing copy. Avoids rendering arbitrary attacker-controlled text on
- * the login page.
- */
-const ERROR_MESSAGES: Record<string, string> = {
-  auth_failed: "Não foi possível autenticar. Tente novamente.",
-  missing_code: "Sessão inválida. Tente fazer login novamente.",
-};
+type LoginErrorCode = "auth_failed" | "missing_code";
+
+const KNOWN_ERROR_CODES = new Set<LoginErrorCode>(["auth_failed", "missing_code"]);
+
+function isKnownErrorCode(value: string): value is LoginErrorCode {
+  return KNOWN_ERROR_CODES.has(value as LoginErrorCode);
+}
 
 export default async function LoginPage({
   searchParams,
@@ -24,18 +26,24 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const next = safeNextPath(params.next) ?? undefined;
-  const initialError = params.error ? ERROR_MESSAGES[params.error] : undefined;
+  const t = await getTranslations("login");
+  const tErrors = await getTranslations("login.errors");
+  // Avoid rendering arbitrary attacker-controlled error strings on the
+  // login page — only translate codes we recognize.
+  const initialError =
+    params.error && isKnownErrorCode(params.error) ? tErrors(params.error) : undefined;
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
-        <p className="text-muted-foreground text-sm">Acesse seu painel de voice agents.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground text-sm">{t("description")}</p>
       </div>
       <LoginForm next={next} initialError={initialError} />
       <p className="text-muted-foreground text-center text-sm">
-        Não tem conta?{" "}
+        {t("noAccountPrompt")}{" "}
         <Link href="/signup" className="text-foreground underline-offset-4 hover:underline">
-          Criar conta
+          {t("createAccount")}
         </Link>
       </p>
     </div>

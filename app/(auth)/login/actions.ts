@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { consumeToken, OTP_LIMIT } from "@/lib/auth/rate-limit";
@@ -21,12 +22,13 @@ const Schema = z.object({
 const GENERIC_SUCCESS: Result = { ok: true };
 
 export async function loginAction(formData: FormData): Promise<Result> {
+  const t = await getTranslations("login.errors");
   const parsed = Schema.safeParse({
     email: formData.get("email"),
     next: formData.get("next"),
   });
   if (!parsed.success) {
-    return { ok: false, error: "Email inválido." };
+    return { ok: false, error: t("invalidEmail") };
   }
 
   // Rate-limit per email and per IP. Both reveal the same generic message so
@@ -54,8 +56,7 @@ export async function loginAction(formData: FormData): Promise<Result> {
     if (error.message.toLowerCase().includes("not found")) {
       return GENERIC_SUCCESS;
     }
-    // Avoid leaking the raw provider error to the UI for unexpected cases.
-    return { ok: false, error: "Não foi possível enviar o link. Tente novamente em instantes." };
+    return { ok: false, error: t("sendFailed") };
   }
 
   return GENERIC_SUCCESS;

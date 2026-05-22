@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +12,7 @@ import type { Result } from "@/lib/types/result";
 import { acceptInviteAction } from "./actions";
 
 export function AcceptInviteForm({ token }: { token: string }) {
+  const t = useTranslations("onboarding.acceptInvite.form");
   const router = useRouter();
 
   const [state, runAccept, pending] = useActionState<Result | null>(
@@ -20,11 +22,11 @@ export function AcceptInviteForm({ token }: { token: string }) {
 
   useEffect(() => {
     if (state && state.ok) {
-      toast.success("Bem-vindo!");
+      toast.success(t("toastWelcome"));
       router.push("/dashboard");
       router.refresh();
     }
-  }, [state, router]);
+  }, [state, router, t]);
 
   const error = state && !state.ok ? state.error : null;
 
@@ -39,7 +41,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
         }}
       >
         <Button type="submit" disabled={pending}>
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aceitar convite"}
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
         </Button>
       </form>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}

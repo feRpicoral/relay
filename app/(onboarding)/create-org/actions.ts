@@ -2,6 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { customAlphabet } from "nanoid";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { setActiveOrg } from "@/lib/auth/active-org";
@@ -17,14 +18,15 @@ const slugSuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
 const SLUG_MAX_ATTEMPTS = 5;
 
 export async function createOrgAction(formData: FormData): Promise<Result<{ orgId: string }>> {
+  const t = await getTranslations("onboarding.createOrg.errors");
   const parsed = Schema.safeParse({ name: formData.get("name") });
-  if (!parsed.success) return { ok: false, error: "Nome inválido." };
+  if (!parsed.success) return { ok: false, error: t("invalidName") };
 
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Sessão expirada." };
+  if (!user) return { ok: false, error: t("sessionExpired") };
 
   // Idempotency guard: if the user already has any membership, send them back
   // to the dashboard instead of silently creating a second org.
@@ -74,5 +76,5 @@ export async function createOrgAction(formData: FormData): Promise<Result<{ orgI
   }
 
   console.error("[create-org] slug allocation exhausted", lastErr);
-  return { ok: false, error: "Não foi possível criar a organização. Tente outro nome." };
+  return { ok: false, error: t("slugExhausted") };
 }

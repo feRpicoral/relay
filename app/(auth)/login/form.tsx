@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ import { loginAction } from "./actions";
 type State = Result | { initialError: string } | null;
 
 export function LoginForm({ next, initialError }: { next?: string; initialError?: string }) {
+  const t = useTranslations("login.form");
   const [email, setEmail] = useState("");
   const router = useRouter();
 
@@ -28,14 +30,14 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
   useEffect(() => {
     if (!state) return;
     if ("ok" in state && state.ok) {
-      toast.success("Link de acesso enviado", {
-        description: "Se houver uma conta para esse email, você receberá um link.",
+      toast.success(t("toastTitle"), {
+        description: t("toastDescription"),
       });
       const params = new URLSearchParams({ email });
       if (next) params.set("next", next);
       router.push(`/auth/check-email?${params.toString()}`);
     }
-  }, [state, email, next, router]);
+  }, [state, email, next, router, t]);
 
   const error = !state
     ? null
@@ -49,7 +51,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={next ?? ""} />
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("emailLabel")}</Label>
         <Input
           id="email"
           name="email"
@@ -57,7 +59,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
           required
           autoComplete="email"
           autoFocus
-          placeholder="voce@empresa.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={pending}
@@ -68,10 +70,10 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
         {pending ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            <span className="sr-only">Enviando link</span>
+            <span className="sr-only">{t("submitting")}</span>
           </>
         ) : (
-          "Enviar link de acesso"
+          t("submit")
         )}
       </Button>
     </form>

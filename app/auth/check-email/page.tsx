@@ -1,5 +1,6 @@
 import { Mail } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { Button } from "@/components/ui/button";
 
@@ -9,6 +10,7 @@ export default async function CheckEmailPage({
   searchParams: Promise<{ email?: string }>;
 }) {
   const { email } = await searchParams;
+  const t = await getTranslations("checkEmail");
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-md space-y-6 text-center">
@@ -16,15 +18,15 @@ export default async function CheckEmailPage({
           <Mail className="h-5 w-5" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Verifique seu email</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground text-sm">
-            Enviamos um link de acesso para
-            {email ? <span className="text-foreground ml-1 font-medium">{email}</span> : ""}. Clique
-            nele para entrar.
+            {t("descriptionHead")}
+            {email ? <span className="text-foreground ml-1 font-medium">{email}</span> : ""}
+            {t("descriptionTail")}
           </p>
         </div>
         <Button asChild variant="outline">
-          <Link href="/login">Voltar para login</Link>
+          <Link href="/login">{t("backToLogin")}</Link>
         </Button>
       </div>
     </div>

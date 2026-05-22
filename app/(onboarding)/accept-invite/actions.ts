@@ -1,28 +1,32 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
+
 import { setActiveOrg } from "@/lib/auth/active-org";
 import { getPrisma } from "@/lib/db/client";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { Result } from "@/lib/types/result";
 
 export async function acceptInviteAction(token: string): Promise<Result> {
+  const t = await getTranslations("onboarding.acceptInvite.errors");
+
   if (!token || token.length < 8 || token.length > 200) {
-    return { ok: false, error: "Token ausente." };
+    return { ok: false, error: t("missingToken") };
   }
 
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Faça login primeiro." };
+  if (!user) return { ok: false, error: t("signInFirst") };
 
   const prisma = getPrisma();
   const invite = await prisma.invite.findUnique({ where: { token } });
-  if (!invite) return { ok: false, error: "Convite não encontrado." };
-  if (invite.acceptedAt) return { ok: false, error: "Convite já usado." };
-  if (invite.expiresAt < new Date()) return { ok: false, error: "Convite expirado." };
+  if (!invite) return { ok: false, error: t("inviteNotFound") };
+  if (invite.acceptedAt) return { ok: false, error: t("inviteUsed") };
+  if (invite.expiresAt < new Date()) return { ok: false, error: t("inviteExpired") };
   if (invite.email.toLowerCase() !== user.email?.toLowerCase()) {
-    return { ok: false, error: "Esse convite é pra outro email." };
+    return { ok: false, error: t("wrongEmail") };
   }
 
   // Idempotent inside a transaction:
