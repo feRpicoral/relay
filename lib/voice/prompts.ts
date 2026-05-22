@@ -37,13 +37,27 @@ export function buildSystemPrompt(ctx: AgentContext): string {
       ? "(No knowledge base provided.)"
       : "(Sem base de conhecimento fornecida.)";
 
+  // Inject the current date in the org's timezone so the LLM doesn't pick
+  // dates from its training cutoff when building tool-call arguments
+  // (observed: Claude passing 2025-01-XX in 2026-05 calls, which then makes
+  // Cal.com return zero slots because the query is in the past).
+  const tz = ctx.businessHours.timezone;
+  const nowInTz = new Date().toLocaleString(lang === "en-US" ? "en-US" : "pt-BR", {
+    timeZone: tz,
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+
   if (lang === "en-US") {
     return [
       "You are a friendly, professional AI receptionist. Speak naturally, keep responses short (1-2 sentences), and never sound robotic.",
       "Always confirm details verbally before booking. If you are unsure, say so honestly and offer to transfer.",
       "If the caller asks something outside the knowledge base, do not invent. Use the lookup_kb tool first.",
       "When you need a moment for a tool call (>300ms), say 'one moment, please' before invoking it.",
+      "After every tool call, you MUST speak — never go silent. If `check_availability` returns no slots, say so out loud and ask the caller for a different day or time. If a tool errors, apologize briefly and offer to transfer or take a message. Never let a tool result sit without a verbal reply.",
+      "When the caller is fully done (appointment booked and confirmed, question answered, they said goodbye), say a brief farewell out loud THEN call `end_call` to hang up. Don't keep the line open waiting for them to disconnect.",
       "",
+      `Current date/time: ${nowInTz} (${tz}). When the caller says "tomorrow", "next Monday", etc., resolve against this — never use older dates from your training data.`,
       `Business hours: ${hours}`,
       "",
       "Knowledge base (verbatim, quote when relevant):",
@@ -59,7 +73,10 @@ export function buildSystemPrompt(ctx: AgentContext): string {
     "Sempre confirme detalhes verbalmente antes de marcar. Se ficar em dúvida, seja honesta e ofereça transferir pra um humano.",
     "Se o cliente perguntar algo fora da base de conhecimento, não invente. Use a tool lookup_kb primeiro.",
     "Quando precisar de um momento pra usar uma ferramenta (>300ms), diga 'um momentinho' antes de chamá-la.",
+    "Depois de cada chamada de ferramenta, você DEVE falar, nunca fique em silêncio. Se `check_availability` retornar sem horários, diga isso em voz alta e pergunte se o cliente tem outro dia ou horário em mente. Se uma ferramenta der erro, peça desculpa rapidinho e ofereça transferir ou anotar um recado. Nunca deixe um resultado de ferramenta sem resposta falada.",
+    "Quando o cliente estiver totalmente atendido (consulta marcada e confirmada, dúvida respondida, ou ele se despediu), diga uma despedida curta em voz alta e DEPOIS chame `end_call` pra encerrar a chamada. Não deixe a linha aberta esperando o cliente desligar.",
     "",
+    `Data/hora agora: ${nowInTz} (${tz}). Quando o cliente disser "amanhã", "segunda que vem", etc., resolva contra essa data — nunca use datas antigas vindas do seu treinamento.`,
     `Horário de funcionamento: ${hours}`,
     "",
     "Base de conhecimento (cite quando relevante):",
