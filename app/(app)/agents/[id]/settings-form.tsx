@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ interface AgentInitial {
 }
 
 export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
+  const t = useTranslations("agents.detail.settings");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const [name, setName] = useState(agent.name);
@@ -52,7 +54,7 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
         enabled,
       });
       if (result.ok) {
-        toast.success("Salvo");
+        toast.success(t("toastSaved"));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -71,16 +73,14 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
       <div className="border-border bg-card/40 flex items-center justify-between rounded-md border px-4 py-3">
         <div>
           <Label htmlFor="enabled" className="text-sm">
-            Agente ativo
+            {t("enabledLabel")}
           </Label>
-          <p className="text-muted-foreground text-xs">
-            Quando desativado, chamadas recebem mensagem de indisponibilidade.
-          </p>
+          <p className="text-muted-foreground text-xs">{t("enabledHint")}</p>
         </div>
         <Switch id="enabled" checked={enabled} onCheckedChange={setEnabled} disabled={pending} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="name">{t("nameLabel")}</Label>
         <Input
           id="name"
           value={name}
@@ -90,7 +90,7 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="language">Idioma</Label>
+        <Label htmlFor="language">{t("languageLabel")}</Label>
         <Select
           value={language}
           onValueChange={(v) => setLanguage(v as AgentInitial["language"])}
@@ -102,12 +102,12 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
           <SelectContent>
             <SelectItem value="PT_BR">Português (Brasil)</SelectItem>
             <SelectItem value="EN_US">English (US)</SelectItem>
-            <SelectItem value="AUTO">Auto-detectar</SelectItem>
+            <SelectItem value="AUTO">{t("languageAuto")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="greeting">Saudação inicial</Label>
+        <Label htmlFor="greeting">{t("greetingLabel")}</Label>
         <Input
           id="greeting"
           value={greeting}
@@ -116,22 +116,19 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="persona">Persona</Label>
+        <Label htmlFor="persona">{t("personaLabel")}</Label>
         <Textarea
           id="persona"
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
           rows={6}
           disabled={pending}
-          placeholder="Você é a recepcionista..."
+          placeholder={t("personaPlaceholder")}
         />
-        <p className="text-muted-foreground text-xs">
-          Vira parte do system prompt. Use cache prompt (sempre estável), evite informações que
-          mudam por chamada.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("personaHint")}</p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="fallback">Número de transferência humana</Label>
+        <Label htmlFor="fallback">{t("fallbackLabel")}</Label>
         <Input
           id="fallback"
           value={fallback}
@@ -139,12 +136,10 @@ export function AgentSettingsForm({ agent }: { agent: AgentInitial }) {
           placeholder="+5511999998888"
           disabled={pending}
         />
-        <p className="text-muted-foreground text-xs">
-          Quando o agente usar a tool <code>transfer_to_human</code>, transferimos pra esse número.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("fallbackHint")}</p>
       </div>
       <Button type="submit" disabled={pending}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
       </Button>
     </form>
   );

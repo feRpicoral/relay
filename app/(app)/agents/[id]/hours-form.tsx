@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -13,14 +14,16 @@ import type { BusinessHours, BusinessHoursDay } from "@/lib/voice/types";
 
 import { updateBusinessHoursAction } from "./actions";
 
-const DAYS: Array<{ key: keyof BusinessHours; label: string }> = [
-  { key: "monday", label: "Segunda-feira" },
-  { key: "tuesday", label: "Terça-feira" },
-  { key: "wednesday", label: "Quarta-feira" },
-  { key: "thursday", label: "Quinta-feira" },
-  { key: "friday", label: "Sexta-feira" },
-  { key: "saturday", label: "Sábado" },
-  { key: "sunday", label: "Domingo" },
+type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+
+const DAY_KEYS: DayKey[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
 ];
 
 export function BusinessHoursForm({
@@ -30,6 +33,8 @@ export function BusinessHoursForm({
   agentId: string;
   initial: BusinessHours;
 }) {
+  const t = useTranslations("agents.detail.hours");
+  const tDays = useTranslations("enums.dayOfWeek");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const [hours, setHours] = useState<BusinessHours>({
@@ -62,7 +67,7 @@ export function BusinessHoursForm({
     startTransition(async () => {
       const result = await updateBusinessHoursAction({ agentId, hours });
       if (result.ok) {
-        toast.success("Horários salvos");
+        toast.success(t("toastSaved"));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -79,7 +84,7 @@ export function BusinessHoursForm({
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="tz">Fuso horário</Label>
+        <Label htmlFor="tz">{t("timezoneLabel")}</Label>
         <Input
           id="tz"
           value={hours.timezone}
@@ -88,7 +93,7 @@ export function BusinessHoursForm({
         />
       </div>
       <div className="space-y-2">
-        {DAYS.map(({ key, label }) => {
+        {DAY_KEYS.map((key) => {
           const day = hours[key];
           const isOpen = day && typeof day === "object" && "open" in day;
           return (
@@ -97,7 +102,7 @@ export function BusinessHoursForm({
               className="border-border bg-card/40 flex items-center gap-3 rounded-md border px-4 py-2.5"
             >
               <div className="w-40">
-                <p className="text-sm font-medium">{label}</p>
+                <p className="text-sm font-medium">{tDays(key)}</p>
               </div>
               <Switch
                 checked={Boolean(isOpen)}
@@ -113,7 +118,7 @@ export function BusinessHoursForm({
                     className="w-28"
                     disabled={pending}
                   />
-                  <span className="text-muted-foreground">até</span>
+                  <span className="text-muted-foreground">{t("to")}</span>
                   <Input
                     type="time"
                     value={(day as BusinessHoursDay).close}
@@ -123,14 +128,14 @@ export function BusinessHoursForm({
                   />
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Fechado</p>
+                <p className="text-muted-foreground text-sm">{t("closed")}</p>
               )}
             </div>
           );
         })}
       </div>
       <Button type="submit" disabled={pending}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar horários"}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
       </Button>
     </form>
   );

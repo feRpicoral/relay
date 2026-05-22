@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -18,7 +19,7 @@ const E164 = /^\+\d{6,18}$/;
 const Schema = z.object({
   name: z.string().trim().min(2).max(120),
   agentId: z.string().uuid(),
-  fromPhoneNumberE164: z.string().regex(E164, "Número inválido"),
+  fromPhoneNumberE164: z.string().regex(E164, "INVALID_PHONE"),
   scriptPrompt: z.string().max(2000).default(""),
   csv: z.string().min(1).max(MAX_CSV_BYTES),
   maxAttempts: z.number().int().min(1).max(10).default(3),
@@ -29,35 +30,30 @@ const Schema = z.object({
 export async function createCampaignAction(
   input: z.infer<typeof Schema>,
 ): Promise<Result<{ campaignId: string; leadsAdded: number }>> {
+  const t = await getTranslations("campaigns.new.errors");
   const session = await requireAdmin();
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Dados inválidos." };
+  if (!parsed.success) return { ok: false, error: t("invalidData") };
 
   const db = getDb(session.orgId);
 
   // Defense-in-depth: the FK insert below would fail if these don't belong to
-  // the org, but the error surfaces as opaque Prisma. Verify explicitly so we
-  // can return a friendly message and avoid leaking FK error wording.
+  // the org, but the error surfaces as opaque Prisma.
   const agent = await db.agent.findFirst({
     where: { id: parsed.data.agentId },
     select: { id: true },
   });
-  if (!agent) return { ok: false, error: "Agente não encontrado." };
+  if (!agent) return { ok: false, error: t("noAgents") };
   const phone = await db.phoneNumber.findFirst({
     where: { e164: parsed.data.fromPhoneNumberE164, outbound: true },
     select: { id: true },
   });
-  if (!phone) {
-    return { ok: false, error: "Número não encontrado ou sem outbound habilitado." };
-  }
+  if (!phone) return { ok: false, error: t("noNumbers") };
 
   const leads = parseCsv(parsed.data.csv);
-  if (leads.length === 0) return { ok: false, error: "Nenhum lead válido encontrado no CSV." };
+  if (leads.length === 0) return { ok: false, error: t("invalidCsv") };
   if (leads.length > MAX_LEADS_PER_UPLOAD) {
-    return {
-      ok: false,
-      error: `CSV tem mais de ${MAX_LEADS_PER_UPLOAD} leads. Divida em arquivos menores.`,
-    };
+    return { ok: false, error: t("tooManyLeads") };
   }
 
   const campaign = await db.campaign.create({

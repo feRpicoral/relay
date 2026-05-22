@@ -2,6 +2,7 @@
 
 import { Check, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -24,6 +25,8 @@ export function VoicePicker({
   currentProvider: "CARTESIA" | "ELEVENLABS";
   voices: readonly VoiceOption[];
 }) {
+  const t = useTranslations("agents.detail.voice");
+  const tGender = useTranslations("enums.voiceGender");
   const langFilter: "pt-BR" | "en-US" = language === "EN_US" ? "en-US" : "pt-BR";
   const candidates = voices.filter((v) => v.language === langFilter);
 
@@ -44,7 +47,7 @@ export function VoicePicker({
         ttsProvider: voice.provider === "elevenlabs" ? "ELEVENLABS" : "CARTESIA",
       });
       if (result.ok) {
-        toast.success(`Voz alterada: ${voice.label}`);
+        toast.success(t("toastChanged", { label: voice.label }));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -57,11 +60,9 @@ export function VoicePicker({
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <p className="text-sm font-medium">Voz do agente</p>
+        <p className="text-sm font-medium">{t("title")}</p>
         <p className="text-muted-foreground text-xs">
-          {elevenlabsEnabled
-            ? "Cartesia (default) é otimizada pra latência. ElevenLabs é a opção premium com naturalidade superior, mas adiciona ~35ms."
-            : "Cartesia (default) é otimizada pra latência. Configure ELEVENLABS_API_KEY pra liberar vozes premium."}
+          {elevenlabsEnabled ? t("hintWithElevenlabs") : t("hintCartesiaOnly")}
         </p>
       </div>
       <div className="grid gap-2">
@@ -86,11 +87,11 @@ export function VoicePicker({
                   {voice.provider === "elevenlabs" ? (
                     <Badge variant="outline" className="border-warning/40 text-warning gap-1">
                       <Sparkles className="h-3 w-3" />
-                      Premium
+                      {t("premium")}
                     </Badge>
                   ) : null}
                   <Badge variant="secondary" className="text-[10px] uppercase">
-                    {voice.gender}
+                    {tGender(voice.gender)}
                   </Badge>
                 </div>
                 {voice.description ? (

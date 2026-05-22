@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useFormatter, useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { CallStatusBadge } from "@/components/call/call-status-badge";
@@ -20,6 +21,9 @@ interface CallRow {
 }
 
 export function LiveCallsList({ orgId, initial }: { orgId: string; initial: CallRow[] }) {
+  const t = useTranslations("calls.live");
+  const tDirection = useTranslations("enums.callDirection");
+  const formatter = useFormatter();
   const rows = useRealtimeList<CallRow>({
     table: "calls",
     filter: `org_id=eq.${orgId}`,
@@ -52,12 +56,16 @@ export function LiveCallsList({ orgId, initial }: { orgId: string; initial: Call
                     : formatPhone(c.callee_e164)}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  {c.agent_name ?? "-"}, {c.direction === "INBOUND" ? "Recebida" : "Realizada"} ,{" "}
-                  {new Date(c.started_at).toLocaleTimeString("pt-BR", { hour12: false })}
+                  {c.agent_name ?? "-"}, {tDirection(c.direction)} ,{" "}
+                  {formatter.dateTime(new Date(c.started_at), {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })}
                 </p>
               </div>
             </div>
-            <span className="text-muted-foreground text-xs">Ver ao vivo</span>
+            <span className="text-muted-foreground text-xs">{t("viewLive")}</span>
           </Link>
         ))}
       </div>

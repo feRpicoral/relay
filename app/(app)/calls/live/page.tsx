@@ -1,5 +1,6 @@
 import { PhoneCall } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { Empty } from "@/components/ui/empty";
@@ -11,6 +12,8 @@ import { LiveCallsList } from "./live-list";
 export default async function LiveCallsPage() {
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("calls.live");
+
   const initial = await db.call.findMany({
     where: { status: { in: ["RINGING", "IN_PROGRESS"] } },
     orderBy: { startedAt: "desc" },
@@ -20,16 +23,13 @@ export default async function LiveCallsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Chamadas ao vivo"
-        description="Acompanhe as ligações que estão acontecendo agora, clique numa pra ver a transcrição em tempo real."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <div className="p-8">
         {initial.length === 0 ? (
           <Empty
             icon={<PhoneCall className="h-5 w-5" />}
-            title="Nada acontecendo agora"
-            description="Quando uma chamada começar, ela aparece aqui em tempo real."
+            title={t("empty.title")}
+            description={t("empty.description")}
           />
         ) : null}
         <LiveCallsList
@@ -52,7 +52,7 @@ export default async function LiveCallsPage() {
           href="/calls"
           className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline"
         >
-          Ver histórico de chamadas
+          {t("viewHistory")}
         </Link>
       </div>
     </>

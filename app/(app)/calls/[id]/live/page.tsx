@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { LatencyMeter } from "@/components/call/latency-meter";
 import { LiveCallListener } from "@/components/call/live-call-listener";
@@ -21,6 +22,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("calls.liveDetail");
 
   const call = await db.call.findUnique({
     where: { id },
@@ -55,12 +57,14 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
   }
 
   const active = call.status === "RINGING" || call.status === "IN_PROGRESS";
+  const agentName = call.agent?.name ?? t("agentFallback");
+  const peerNumber = formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164);
 
   return (
     <>
       <PageHeader
-        title={call.direction === "INBOUND" ? "Chamada recebida" : "Chamada de saída"}
-        description={`${formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164)}, ${call.agent?.name ?? "Agente"}`}
+        title={call.direction === "INBOUND" ? t("titleInbound") : t("titleOutbound")}
+        description={`${peerNumber}, ${agentName}`}
         actions={<LiveStatusActions callId={call.id} initialStatus={call.status} />}
       />
       {/* `minmax(0,1fr)` instead of `1fr`: see /calls/[id]/page.tsx for the
@@ -73,10 +77,10 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-muted-foreground text-sm font-medium">
-                  Waveform ao vivo
+                  {t("waveform")}
                 </CardTitle>
                 <Badge variant="outline" className="text-[10px]">
-                  {call.livekitRoomName ?? "no room"}
+                  {call.livekitRoomName ?? t("noRoom")}
                 </Badge>
               </div>
             </CardHeader>
@@ -101,7 +105,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
           <Card>
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm font-medium">
-                Latência por leg
+                {t("latencyPerLeg")}
               </CardTitle>
             </CardHeader>
             <div className="px-6 pb-6">
@@ -119,21 +123,21 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
           <Card>
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm font-medium">
-                Ferramentas usadas
+                {t("toolsUsed")}
               </CardTitle>
             </CardHeader>
             <div className="px-6 pb-6">
               <ToolTimeline
                 callId={call.id}
-                initial={call.toolCalls.map((t) => ({
-                  id: t.id,
-                  name: t.name,
-                  inputJson: t.inputJson as Record<string, unknown>,
-                  outputJson: t.outputJson as Record<string, unknown> | null,
-                  errorMessage: t.errorMessage,
-                  startedAt: t.startedAt.toISOString(),
-                  endedAt: t.endedAt?.toISOString() ?? null,
-                  durationMs: t.durationMs,
+                initial={call.toolCalls.map((tc) => ({
+                  id: tc.id,
+                  name: tc.name,
+                  inputJson: tc.inputJson as Record<string, unknown>,
+                  outputJson: tc.outputJson as Record<string, unknown> | null,
+                  errorMessage: tc.errorMessage,
+                  startedAt: tc.startedAt.toISOString(),
+                  endedAt: tc.endedAt?.toISOString() ?? null,
+                  durationMs: tc.durationMs,
                 }))}
               />
             </div>
@@ -143,7 +147,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
         <Card className="flex h-[640px] flex-col">
           <CardHeader>
             <CardTitle className="text-muted-foreground text-sm font-medium">
-              Transcrição ao vivo
+              {t("liveTranscript")}
             </CardTitle>
           </CardHeader>
           <Separator />
@@ -154,14 +158,14 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
           <div className="min-h-0 flex-1 overflow-hidden">
             <TranscriptStream
               callId={call.id}
-              initial={call.transcripts.map((t) => ({
-                id: t.id,
-                speaker: t.speaker,
-                text: t.text,
-                startMs: t.startMs,
-                endMs: t.endMs,
-                isFinal: t.isFinal,
-                createdAt: t.createdAt.toISOString(),
+              initial={call.transcripts.map((tr) => ({
+                id: tr.id,
+                speaker: tr.speaker,
+                text: tr.text,
+                startMs: tr.startMs,
+                endMs: tr.endMs,
+                isFinal: tr.isFinal,
+                createdAt: tr.createdAt.toISOString(),
               }))}
             />
           </div>

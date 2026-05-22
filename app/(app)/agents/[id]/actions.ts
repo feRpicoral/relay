@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -9,7 +10,7 @@ import type { Result } from "@/lib/types/result";
 import { E164_REGEX } from "@/lib/validation/phone";
 import { BusinessHoursSchema } from "@/lib/voice/types";
 
-const E164 = z.string().regex(E164_REGEX, "Use formato E.164: +5511999998888");
+const E164 = z.string().regex(E164_REGEX, "USE_E164_FORMAT");
 
 const SettingsSchema = z.object({
   agentId: z.string().uuid(),
@@ -24,10 +25,13 @@ const SettingsSchema = z.object({
 export async function updateAgentSettingsAction(
   input: z.infer<typeof SettingsSchema>,
 ): Promise<Result> {
+  const t = await getTranslations("agents.detail.errors");
   const session = await requireAdmin();
   const parsed = SettingsSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
+    const code = parsed.error.issues[0]?.message;
+    const message = code === "USE_E164_FORMAT" ? t("useE164Format") : t("invalidInput");
+    return { ok: false, error: message };
   }
 
   const db = getDb(session.orgId);
@@ -54,9 +58,10 @@ const VoiceSchema = z.object({
 });
 
 export async function updateAgentVoiceAction(input: z.infer<typeof VoiceSchema>): Promise<Result> {
+  const t = await getTranslations("agents.detail.errors");
   const session = await requireAdmin();
   const parsed = VoiceSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
 
   const db = getDb(session.orgId);
   await db.agent.update({
@@ -75,9 +80,10 @@ const HoursSchema = z.object({
 export async function updateBusinessHoursAction(
   input: z.infer<typeof HoursSchema>,
 ): Promise<Result> {
+  const t = await getTranslations("agents.detail.errors");
   const session = await requireAdmin();
   const parsed = HoursSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Horários inválidos." };
+  if (!parsed.success) return { ok: false, error: t("invalidHours") };
 
   const db = getDb(session.orgId);
   await db.agent.update({
@@ -97,9 +103,10 @@ const DocCreateSchema = z.object({
 export async function createKnowledgeDocAction(
   input: z.infer<typeof DocCreateSchema>,
 ): Promise<Result> {
+  const t = await getTranslations("agents.detail.errors");
   const session = await requireAdmin();
   const parsed = DocCreateSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Documento inválido." };
+  if (!parsed.success) return { ok: false, error: t("invalidDocument") };
 
   const db = getDb(session.orgId);
   await db.knowledgeDoc.create({
@@ -119,9 +126,10 @@ const DocDeleteSchema = z.object({ docId: z.string().uuid(), agentId: z.string()
 export async function deleteKnowledgeDocAction(
   input: z.infer<typeof DocDeleteSchema>,
 ): Promise<Result> {
+  const t = await getTranslations("agents.detail.errors");
   const session = await requireAdmin();
   const parsed = DocDeleteSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
 
   const db = getDb(session.orgId);
   await db.knowledgeDoc.deleteMany({ where: { id: parsed.data.docId } });
@@ -132,9 +140,10 @@ export async function deleteKnowledgeDocAction(
 const DeleteAgentSchema = z.object({ agentId: z.string().uuid() });
 
 export async function deleteAgentAction(input: z.infer<typeof DeleteAgentSchema>): Promise<Result> {
+  const t = await getTranslations("agents.detail.errors");
   const session = await requireAdmin();
   const parsed = DeleteAgentSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
 
   const db = getDb(session.orgId);
   // The Agent FK cascades on call/phone-number/knowledge-doc/campaign delete.
@@ -146,7 +155,7 @@ export async function deleteAgentAction(input: z.infer<typeof DeleteAgentSchema>
     console.warn("[deleteAgentAction] delete failed", err);
     return {
       ok: false,
-      error: "Não foi possível remover o agente. Verifique se há chamadas ou campanhas ativas.",
+      error: t("deleteFailed"),
     };
   }
   revalidatePath("/agents");

@@ -2,6 +2,7 @@
 
 import type { CampaignStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -25,6 +26,7 @@ async function transitionCampaign(args: {
   kind: keyof typeof ALLOWED_TRANSITIONS;
   data: Record<string, unknown>;
 }): Promise<Result> {
+  const t = await getTranslations("campaigns.detail.errors");
   const session = await requireAdmin();
   const db = getDb(session.orgId);
   // Use updateMany with a status filter so an invalid transition is a no-op
@@ -35,7 +37,7 @@ async function transitionCampaign(args: {
     data: args.data,
   });
   if (updated.count === 0) {
-    return { ok: false, error: "Transição não permitida no estado atual." };
+    return { ok: false, error: t("notRunning") };
   }
   revalidatePath("/campaigns");
   revalidatePath(`/campaigns/${args.campaignId}`);
@@ -43,8 +45,9 @@ async function transitionCampaign(args: {
 }
 
 export async function startCampaignAction(input: z.infer<typeof Schema>): Promise<Result> {
+  const t = await getTranslations("campaigns.detail.errors");
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
   return transitionCampaign({
     campaignId: parsed.data.campaignId,
     kind: "start",
@@ -53,8 +56,9 @@ export async function startCampaignAction(input: z.infer<typeof Schema>): Promis
 }
 
 export async function pauseCampaignAction(input: z.infer<typeof Schema>): Promise<Result> {
+  const t = await getTranslations("campaigns.detail.errors");
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
   return transitionCampaign({
     campaignId: parsed.data.campaignId,
     kind: "pause",
@@ -63,11 +67,11 @@ export async function pauseCampaignAction(input: z.infer<typeof Schema>): Promis
 }
 
 export async function cancelCampaignAction(input: z.infer<typeof Schema>): Promise<Result> {
+  const t = await getTranslations("campaigns.detail.errors");
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
   // canceledAt is distinct from completedAt: the former marks operator
-  // intervention, the latter marks natural exhaustion. Keeps analytics able
-  // to differentiate the two.
+  // intervention, the latter marks natural exhaustion.
   return transitionCampaign({
     campaignId: parsed.data.campaignId,
     kind: "cancel",

@@ -1,5 +1,6 @@
 import { Bot, Plus } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,9 @@ import { getDb } from "@/lib/db/with-org";
 export default async function AgentsPage() {
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("agents.list");
+  const tLanguage = await getTranslations("enums.agentLanguageShort");
+
   const agents = await db.agent.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -23,13 +27,13 @@ export default async function AgentsPage() {
   return (
     <>
       <PageHeader
-        title="Agentes"
-        description="Configure persona, voz e base de conhecimento dos seus agentes de voz."
+        title={t("title")}
+        description={t("description")}
         actions={
           <Button asChild>
             <Link href="/agents/new">
               <Plus className="h-4 w-4" />
-              Novo agente
+              {t("newAgent")}
             </Link>
           </Button>
         }
@@ -38,11 +42,11 @@ export default async function AgentsPage() {
         {agents.length === 0 ? (
           <Empty
             icon={<Bot className="h-5 w-5" />}
-            title="Você ainda não tem agentes"
-            description="Crie seu primeiro agente, leva uns 2 minutos."
+            title={t("empty.title")}
+            description={t("empty.description")}
             action={
               <Button asChild>
-                <Link href="/agents/new">Criar agente</Link>
+                <Link href="/agents/new">{t("empty.cta")}</Link>
               </Button>
             }
           />
@@ -62,17 +66,16 @@ export default async function AgentsPage() {
                       <div>
                         <p className="font-semibold">{a.name}</p>
                         <p className="text-muted-foreground text-xs">
-                          {a.language === "PT_BR"
-                            ? "Português, "
-                            : a.language === "EN_US"
-                              ? "English, "
-                              : "Auto, "}
-                          {a._count.calls} chamadas, {a._count.knowledgeDocs} docs
+                          {tLanguage(a.language)},{" "}
+                          {t("summary", {
+                            calls: a._count.calls,
+                            docs: a._count.knowledgeDocs,
+                          })}
                         </p>
                       </div>
                     </div>
                     <Badge variant={a.enabled ? "success" : "secondary"} className="gap-1.5">
-                      {a.enabled ? "Ativo" : "Pausado"}
+                      {a.enabled ? t("active") : t("paused")}
                     </Badge>
                   </div>
                   {a.phoneNumbers.length > 0 ? (
@@ -80,7 +83,7 @@ export default async function AgentsPage() {
                       {a.phoneNumbers.map((p) => p.e164).join(", ")}
                     </p>
                   ) : (
-                    <p className="text-muted-foreground mt-4 text-xs">Nenhum número conectado</p>
+                    <p className="text-muted-foreground mt-4 text-xs">{t("noNumber")}</p>
                   )}
                 </Link>
               </Card>

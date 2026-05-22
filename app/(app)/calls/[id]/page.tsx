@@ -1,5 +1,6 @@
 import { Bot, Phone, Sparkles } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 
 import { CallStatusBadge } from "@/components/call/call-status-badge";
 import { ToolTimeline } from "@/components/call/tool-timeline";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { requireSession } from "@/lib/auth/session";
-import { OUTCOME_LABEL, SENTIMENT_LABEL, SENTIMENT_VARIANT } from "@/lib/calls/labels";
+import { outcomeLabel, SENTIMENT_VARIANT, sentimentLabel } from "@/lib/calls/labels";
 import { getDb } from "@/lib/db/with-org";
 import { cn, currency, formatDuration, formatPhone } from "@/lib/utils";
 
@@ -18,6 +19,11 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("calls.detail");
+  const tOutcome = await getTranslations("enums.outcome");
+  const tSentiment = await getTranslations("enums.sentiment");
+  const formatter = await getFormatter();
+  const locale = await getLocale();
 
   const call = await db.call.findUnique({
     where: { id },
@@ -33,11 +39,17 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
   const isPeerView =
     call.direction === "INBOUND" ? formatPhone(call.callerE164) : formatPhone(call.calleeE164);
 
+  const agentName = call.agent?.name ?? t("agentFallback");
+  const dateString = formatter.dateTime(call.startedAt, {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+
   return (
     <>
       <PageHeader
         title={isPeerView}
-        description={`${call.agent?.name ?? "Agente"}, ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(call.startedAt)}`}
+        description={`${agentName}, ${dateString}`}
         actions={<CallStatusBadge status={call.status} />}
       />
 
@@ -52,13 +64,13 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
           <div className="grid gap-4 md:grid-cols-3">
             <SummaryStat
               icon={<Phone className="text-muted-foreground h-4 w-4" />}
-              label="Duração"
+              label={t("stat.duration")}
               value={call.durationMs ? formatDuration(call.durationMs) : "-"}
             />
             <SummaryStat
               icon={<Bot className="text-muted-foreground h-4 w-4" />}
-              label="Desfecho"
-              value={call.outcome ? (OUTCOME_LABEL[call.outcome] ?? call.outcome) : "-"}
+              label={t("stat.outcome")}
+              value={call.outcome ? outcomeLabel(call.outcome, tOutcome) : "-"}
               badge={
                 call.outcome === "SCHEDULED"
                   ? "success"
@@ -69,8 +81,8 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             />
             <SummaryStat
               icon={<Sparkles className="text-muted-foreground h-4 w-4" />}
-              label="Sentimento"
-              value={call.sentiment ? (SENTIMENT_LABEL[call.sentiment] ?? call.sentiment) : "-"}
+              label={t("stat.sentiment")}
+              value={call.sentiment ? sentimentLabel(call.sentiment, tSentiment) : "-"}
               badge={call.sentiment ? SENTIMENT_VARIANT[call.sentiment] : undefined}
             />
           </div>
@@ -80,23 +92,25 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
               <CardHeader>
                 <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Resumo IA
+                  {t("aiSummary")}
                 </CardTitle>
               </CardHeader>
               <div className="px-6 pb-6">
                 <p className="text-foreground text-sm leading-relaxed">{call.summary}</p>
                 {call.topics.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {call.topics.map((t) => (
-                      <Badge key={t} variant="outline" className="text-xs">
-                        {t}
+                    {call.topics.map((topic) => (
+                      <Badge key={topic} variant="outline" className="text-xs">
+                        {topic}
                       </Badge>
                     ))}
                   </div>
                 ) : null}
                 {call.costCents != null ? (
                   <p className="text-muted-foreground mt-3 text-xs">
-                    Custo estimado: {currency(call.costCents, "USD")}
+                    {t("estimatedCost", {
+                      amount: currency(call.costCents, "USD", locale),
+                    })}
                   </p>
                 ) : null}
               </div>
@@ -105,13 +119,11 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             <Card>
               <CardHeader>
                 <CardTitle className="text-muted-foreground text-sm font-medium">
-                  Resumo IA
+                  {t("aiSummary")}
                 </CardTitle>
               </CardHeader>
               <div className="text-muted-foreground px-6 pb-6 text-sm">
-                {call.processedAt
-                  ? "Sem resumo disponível."
-                  : "Processando resumo no momento, atualize em alguns segundos."}
+                {call.processedAt ? t("summaryUnavailable") : t("summaryProcessing")}
               </div>
             </Card>
           )}
@@ -119,21 +131,21 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
           <Card>
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm font-medium">
-                Ferramentas usadas
+                {t("toolsUsed")}
               </CardTitle>
             </CardHeader>
             <div className="px-6 pb-6">
               <ToolTimeline
                 callId={call.id}
-                initial={call.toolCalls.map((t) => ({
-                  id: t.id,
-                  name: t.name,
-                  inputJson: t.inputJson as Record<string, unknown>,
-                  outputJson: t.outputJson as Record<string, unknown> | null,
-                  errorMessage: t.errorMessage,
-                  startedAt: t.startedAt.toISOString(),
-                  endedAt: t.endedAt?.toISOString() ?? null,
-                  durationMs: t.durationMs,
+                initial={call.toolCalls.map((tc) => ({
+                  id: tc.id,
+                  name: tc.name,
+                  inputJson: tc.inputJson as Record<string, unknown>,
+                  outputJson: tc.outputJson as Record<string, unknown> | null,
+                  errorMessage: tc.errorMessage,
+                  startedAt: tc.startedAt.toISOString(),
+                  endedAt: tc.endedAt?.toISOString() ?? null,
+                  durationMs: tc.durationMs,
                 }))}
               />
             </div>
@@ -144,19 +156,19 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
           <Card className="flex h-[640px] flex-col overflow-hidden">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm font-medium">
-                Transcrição
+                {t("transcript")}
               </CardTitle>
             </CardHeader>
             <Separator />
             <CallDetailBody
               recordingUrl={call.recordingUrl}
-              transcripts={call.transcripts.map((t) => ({
-                id: t.id,
-                speaker: t.speaker,
-                text: t.text,
-                startMs: t.startMs,
-                endMs: t.endMs,
-                sentiment: t.sentiment,
+              transcripts={call.transcripts.map((tr) => ({
+                id: tr.id,
+                speaker: tr.speaker,
+                text: tr.text,
+                startMs: tr.startMs,
+                endMs: tr.endMs,
+                sentiment: tr.sentiment,
               }))}
             />
           </Card>

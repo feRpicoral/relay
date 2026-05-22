@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ export function NewCampaignForm({
   agents: Array<{ id: string; name: string }>;
   phones: Array<{ id: string; e164: string }>;
 }) {
+  const t = useTranslations("campaigns.new.form");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const [name, setName] = useState("");
@@ -50,7 +52,7 @@ export function NewCampaignForm({
         concurrencyLimit,
       });
       if (result.ok) {
-        toast.success(`Campanha criada com ${result.leadsAdded} leads`);
+        toast.success(t("toastCreated"));
         router.push(`/campaigns/${result.campaignId}`);
       } else {
         toast.error(result.error);
@@ -67,22 +69,22 @@ export function NewCampaignForm({
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="name">Nome da campanha</Label>
+        <Label htmlFor="name">{t("nameLabel")}</Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           disabled={pending}
-          placeholder="Follow-up Q2"
+          placeholder={t("namePlaceholder")}
         />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="agent">Agente</Label>
+          <Label htmlFor="agent">{t("agentLabel")}</Label>
           <Select value={agentId} onValueChange={setAgentId} disabled={pending}>
             <SelectTrigger id="agent">
-              <SelectValue />
+              <SelectValue placeholder={t("agentPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {agents.map((a) => (
@@ -94,10 +96,10 @@ export function NewCampaignForm({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="from">Número de origem</Label>
+          <Label htmlFor="from">{t("fromNumberLabel")}</Label>
           <Select value={fromE164} onValueChange={setFromE164} disabled={pending}>
             <SelectTrigger id="from">
-              <SelectValue />
+              <SelectValue placeholder={t("fromNumberPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {phones.map((p) => (
@@ -110,19 +112,20 @@ export function NewCampaignForm({
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="script">Instrução adicional ao agente</Label>
+        <Label htmlFor="script">{t("scriptLabel")}</Label>
         <Textarea
           id="script"
           value={scriptPrompt}
           onChange={(e) => setScriptPrompt(e.target.value)}
           rows={3}
-          placeholder="Ex: Você está ligando pra confirmar a consulta da próxima semana e pedir 2 documentos..."
+          placeholder={t("scriptPlaceholder")}
           disabled={pending}
         />
+        <p className="text-muted-foreground text-xs">{t("scriptHint")}</p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="max-attempts">Tentativas máximas</Label>
+          <Label htmlFor="max-attempts">{t("scriptLabel")}</Label>
           <Input
             id="max-attempts"
             type="number"
@@ -134,7 +137,7 @@ export function NewCampaignForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cooldown">Cooldown (min)</Label>
+          <Label htmlFor="cooldown">{t("scriptLabel")}</Label>
           <Input
             id="cooldown"
             type="number"
@@ -146,7 +149,7 @@ export function NewCampaignForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="concurrency">Concorrência</Label>
+          <Label htmlFor="concurrency">{t("scriptLabel")}</Label>
           <Input
             id="concurrency"
             type="number"
@@ -159,22 +162,20 @@ export function NewCampaignForm({
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="csv">Leads (CSV)</Label>
+        <Label htmlFor="csv">{t("leadsLabel")}</Label>
         <Textarea
           id="csv"
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
           rows={6}
-          placeholder="phone,name&#10;+5511999998888,João Silva&#10;+5511777776666,Maria Costa"
+          placeholder="phone,name&#10;+5511999998888,João Silva"
           className="font-mono text-xs"
           disabled={pending}
         />
-        <p className="text-muted-foreground text-xs">
-          Cabeçalho obrigatório: <code>phone</code> (E.164). Opcional: <code>name</code>.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("leadsHint")}</p>
       </div>
       <Button type="submit" disabled={pending || !name || !csv}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar campanha"}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
       </Button>
     </form>
   );

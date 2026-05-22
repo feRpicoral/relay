@@ -1,6 +1,7 @@
 import { PhoneCall, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("agents.detail");
+  const tLanguage = await getTranslations("enums.agentLanguageShort");
 
   const agent = await db.agent.findUnique({
     where: { id },
@@ -32,19 +35,20 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   if (!agent) notFound();
 
   const hours = BusinessHoursSchema.safeParse(agent.businessHours);
+  const ttsProvider = agent.ttsProvider === "ELEVENLABS" ? "ElevenLabs" : "Cartesia";
 
   return (
     <>
       <PageHeader
         title={agent.name}
-        description={`${agent.language === "PT_BR" ? "Português" : agent.language === "EN_US" ? "English" : "Auto"}, ${agent.ttsProvider === "ELEVENLABS" ? "ElevenLabs" : "Cartesia"}`}
+        description={`${tLanguage(agent.language)}, ${ttsProvider}`}
         actions={
           <div className="flex items-center gap-2">
             <TestCallButton agentId={agent.id} />
             <Button asChild variant="outline">
               <Link href={`/calls?agentId=${agent.id}`}>
                 <PhoneCall className="h-4 w-4" />
-                Ver chamadas
+                {t("viewCalls")}
               </Link>
             </Button>
           </div>
@@ -53,11 +57,11 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
       <div className="p-8">
         <Tabs defaultValue="persona">
           <TabsList>
-            <TabsTrigger value="persona">Persona</TabsTrigger>
-            <TabsTrigger value="voice">Voz</TabsTrigger>
-            <TabsTrigger value="hours">Horários</TabsTrigger>
-            <TabsTrigger value="knowledge">Conhecimento</TabsTrigger>
-            <TabsTrigger value="phones">Números</TabsTrigger>
+            <TabsTrigger value="persona">{t("tabs.persona")}</TabsTrigger>
+            <TabsTrigger value="voice">{t("tabs.voice")}</TabsTrigger>
+            <TabsTrigger value="hours">{t("tabs.hours")}</TabsTrigger>
+            <TabsTrigger value="knowledge">{t("tabs.knowledge")}</TabsTrigger>
+            <TabsTrigger value="phones">{t("tabs.phones")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="persona" className="max-w-2xl">
@@ -112,19 +116,17 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           <TabsContent value="phones" className="max-w-2xl">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Números conectados</CardTitle>
+                <CardTitle>{t("phones.title")}</CardTitle>
                 <Button size="sm" asChild variant="outline">
                   <Link href="/settings/telephony">
                     <Plus className="h-4 w-4" />
-                    Conectar
+                    {t("phones.connect")}
                   </Link>
                 </Button>
               </CardHeader>
               <div className="divide-border divide-y">
                 {agent.phoneNumbers.length === 0 ? (
-                  <p className="text-muted-foreground px-6 py-4 text-sm">
-                    Nenhum número apontado pra esse agente.
-                  </p>
+                  <p className="text-muted-foreground px-6 py-4 text-sm">{t("phones.empty")}</p>
                 ) : (
                   agent.phoneNumbers.map((p) => (
                     <div key={p.id} className="flex items-center justify-between px-6 py-3">

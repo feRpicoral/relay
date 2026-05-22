@@ -2,6 +2,7 @@
 
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ interface KbDoc {
 }
 
 export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[] }) {
+  const t = useTranslations("agents.detail.knowledge");
+  const formatter = useFormatter();
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -41,7 +44,7 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
     startTransition(async () => {
       const result = await createKnowledgeDocAction({ agentId, title, body });
       if (result.ok) {
-        toast.success("Documento adicionado");
+        toast.success(t("toastAdded"));
         setOpen(false);
         setTitle("");
         setBody("");
@@ -56,7 +59,7 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
     startTransition(async () => {
       const result = await deleteKnowledgeDocAction({ docId: id, agentId });
       if (result.ok) {
-        toast.success("Removido");
+        toast.success(t("toastRemoved"));
         router.refresh();
       } else {
         toast.error(result.error);
@@ -68,51 +71,49 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Base de conhecimento</h2>
-          <p className="text-muted-foreground text-sm">
-            FAQs, políticas, horários especiais. O agente consulta antes de responder.
-          </p>
+          <h2 className="text-lg font-semibold">{t("title")}</h2>
+          <p className="text-muted-foreground text-sm">{t("description")}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4" />
-              Adicionar documento
+              {t("addDocument")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>Novo documento</DialogTitle>
+              <DialogTitle>{t("newDocument")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="kb-title">Título</Label>
+                <Label htmlFor="kb-title">{t("titleLabel")}</Label>
                 <Input
                   id="kb-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Política de cancelamento"
+                  placeholder={t("titlePlaceholder")}
                   disabled={pending}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="kb-body">Conteúdo</Label>
+                <Label htmlFor="kb-body">{t("bodyLabel")}</Label>
                 <Textarea
                   id="kb-body"
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   rows={10}
-                  placeholder="Cole o texto / FAQ aqui..."
+                  placeholder={t("bodyPlaceholder")}
                   disabled={pending}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
-                Cancelar
+                {t("cancel")}
               </Button>
               <Button onClick={onCreate} disabled={pending || !title || !body}>
-                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar"}
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("add")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -120,10 +121,7 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
       </div>
 
       {docs.length === 0 ? (
-        <Empty
-          title="Nenhum documento ainda"
-          description="Adicione FAQs e políticas pra que o agente responda com precisão."
-        />
+        <Empty title={t("empty.title")} description={t("empty.description")} />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {docs.map((doc) => (
@@ -132,19 +130,21 @@ export function KnowledgeBase({ agentId, docs }: { agentId: string; docs: KbDoc[
                 <div>
                   <CardTitle className="text-base">{doc.title}</CardTitle>
                   <p className="text-muted-foreground mt-0.5 text-xs">
-                    Atualizado em {new Date(doc.updatedAt).toLocaleDateString("pt-BR")}
+                    {t("updatedAt", {
+                      date: formatter.dateTime(new Date(doc.updatedAt), { dateStyle: "short" }),
+                    })}
                   </p>
                 </div>
                 <ConfirmDialog
                   trigger={
                     <Button variant="ghost" size="icon-sm" disabled={pending}>
                       <Trash2 className="text-muted-foreground h-4 w-4" />
-                      <span className="sr-only">Remover documento</span>
+                      <span className="sr-only">{t("removeDocAria")}</span>
                     </Button>
                   }
-                  title="Remover documento?"
-                  description={`"${doc.title}" será removido permanentemente. Essa ação não pode ser desfeita.`}
-                  confirmLabel="Remover"
+                  title={t("confirmRemove.title")}
+                  description={t("confirmRemove.description", { title: doc.title })}
+                  confirmLabel={t("confirmRemove.confirm")}
                   pending={pending}
                   onConfirm={() => onDelete(doc.id)}
                 />

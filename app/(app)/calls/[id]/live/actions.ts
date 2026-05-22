@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireSession } from "@/lib/auth/session";
@@ -11,15 +12,16 @@ import { deleteRoom } from "@/lib/voice/livekit";
 const Schema = z.object({ callId: z.string().uuid() });
 
 export async function hangupAction(input: z.infer<typeof Schema>): Promise<Result> {
+  const t = await getTranslations("calls.liveDetail.errors");
   const session = await requireSession();
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Entrada inválida." };
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
 
   const db = getDb(session.orgId);
   const call = await db.call.findUnique({ where: { id: parsed.data.callId } });
-  if (!call) return { ok: false, error: "Chamada não encontrada." };
+  if (!call) return { ok: false, error: t("callNotFound") };
   if (call.status !== "IN_PROGRESS" && call.status !== "RINGING") {
-    return { ok: false, error: "Chamada já encerrada." };
+    return { ok: false, error: t("alreadyEnded") };
   }
   if (!call.startedAt) {
     // Worker-side state machine should always populate startedAt before

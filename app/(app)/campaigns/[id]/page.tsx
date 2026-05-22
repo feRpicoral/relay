@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +10,10 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { requireSession } from "@/lib/auth/session";
 import {
-  CAMPAIGN_STATUS_LABEL,
   CAMPAIGN_STATUS_VARIANT,
-  LEAD_STATUS_LABEL,
+  campaignStatusLabel,
   LEAD_STATUS_VARIANT,
+  leadStatusLabel,
   TERMINAL_LEAD_STATUSES,
 } from "@/lib/campaigns/labels";
 import { getDb } from "@/lib/db/with-org";
@@ -35,6 +36,11 @@ export default async function CampaignPage({
 
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const t = await getTranslations("campaigns.detail");
+  const tCallsList = await getTranslations("calls.list");
+  const tCampaignsList = await getTranslations("campaigns.list");
+  const tStatus = await getTranslations("enums.campaignStatus");
+  const tLead = await getTranslations("enums.campaignLeadStatus");
 
   const campaign = await db.campaign.findUnique({
     where: { id },
@@ -70,11 +76,11 @@ export default async function CampaignPage({
     <>
       <PageHeader
         title={campaign.name}
-        description={`Agente ${campaign.agent.name}, de ${campaign.fromPhoneNumberE164}`}
+        description={`${tCampaignsList("agentLabel")} ${campaign.agent.name}, ${tCampaignsList("fromLabel")} ${campaign.fromPhoneNumberE164}`}
         actions={
           <div className="flex items-center gap-2">
             <Badge variant={CAMPAIGN_STATUS_VARIANT[campaign.status] ?? "secondary"}>
-              {CAMPAIGN_STATUS_LABEL[campaign.status] ?? campaign.status}
+              {campaignStatusLabel(campaign.status, tStatus)}
             </Badge>
             <CampaignActions campaignId={campaign.id} status={campaign.status} />
           </div>
@@ -83,34 +89,34 @@ export default async function CampaignPage({
       <div className="space-y-6 p-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm font-medium">Progresso</CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              {t("stats.total")}
+            </CardTitle>
           </CardHeader>
           <div className="space-y-3 px-6 pb-6">
             <Progress value={progress} />
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <Stat label="Total" value={totalLeads} />
-              <Stat label="Em chamada" value={callsInFlight} />
-              <Stat label="Atendidas" value={reached} />
-              <Stat label="Restantes" value={totalLeads - completed - callsInFlight} />
+              <Stat label={t("stats.total")} value={totalLeads} />
+              <Stat label={tLead("CALLING")} value={callsInFlight} />
+              <Stat label={t("stats.reached")} value={reached} />
+              <Stat label={t("stats.pending")} value={totalLeads - completed - callsInFlight} />
             </div>
           </div>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Leads</CardTitle>
+            <CardTitle>{t("leadsTab")}</CardTitle>
           </CardHeader>
           <div className="divide-border divide-y">
             {leads.map((lead) => (
               <div key={lead.id} className="flex items-center justify-between px-5 py-3">
                 <div>
                   <p className="font-medium">{lead.name ?? formatPhone(lead.phoneE164)}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {formatPhone(lead.phoneE164)}, tentativas: {lead.attempts}
-                  </p>
+                  <p className="text-muted-foreground text-xs">{formatPhone(lead.phoneE164)}</p>
                 </div>
                 <Badge variant={LEAD_STATUS_VARIANT[lead.status] ?? "secondary"}>
-                  {LEAD_STATUS_LABEL[lead.status] ?? lead.status}
+                  {leadStatusLabel(lead.status, tLead)}
                 </Badge>
               </div>
             ))}
@@ -120,18 +126,18 @@ export default async function CampaignPage({
         {totalPages > 1 ? (
           <div className="flex items-center justify-between text-sm">
             <p className="text-muted-foreground">
-              Página {page} de {totalPages}
+              {tCallsList("paginationSummary", { page, totalPages, total: totalLeads })}
             </p>
             <div className="flex gap-2">
               <Button asChild variant="outline" size="sm" disabled={page <= 1}>
                 <Link href={`/campaigns/${id}?page=${page - 1}`} aria-disabled={page <= 1}>
                   <ChevronLeft className="h-4 w-4" />
-                  Anterior
+                  {tCallsList("previous")}
                 </Link>
               </Button>
               <Button asChild variant="outline" size="sm" disabled={page >= totalPages}>
                 <Link href={`/campaigns/${id}?page=${page + 1}`} aria-disabled={page >= totalPages}>
-                  Próxima
+                  {tCallsList("next")}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </Button>

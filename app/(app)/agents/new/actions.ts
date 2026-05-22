@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/session";
@@ -18,9 +19,10 @@ const Schema = z.object({
 export async function createAgentAction(
   input: z.infer<typeof Schema>,
 ): Promise<Result<{ agentId: string }>> {
+  const t = await getTranslations("agents.new.errors");
   const session = await requireAdmin();
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Dados inválidos." };
+  if (!parsed.success) return { ok: false, error: t("invalidData") };
 
   const db = getDb(session.orgId);
 
