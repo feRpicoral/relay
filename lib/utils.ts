@@ -30,16 +30,20 @@ export function formatPhone(e164: string): string {
   return e164;
 }
 
-export function compactNumber(n: number): string {
-  return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+export function compactNumber(n: number, locale = "en-US"): string {
+  return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(n);
 }
 
 export function percent(n: number, digits = 1): string {
   return `${(n * 100).toFixed(digits)}%`;
 }
 
-export function currency(cents: number, currencyCode: "USD" | "BRL" = "USD"): string {
-  return new Intl.NumberFormat(currencyCode === "BRL" ? "pt-BR" : "en-US", {
+export function currency(
+  cents: number,
+  currencyCode: "USD" | "BRL" = "USD",
+  locale = "en-US",
+): string {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: currencyCode,
   }).format(cents / 100);
