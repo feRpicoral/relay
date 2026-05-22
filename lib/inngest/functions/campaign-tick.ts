@@ -49,10 +49,9 @@ export const campaignTick = inngest.createFunction(
   },
 );
 
-function withinWorkingHours(raw: unknown): boolean {
+export function withinWorkingHours(raw: unknown, now: Date = new Date()): boolean {
   if (!raw || typeof raw !== "object") return true;
   const hours = raw as Record<string, { open?: string; close?: string } | null | undefined>;
-  const now = new Date();
   const day = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
     now.getDay()
   ];

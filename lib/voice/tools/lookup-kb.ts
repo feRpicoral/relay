@@ -32,7 +32,7 @@ export async function lookupKb(
   }));
 }
 
-function extractRelevantSpan(body: string, query: string, span = 240): string {
+export function extractRelevantSpan(body: string, query: string, span = 240): string {
   const lc = body.toLowerCase();
   const qLc = query.toLowerCase();
   const idx = lc.indexOf(qLc);
