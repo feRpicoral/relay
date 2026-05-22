@@ -8,6 +8,13 @@
  *
  * Run with `yarn worker:start` (production) or `yarn worker:dev` (watch).
  */
+import { installAnthropicToolIdShim } from "@/lib/voice/anthropic-tool-id-shim";
+
+// Install the shim BEFORE the LLM plugin module is loaded so the patched
+// fetch is in place by the time the first request goes out. See the module
+// for context on what this works around.
+installAnthropicToolIdShim();
+
 import { fileURLToPath } from "node:url";
 
 import {
@@ -66,6 +73,11 @@ export default defineAgent({
     const attrs = participant.attributes ?? {};
     const sipFrom = attrs["sip.phoneNumber"] ?? attrs["sip.from"] ?? "";
     const sipTo = attrs["sip.trunkPhoneNumber"] ?? attrs["sip.to"] ?? "";
+    // No SIP attrs means the caller joined via WebRTC from the in-dashboard
+    // test page, not a real PSTN call. transfer_to_human, recording, and
+    // anything else that touches LiveKit's SIP plane has to be a no-op for
+    // these — there's no SIP session to transfer.
+    const isTestCall = !sipTo;
 
     let callId: string | null = null;
     let orgId: string | null = null;
@@ -214,6 +226,26 @@ export default defineAgent({
         async execute({ reason }) {
           const startedAt = new Date();
           await recordCallEvent(orgIdBranded, callIdBranded, "TRANSFER_REQUESTED", { reason });
+          if (isTestCall) {
+            // No SIP session to transfer in a browser-WebRTC test call.
+            // Return a graceful error so Claude tells the caller verbally
+            // instead of looping on the same failure.
+            const endedAt = new Date();
+            await recordToolCall(orgIdBranded, callIdBranded, {
+              name: "transfer_to_human",
+              inputJson: { reason },
+              errorMessage: "Transfer not available in browser test call (no SIP session).",
+              startedAt,
+              endedAt,
+              durationMs: endedAt.getTime() - startedAt.getTime(),
+            });
+            return {
+              ok: false,
+              error: "transfer_unavailable_in_test_call",
+              message:
+                "Transfers don't work in the browser test mode. In a real phone call this would forward to the fallback number.",
+            };
+          }
           const transferTo = agentCtx.fallbackTransferE164;
           if (!transferTo) {
             const endedAt = new Date();
@@ -298,6 +330,44 @@ export default defineAgent({
           }
         },
       }),
+
+      end_call: llmModule.tool({
+        description:
+          "End the call after you've fully helped the caller and there's nothing left to do (e.g. appointment booked and confirmed verbally, question answered, caller said goodbye). ALWAYS say a brief farewell BEFORE calling this tool, since the line drops immediately after. Do NOT use this as a way to escape difficult conversations — for those, use `transfer_to_human` instead.",
+        parameters: z.object({
+          summary: z
+            .string()
+            .min(2)
+            .max(MAX_FREEFORM_REASON_LEN)
+            .describe("One short sentence on why the call is ending (e.g. 'appointment booked')."),
+        }),
+        async execute({ summary }) {
+          const startedAt = new Date();
+          // No dedicated AGENT_HANGUP event type in the CallEventType enum.
+          // Use HANGUP with `initiator: "agent"` metadata so post-call analysis
+          // can distinguish "agent ended cleanly" from "caller dropped".
+          await recordCallEvent(orgIdBranded, callIdBranded, "HANGUP", {
+            initiator: "agent",
+            summary,
+          });
+          await recordToolCall(orgIdBranded, callIdBranded, {
+            name: "end_call",
+            inputJson: { summary },
+            outputJson: { ok: true },
+            startedAt,
+            endedAt: new Date(),
+            durationMs: 0,
+          });
+          // Disconnect on a short delay so the farewell TTS that Claude
+          // queued just before invoking this tool has a chance to play out.
+          // 1.5s is enough for a "tchau, até logo!" utterance; without the
+          // delay the user hears the goodbye get cut mid-syllable.
+          setTimeout(() => {
+            void ctx.room.disconnect().catch(() => undefined);
+          }, 1500);
+          return { ok: true };
+        },
+      }),
     };
 
     // Pipeline.
@@ -378,11 +448,25 @@ export default defineAgent({
     });
 
     // Per-leg latency from the framework's metrics events.
+    //
+    // The framework emits a discriminated union: STTMetrics, LLMMetrics,
+    // TTSMetrics, VADMetrics, EOUMetrics, etc. — keyed on `metrics.type`.
+    // All timing fields are already milliseconds (`ttftMs`, `ttfbMs`,
+    // `durationMs`, `endOfUtteranceDelayMs`). The previous implementation
+    // looked for `ttft`/`ttfb`/`e2eLatencyMs` and never matched, which is
+    // why call_metrics had zero rows.
     session.on(AgentSessionEventTypes.MetricsCollected, (event) => {
-      const m = (event.metrics ?? {}) as Record<string, unknown>;
-      const ttft = typeof m.ttft === "number" ? m.ttft : null;
-      const ttfb = typeof m.ttfb === "number" ? m.ttfb : null;
-      const e2e = typeof m.e2eLatencyMs === "number" ? m.e2eLatencyMs : null;
+      const m = event.metrics as
+        | {
+            type: string;
+            ttftMs?: number;
+            ttfbMs?: number;
+            durationMs?: number;
+            endOfUtteranceDelayMs?: number;
+          }
+        | undefined;
+      if (!m || typeof m !== "object") return;
+
       const onLatencyErr = (where: string) => (err: unknown) => {
         console.warn(`[agent] recordLatency ${where} failed`, err);
         void recordCallEvent(orgIdBranded, callIdBranded, "ERROR", {
@@ -390,23 +474,38 @@ export default defineAgent({
           message: err instanceof Error ? err.message : String(err),
         }).catch(() => undefined);
       };
-      if (ttft != null) {
+      const write = (
+        leg: "STT_FINALIZE" | "LLM_TTFT" | "LLM_TOTAL" | "TTS_TTFA" | "END_TO_END",
+        ms: number,
+      ) => {
         void recordLatency(orgIdBranded, callIdBranded, {
-          leg: "LLM_TTFT",
-          valueMs: Math.round(ttft * 1000),
-        }).catch(onLatencyErr("LLM_TTFT"));
-      }
-      if (ttfb != null) {
-        void recordLatency(orgIdBranded, callIdBranded, {
-          leg: "TTS_TTFA",
-          valueMs: Math.round(ttfb * 1000),
-        }).catch(onLatencyErr("TTS_TTFA"));
-      }
-      if (e2e != null) {
-        void recordLatency(orgIdBranded, callIdBranded, {
-          leg: "END_TO_END",
-          valueMs: Math.round(e2e),
-        }).catch(onLatencyErr("END_TO_END"));
+          leg,
+          valueMs: Math.round(ms),
+        }).catch(onLatencyErr(leg));
+      };
+
+      switch (m.type) {
+        case "llm_metrics":
+          if (typeof m.ttftMs === "number") write("LLM_TTFT", m.ttftMs);
+          if (typeof m.durationMs === "number") write("LLM_TOTAL", m.durationMs);
+          break;
+        case "tts_metrics":
+          if (typeof m.ttfbMs === "number") write("TTS_TTFA", m.ttfbMs);
+          break;
+        case "stt_metrics":
+          // STT streaming reports duration=0; skip those, only record final
+          // finalization batches if they ever come through.
+          if (typeof m.durationMs === "number" && m.durationMs > 0) {
+            write("STT_FINALIZE", m.durationMs);
+          }
+          break;
+        case "eou_metrics":
+          // EOU delay is the closest proxy to "user-finished-talking → agent-
+          // turn-decided"; we treat it as END_TO_END for the latency meter.
+          if (typeof m.endOfUtteranceDelayMs === "number") {
+            write("END_TO_END", m.endOfUtteranceDelayMs);
+          }
+          break;
       }
     });
 
