@@ -56,7 +56,7 @@ function shouldRewrite(input: Parameters<typeof fetch>[0], init?: RequestInit): 
  * locations where the framework puts its internal IDs. Intentionally narrow:
  * we don't touch unknown `id` fields because that could break other things.
  */
-function rewriteToolIds(value: unknown): unknown {
+export function rewriteToolIds(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const root = value as { messages?: unknown };
   if (!Array.isArray(root.messages)) return value;
@@ -81,6 +81,6 @@ function rewriteToolIds(value: unknown): unknown {
   return value;
 }
 
-function sanitize(id: string): string {
+export function sanitize(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
