@@ -26,6 +26,12 @@ model User {
   // Stored server-side so the user's choice follows them across devices —
   // localStorage alone would reset every time they log in on a new browser.
   themePreference ThemePreference @default(DARK) @map("theme_preference")
+  // UI locale persisted per-user. The `NEXT_LOCALE` cookie is the runtime
+  // signal that next-intl reads on each request; this column is the source
+  // of truth that re-seeds that cookie on every login and survives device
+  // switches. Anonymous visitors (landing page) fall back to cookie /
+  // Accept-Language / EN_US in `lib/i18n/resolve-locale.ts`.
+  locale          Locale          @default(EN_US)
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   memberships     Membership[]
@@ -38,6 +44,11 @@ model User {
 enum ThemePreference {
   LIGHT
   DARK
+}
+
+enum Locale {
+  EN_US
+  PT_BR
 }
 
 model Organization {
