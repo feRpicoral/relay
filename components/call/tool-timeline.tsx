@@ -90,7 +90,12 @@ export function ToolTimeline({ callId, initial }: ToolTimelineProps) {
                 ) : null}
               </div>
               {failed ? (
-                <p className="text-destructive mt-1 text-xs">{tool.error_message}</p>
+                // `break-all` is required, not `break-words`: Cal.com / SDK
+                // error payloads are long unbroken JSON strings with no
+                // whitespace, so word-boundary wrapping doesn't engage and
+                // the message pushes the parent wider than the card, causing
+                // page-level horizontal scroll.
+                <p className="text-destructive mt-1 text-xs break-all">{tool.error_message}</p>
               ) : tool.output_json ? (
                 <p className="text-muted-foreground mt-1 truncate font-mono text-xs">
                   {JSON.stringify(tool.output_json).slice(0, 120)}

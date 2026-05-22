@@ -63,7 +63,11 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
         description={`${formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164)}, ${call.agent?.name ?? "Agente"}`}
         actions={<LiveStatusActions callId={call.id} initialStatus={call.status} />}
       />
-      <div className="grid gap-6 p-8 lg:grid-cols-[1fr_440px]">
+      {/* `minmax(0,1fr)` instead of `1fr`: see /calls/[id]/page.tsx for the
+          long-form reasoning. Short version — `1fr` is `minmax(auto, 1fr)`
+          and `auto` honors intrinsic content width, so a long unbroken JSON
+          string in a tool output makes the column blow past the viewport. */}
+      <div className="grid gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_440px]">
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -143,7 +147,11 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
             </CardTitle>
           </CardHeader>
           <Separator />
-          <div className="flex-1 overflow-hidden">
+          {/* `min-h-0` is required, not optional: flex children default to
+              min-height:auto and refuse to shrink below content, which defeats
+              `overflow-hidden` and lets the transcript list push the card past
+              640px → page-level vertical scroll once messages pile up. */}
+          <div className="min-h-0 flex-1 overflow-hidden">
             <TranscriptStream
               callId={call.id}
               initial={call.transcripts.map((t) => ({

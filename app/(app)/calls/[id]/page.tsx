@@ -41,7 +41,13 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
         actions={<CallStatusBadge status={call.status} />}
       />
 
-      <div className="grid gap-6 p-8 lg:grid-cols-[1fr_440px]">
+      {/* `minmax(0,1fr)` instead of `1fr`: the default `1fr` resolves to
+          `minmax(auto, 1fr)`, where `auto` means "at least the intrinsic
+          content width". A long unbroken token inside (e.g. the JSON output
+          of a tool call) then makes the column grow past the viewport,
+          triggering page-level horizontal scroll AND disabling `truncate`
+          on descendants. `minmax(0, ...)` lets the column actually shrink. */}
+      <div className="grid gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_440px]">
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             <SummaryStat

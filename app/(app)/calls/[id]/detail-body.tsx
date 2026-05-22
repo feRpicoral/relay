@@ -25,7 +25,10 @@ export function CallDetailBody({ recordingUrl, transcripts }: DetailBodyProps) {
       <div className="border-border border-b p-3">
         <AudioPlayer src={recordingUrl} onTimeUpdate={setCurrentMs} />
       </div>
-      <div className="flex-1 overflow-hidden">
+      {/* `min-h-0` lets the flex child shrink under overflow-hidden. Without
+          it a long transcript pushes the card past h-[640px] and the whole
+          page becomes vertically scrollable. Same fix as live page. */}
+      <div className="min-h-0 flex-1 overflow-hidden">
         <TranscriptHistory rows={transcripts} currentMs={currentMs} />
       </div>
     </>
