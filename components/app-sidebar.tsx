@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -36,13 +37,21 @@ interface SidebarProps {
   role: "ADMIN" | "MEMBER";
 }
 
-const nav = [
-  { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/calls", label: "Chamadas", icon: PhoneCall },
-  { href: "/agents", label: "Agentes", icon: Bot },
-  { href: "/campaigns", label: "Campanhas", icon: Megaphone },
-  { href: "/calendar", label: "Calendário", icon: CalendarClock },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+type SidebarNavKey = "dashboard" | "calls" | "agents" | "campaigns" | "calendar" | "analytics";
+
+interface NavItem {
+  href: string;
+  labelKey: SidebarNavKey;
+  icon: typeof LayoutDashboard;
+}
+
+const nav: NavItem[] = [
+  { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/calls", labelKey: "calls", icon: PhoneCall },
+  { href: "/agents", labelKey: "agents", icon: Bot },
+  { href: "/campaigns", labelKey: "campaigns", icon: Megaphone },
+  { href: "/calendar", labelKey: "calendar", icon: CalendarClock },
+  { href: "/analytics", labelKey: "analytics", icon: BarChart3 },
 ];
 
 const COLLAPSED_STORAGE_KEY = "relay:sidebar-collapsed";
@@ -66,6 +75,9 @@ function serverCollapsed(): boolean {
 
 export function AppSidebar({ user, org, role }: SidebarProps) {
   const pathname = usePathname();
+  const t = useTranslations("sidebar");
+  const tNav = useTranslations("sidebar.nav");
+  const tMenu = useTranslations("sidebar.menu");
   const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
   const collapsed = useSyncExternalStore(subscribeToStorage, readCollapsed, serverCollapsed);
 
@@ -106,7 +118,7 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
           size="icon"
           className="h-8 w-8"
           onClick={toggle}
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          aria-label={collapsed ? t("expand") : t("collapse")}
         >
           {collapsed ? (
             <PanelLeftOpen className="h-4 w-4" />
@@ -116,8 +128,9 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
         </Button>
       </div>
       <nav className={cn("flex-1 space-y-1", collapsed ? "px-2" : "px-3")}>
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
+          const label = tNav(labelKey);
           const link = (
             <Link
               key={href}
@@ -170,14 +183,20 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
               <DropdownMenuItem asChild>
                 <Link href="/settings">
                   <Settings className="h-4 w-4" />
-                  Configurações
+                  {tMenu("settings")}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings/preferences">
+                  <Settings className="h-4 w-4" />
+                  {tMenu("preferences")}
                 </Link>
               </DropdownMenuItem>
               {role === "ADMIN" ? (
                 <DropdownMenuItem asChild>
                   <Link href="/settings/members">
                     <Settings className="h-4 w-4" />
-                    Membros
+                    {tMenu("members")}
                   </Link>
                 </DropdownMenuItem>
               ) : null}
@@ -185,7 +204,7 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
               <form action="/auth/signout" method="post">
                 <DropdownMenuItem asChild>
                   <button type="submit" className="w-full">
-                    Sair
+                    {tMenu("signOut")}
                   </button>
                 </DropdownMenuItem>
               </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useTransition } from "react";
 
@@ -14,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
  * the persisted preference catches up without blocking the click.
  */
 export function ThemeToggle() {
+  const t = useTranslations("themeToggle");
   const { theme, setTheme } = useTheme();
   const [pending, startTransition] = useTransition();
 
@@ -50,12 +52,12 @@ export function ThemeToggle() {
           className="h-8 w-8"
           onClick={onToggle}
           disabled={pending}
-          aria-label={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
+          aria-label={isDark ? t("switchToLightAria") : t("switchToDarkAria")}
         >
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="top">{isDark ? "Tema claro" : "Tema escuro"}</TooltipContent>
+      <TooltipContent side="top">{isDark ? t("lightTheme") : t("darkTheme")}</TooltipContent>
     </Tooltip>
   );
 }
