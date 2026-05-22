@@ -3,16 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildGreeting, buildSystemPrompt } from "./prompts";
 import type { AgentContext } from "./types";
 
-// Assertions in this file are intentionally limited to behavior that is
-// stable across the in-flight prompts refactor. We avoid:
-//   - language-directive strings ("Respond in English" etc.) — only present
-//     in the refactored version;
-//   - per-language day-name formatting ("segunda-feira") — only in the
-//     pre-refactor version;
-//   - the pt-BR empty-KB sentinel (changes between versions).
-// What stays the same in both versions: current-date injection, KB chunk
-// numbering, the "speak after every tool call" rule, the end_call rule,
-// persona rendering, and the greeting builder behavior.
+// Tests follow the language-directive refactor of `buildSystemPrompt`:
+// one English base body plus a per-language directive prepended at the top.
+// Day names and the empty-KB sentinel are now English-only — the LLM is
+// expected to localize them at speak time per the directive.
 
 function makeCtx(overrides: Partial<AgentContext> = {}): AgentContext {
   return {
@@ -33,6 +27,53 @@ function makeCtx(overrides: Partial<AgentContext> = {}): AgentContext {
     ...overrides,
   };
 }
+
+describe("buildSystemPrompt — language directive", () => {
+  it("pt-BR includes the Brazilian Portuguese directive", () => {
+    expect(buildSystemPrompt(makeCtx({ language: "pt-BR" }))).toContain("Brazilian Portuguese");
+  });
+
+  it("en-US includes the English directive", () => {
+    expect(buildSystemPrompt(makeCtx({ language: "en-US" }))).toContain("Respond in English");
+  });
+
+  it("auto includes the language-detection directive", () => {
+    expect(buildSystemPrompt(makeCtx({ language: "auto" }))).toContain(
+      "Detect the caller's language",
+    );
+  });
+});
+
+describe("buildSystemPrompt — business hours", () => {
+  it("renders 24/7 when no day blocks are configured", () => {
+    expect(buildSystemPrompt(makeCtx())).toContain("Business hours: 24/7");
+  });
+
+  it("renders day blocks with English keys (model localizes at speak time)", () => {
+    const out = buildSystemPrompt(
+      makeCtx({
+        businessHours: {
+          timezone: "America/Sao_Paulo",
+          monday: { open: "09:00", close: "18:00" },
+          tuesday: { open: "10:00", close: "20:00" },
+        },
+      }),
+    );
+    expect(out).toContain("monday: 09:00-18:00");
+    expect(out).toContain("tuesday: 10:00-20:00");
+  });
+});
+
+describe("buildSystemPrompt — empty knowledge base", () => {
+  it("renders the empty-KB sentinel in English regardless of agent language", () => {
+    expect(buildSystemPrompt(makeCtx({ language: "pt-BR" }))).toContain(
+      "(No knowledge base provided.)",
+    );
+    expect(buildSystemPrompt(makeCtx({ language: "en-US" }))).toContain(
+      "(No knowledge base provided.)",
+    );
+  });
+});
 
 describe("buildSystemPrompt — guardrail rules", () => {
   it("reminds the model to speak after every tool call (silence-after-tool regression)", () => {
@@ -115,10 +156,7 @@ describe("buildGreeting", () => {
     expect(buildGreeting(makeCtx({ language: "en-US" }))).toContain("Hi");
   });
 
-  it("returns a non-empty default greeting for auto-detect mode", () => {
-    // The default for 'auto' is in flux between language-handling versions
-    // (Portuguese default vs English fallback). We assert only that some
-    // default exists so this test survives either choice.
-    expect(buildGreeting(makeCtx({ language: "auto" })).length).toBeGreaterThan(0);
+  it("falls back to English for auto mode (model switches on the caller's first turn)", () => {
+    expect(buildGreeting(makeCtx({ language: "auto" }))).toContain("Hello");
   });
 });
