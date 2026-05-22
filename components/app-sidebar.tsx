@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,52 +144,58 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
         })}
       </nav>
       <div className={cn("border-border border-t", collapsed ? "p-2" : "p-3")}>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              "hover:bg-accent flex w-full items-center rounded-md text-left",
-              collapsed ? "justify-center p-1" : "gap-3 px-2 py-2",
-            )}
-          >
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            {collapsed ? null : (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{user.name ?? user.email}</p>
-                <p className="text-muted-foreground truncate text-xs">{org.name}</p>
-              </div>
-            )}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-56">
-            <DropdownMenuLabel className="text-muted-foreground text-xs">
-              {user.email}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                Configurações
-              </Link>
-            </DropdownMenuItem>
-            {role === "ADMIN" ? (
+        <div className={cn("flex items-center", collapsed ? "flex-col gap-1" : "gap-1")}>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "hover:bg-accent flex items-center rounded-md text-left",
+                collapsed ? "w-full justify-center p-1" : "min-w-0 flex-1 gap-3 px-2 py-2",
+              )}
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              {collapsed ? null : (
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{user.name ?? user.email}</p>
+                  <p className="text-muted-foreground truncate text-xs">{org.name}</p>
+                </div>
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="w-56">
+              <DropdownMenuLabel className="text-muted-foreground text-xs">
+                {user.email}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/settings/members">
+                <Link href="/settings">
                   <Settings className="h-4 w-4" />
-                  Membros
+                  Configurações
                 </Link>
               </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuSeparator />
-            <form action="/auth/signout" method="post">
-              <DropdownMenuItem asChild>
-                <button type="submit" className="w-full">
-                  Sair
-                </button>
-              </DropdownMenuItem>
-            </form>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {role === "ADMIN" ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/settings/members">
+                    <Settings className="h-4 w-4" />
+                    Membros
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator />
+              <form action="/auth/signout" method="post">
+                <DropdownMenuItem asChild>
+                  <button type="submit" className="w-full">
+                    Sair
+                  </button>
+                </DropdownMenuItem>
+              </form>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Theme toggle sits to the right of the avatar block when the
+              sidebar is expanded, and below it when collapsed (stacked layout
+              keeps both targets reachable in 64px width without crowding). */}
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );

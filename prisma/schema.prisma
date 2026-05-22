@@ -19,17 +19,25 @@ datasource db {
 // -----------------------------------------------------------------------------
 
 model User {
-  id          String       @id @db.Uuid
-  email       String       @unique
-  name        String?
-  avatarUrl   String?      @map("avatar_url")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  memberships Membership[]
-  invites     Invite[]     @relation("InvitesCreated")
-  auditLogs   AuditLog[]
+  id              String          @id @db.Uuid
+  email           String          @unique
+  name            String?
+  avatarUrl       String?         @map("avatar_url")
+  // Stored server-side so the user's choice follows them across devices —
+  // localStorage alone would reset every time they log in on a new browser.
+  themePreference ThemePreference @default(DARK) @map("theme_preference")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  memberships     Membership[]
+  invites         Invite[]        @relation("InvitesCreated")
+  auditLogs       AuditLog[]
 
   @@map("users")
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
 }
 
 model Organization {

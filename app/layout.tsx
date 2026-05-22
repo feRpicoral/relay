@@ -28,7 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "bg-background text-foreground min-h-screen font-sans antialiased",
         )}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        {/* Two-state theme: just light/dark, no "system" tier. Per-user
+            persistence is handled inside the (app) layout by ThemeSync which
+            calls setTheme() with the DB value on mount so the browser's
+            localStorage always converges to the server-side preference. We
+            DROP `disableTransitionOnChange` so the global CSS transition on
+            background-color/color in globals.css actually runs on toggle. */}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

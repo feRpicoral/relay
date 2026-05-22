@@ -143,6 +143,17 @@
 @layer base {
   * {
     @apply border-border;
+    /* Smooth theme transitions: every element animates its surface colors
+       when the html.dark class flips. 200ms is short enough to feel
+       responsive, long enough to read as a deliberate transition rather
+       than a flash. Scoped to color tokens so layout properties (width,
+       height, transform) aren't accidentally animated. */
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      stroke 200ms ease;
   }
   body {
     @apply bg-background text-foreground;
