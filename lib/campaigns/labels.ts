@@ -2,18 +2,15 @@
  * Display labels and Badge variants for Campaign and CampaignLead status
  * enums. Co-located so a schema change forces an update right next to the
  * code that consumes them.
+ *
+ * The labels themselves moved to message files (`messages/*.json` under
+ * `enums.campaignStatus.*` / `enums.campaignLeadStatus.*`) when i18n landed.
+ * Callers thread in a translator via the helper functions below.
  */
 import type { CampaignLeadStatus, CampaignStatus } from "@prisma/client";
 
 type Variant = "default" | "secondary" | "success" | "warning" | "destructive";
-
-export const CAMPAIGN_STATUS_LABEL: Record<CampaignStatus, string> = {
-  DRAFT: "Rascunho",
-  RUNNING: "Rodando",
-  PAUSED: "Pausada",
-  COMPLETED: "Concluída",
-  CANCELED: "Cancelada",
-};
+type EnumTranslator<Keys extends string> = (key: Keys) => string;
 
 export const CAMPAIGN_STATUS_VARIANT: Record<CampaignStatus, Variant> = {
   DRAFT: "secondary",
@@ -21,17 +18,6 @@ export const CAMPAIGN_STATUS_VARIANT: Record<CampaignStatus, Variant> = {
   PAUSED: "warning",
   COMPLETED: "success",
   CANCELED: "destructive",
-};
-
-export const LEAD_STATUS_LABEL: Record<CampaignLeadStatus, string> = {
-  PENDING: "Pendente",
-  CALLING: "Ligando",
-  ATTEMPTED: "Esgotada",
-  REACHED: "Atendeu",
-  NO_ANSWER: "Sem resposta",
-  VOICEMAIL: "Caixa postal",
-  FAILED: "Falhou",
-  EXCLUDED: "Excluída",
 };
 
 export const LEAD_STATUS_VARIANT: Record<CampaignLeadStatus, Variant> = {
@@ -44,6 +30,20 @@ export const LEAD_STATUS_VARIANT: Record<CampaignLeadStatus, Variant> = {
   FAILED: "destructive",
   EXCLUDED: "secondary",
 };
+
+export function campaignStatusLabel(
+  status: CampaignStatus,
+  t: EnumTranslator<CampaignStatus>,
+): string {
+  return t(status);
+}
+
+export function leadStatusLabel(
+  status: CampaignLeadStatus,
+  t: EnumTranslator<CampaignLeadStatus>,
+): string {
+  return t(status);
+}
 
 /** Lead statuses considered terminal for progress-bar accounting. */
 export const TERMINAL_LEAD_STATUSES: ReadonlyArray<CampaignLeadStatus> = [

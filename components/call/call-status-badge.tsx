@@ -1,15 +1,10 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Badge } from "@/components/ui/badge";
 
 type CallStatus = "RINGING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "NO_ANSWER" | "VOICEMAIL";
-
-const labels: Record<CallStatus, string> = {
-  RINGING: "Tocando",
-  IN_PROGRESS: "Em curso",
-  COMPLETED: "Finalizada",
-  FAILED: "Falhou",
-  NO_ANSWER: "Sem resposta",
-  VOICEMAIL: "Caixa postal",
-};
 
 const variants: Record<
   CallStatus,
@@ -24,6 +19,7 @@ const variants: Record<
 };
 
 export function CallStatusBadge({ status }: { status: CallStatus }) {
+  const t = useTranslations("enums.callStatus");
   return (
     <Badge variant={variants[status]} className="gap-1.5">
       {status === "IN_PROGRESS" || status === "RINGING" ? (
@@ -32,7 +28,7 @@ export function CallStatusBadge({ status }: { status: CallStatus }) {
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
         </span>
       ) : null}
-      {labels[status]}
+      {t(status)}
     </Badge>
   );
 }
