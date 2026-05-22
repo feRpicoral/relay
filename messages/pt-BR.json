@@ -1,0 +1,679 @@
+{
+  "landing": {
+    "nav": { "signIn": "Entrar", "getStarted": "Começar" },
+    "badge": "Voice AI para negócios de serviço",
+    "hero": {
+      "titleStart": "A recepcionista que",
+      "titleAccent": "não dorme",
+      "titleEnd": ".",
+      "description": "Um agente de voz com IA que atende ligações, qualifica leads e agenda consultas em tempo real, enquanto sua equipe vê tudo acontecer no dashboard.",
+      "ctaPrimary": "Criar conta grátis",
+      "ctaSecondary": "Já tenho conta"
+    },
+    "features": {
+      "alwaysOn": {
+        "title": "Atende 24/7",
+        "body": "Cada ligação é atendida em segundos, com voz natural em português e inglês."
+      },
+      "scheduling": {
+        "title": "Agenda durante a chamada",
+        "body": "O agente conversa, qualifica e marca direto no calendário da sua equipe."
+      },
+      "transcripts": {
+        "title": "Transcrição ao vivo",
+        "body": "Veja cada palavra em tempo real no dashboard, e assuma a chamada se precisar."
+      },
+      "analytics": {
+        "title": "Analytics que importam",
+        "body": "Volume, conversão, latência p95 e custo por chamada. Sem ruído."
+      }
+    },
+    "footer": {
+      "copyright": "© {year} Relay. Feito para clínicas e times de atendimento.",
+      "login": "Login",
+      "signup": "Signup"
+    }
+  },
+  "auth": {
+    "layout": {
+      "testimonialQuote": "Atende todas as ligações, mesmo às 3h da manhã. Nossa recepção dobrou de capacidade sem contratar ninguém.",
+      "testimonialAttribution": "Dra. Renata Martins, Clínica Lumen"
+    }
+  },
+  "login": {
+    "metadataTitle": "Entrar",
+    "title": "Entrar",
+    "description": "Acesse seu painel de voice agents.",
+    "noAccountPrompt": "Não tem conta?",
+    "createAccount": "Criar conta",
+    "errors": {
+      "auth_failed": "Não foi possível autenticar. Tente novamente.",
+      "missing_code": "Sessão inválida. Tente fazer login novamente.",
+      "invalidEmail": "Email inválido.",
+      "sendFailed": "Não foi possível enviar o link. Tente novamente em instantes."
+    },
+    "form": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "voce@empresa.com",
+      "submit": "Enviar link de acesso",
+      "submitting": "Enviando link",
+      "toastTitle": "Link de acesso enviado",
+      "toastDescription": "Se houver uma conta para esse email, você receberá um link."
+    }
+  },
+  "signup": {
+    "metadataTitle": "Criar conta",
+    "title": "Criar conta",
+    "description": "Comece a atender ligações com IA em minutos.",
+    "haveAccount": "Já tem conta?",
+    "signIn": "Entrar",
+    "errors": {
+      "invalidData": "Verifique os dados informados.",
+      "sendFailed": "Não foi possível enviar o link. Tente novamente em instantes."
+    },
+    "form": {
+      "nameLabel": "Nome",
+      "namePlaceholder": "Seu nome",
+      "emailLabel": "Email",
+      "emailPlaceholder": "voce@empresa.com",
+      "submit": "Criar conta",
+      "submitting": "Enviando link",
+      "tos": "Ao criar uma conta, você concorda com os Termos e a Política de Privacidade.",
+      "toastTitle": "Link de confirmação enviado"
+    }
+  },
+  "checkEmail": {
+    "title": "Verifique seu email",
+    "descriptionHead": "Enviamos um link de acesso para",
+    "descriptionTail": ". Clique nele para entrar.",
+    "backToLogin": "Voltar para login"
+  },
+  "onboarding": {
+    "layout": { "signOut": "Sair" },
+    "createOrg": {
+      "title": "Crie sua organização",
+      "description": "Cada clínica, consultório ou prestador é uma organização. Você convida sua equipe depois.",
+      "form": {
+        "nameLabel": "Nome da organização",
+        "namePlaceholder": "Ex: Clínica Lumen",
+        "submit": "Criar organização",
+        "toastCreated": "Organização criada"
+      },
+      "errors": {
+        "invalidName": "Nome inválido.",
+        "sessionExpired": "Sessão expirada.",
+        "slugExhausted": "Não foi possível criar a organização. Tente outro nome."
+      }
+    },
+    "acceptInvite": {
+      "invalid": {
+        "title": "Convite inválido",
+        "description": "Esse link já expirou ou foi usado. Peça um novo convite pra quem te chamou."
+      },
+      "anonymous": {
+        "title": "Você foi convidado pra {orgName}",
+        "description": "Primeiro entre com o email <strong>{email}</strong> pra aceitar.",
+        "signInWith": "Entrar com {email}"
+      },
+      "emailMismatch": {
+        "title": "Email não bate",
+        "description": "Esse convite é pra <strong>{inviteEmail}</strong>, mas você está logado como <strong>{currentEmail}</strong>.",
+        "signOutAndRetry": "Sair e entrar com o email correto"
+      },
+      "valid": {
+        "title": "Entrar em {orgName}",
+        "description": "Você foi convidado como <strong>{role}</strong>."
+      },
+      "form": { "submit": "Aceitar convite", "toastWelcome": "Bem-vindo!" },
+      "errors": {
+        "missingToken": "Token ausente.",
+        "signInFirst": "Faça login primeiro.",
+        "inviteNotFound": "Convite não encontrado.",
+        "inviteUsed": "Convite já usado.",
+        "inviteExpired": "Convite expirado.",
+        "wrongEmail": "Esse convite é pra outro email."
+      }
+    }
+  },
+  "sidebar": {
+    "expand": "Expandir menu",
+    "collapse": "Recolher menu",
+    "nav": {
+      "dashboard": "Visão geral",
+      "calls": "Chamadas",
+      "agents": "Agentes",
+      "campaigns": "Campanhas",
+      "calendar": "Calendário",
+      "analytics": "Analytics"
+    },
+    "menu": {
+      "settings": "Configurações",
+      "preferences": "Preferências",
+      "members": "Membros",
+      "signOut": "Sair"
+    }
+  },
+  "themeToggle": {
+    "switchToLightAria": "Mudar para tema claro",
+    "switchToDarkAria": "Mudar para tema escuro",
+    "lightTheme": "Tema claro",
+    "darkTheme": "Tema escuro"
+  },
+  "dashboard": {
+    "greeting": "Olá, {name}",
+    "overview": "Visão geral da {orgName}",
+    "newAgent": "Novo agente",
+    "stats": {
+      "callsToday": "Chamadas hoje",
+      "callsTodayHint": "Últimas 24 horas",
+      "activeAgents": "Agentes ativos",
+      "activeAgentsHint": "Persona + voz + KB",
+      "connectedLines": "Linhas conectadas",
+      "connectedLinesHint": "Números Twilio / SIP"
+    },
+    "onboarding": {
+      "firstStep": "Primeiros passos",
+      "nextStep": "Próximo passo",
+      "setupAgent": {
+        "title": "Configure seu primeiro agente",
+        "description": "Defina persona, voz, base de conhecimento e horários de atendimento.",
+        "cta": "Criar agente"
+      },
+      "connectNumber": {
+        "title": "Conecte um número de telefone",
+        "description": "Aponte um número Twilio (ou SIP trunk) pro seu agente atender.",
+        "cta": "Conectar número"
+      }
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "workspaceDescription": "Workspace {orgName}.",
+    "tabs": {
+      "organization": "Organização",
+      "preferences": "Preferências",
+      "members": "Membros",
+      "telephony": "Telefonia",
+      "calendar": "Calendário"
+    },
+    "organization": {
+      "title": "Organização",
+      "description": "Detalhes que identificam seu workspace.",
+      "nameLabel": "Nome",
+      "slugLabel": "Slug",
+      "slugHint": "Usado nas URLs de convite."
+    },
+    "preferences": {
+      "title": "Preferências",
+      "description": "Configurações pessoais da sua conta. Acompanham você em todos os dispositivos.",
+      "languageLabel": "Idioma",
+      "languageHint": "Usado na interface do dashboard. O idioma do agente de voz é configurado por agente.",
+      "save": "Salvar",
+      "saved": "Preferências salvas",
+      "localeOption": { "en-US": "English (US)", "pt-BR": "Português (Brasil)" }
+    },
+    "members": {
+      "title": "Membros",
+      "description": "Gerencie quem tem acesso a esse workspace.",
+      "invite": {
+        "title": "Convidar membro",
+        "description": "Envie um link de convite por email. Expira em 7 dias.",
+        "emailLabel": "Email",
+        "emailPlaceholder": "colega@empresa.com",
+        "roleLabel": "Papel",
+        "submit": "Enviar",
+        "toastSent": "Convite enviado"
+      },
+      "table": {
+        "name": "Nome",
+        "email": "Email",
+        "role": "Papel",
+        "joined": "Entrou em",
+        "actions": "Ações",
+        "you": "Você",
+        "remove": "Remover",
+        "changeRole": "Trocar papel",
+        "resendInvite": "Reenviar",
+        "revokeInvite": "Revogar",
+        "pendingInvite": "Pendente",
+        "memberRemoved": "Membro removido",
+        "roleUpdated": "Papel atualizado",
+        "inviteRevoked": "Convite revogado",
+        "inviteResent": "Convite reenviado"
+      },
+      "errors": {
+        "invalidEmail": "Email inválido.",
+        "alreadyMember": "Já é membro.",
+        "alreadyInvited": "Convite já enviado.",
+        "cannotRemoveSelf": "Você não pode se remover.",
+        "cannotChangeOwnRole": "Você não pode mudar seu próprio papel.",
+        "lastAdmin": "Precisa ter ao menos um admin no workspace.",
+        "inviteNotFound": "Convite não encontrado.",
+        "memberNotFound": "Membro não encontrado."
+      }
+    },
+    "telephony": {
+      "title": "Telefonia",
+      "description": "Conecte o Twilio para provisionar e rotear números.",
+      "connect": {
+        "title": "Conectar Twilio",
+        "description": "Use API Key SID + segredo em vez do Auth Token mestre.",
+        "accountSidLabel": "Account SID",
+        "apiKeySidLabel": "API Key SID",
+        "authTokenLabel": "API Key Secret",
+        "submit": "Conectar",
+        "toastConnected": "Twilio conectado",
+        "toastDisconnected": "Twilio desconectado",
+        "toastFailed": "Não foi possível conectar. Verifique as credenciais."
+      },
+      "connected": {
+        "accountLabel": "Conta",
+        "disconnect": "Desconectar",
+        "confirmDisconnectTitle": "Desconectar Twilio?",
+        "confirmDisconnectDescription": "Seus números vão parar de receber chamadas até você reconectar.",
+        "confirmDisconnect": "Desconectar",
+        "attachAgent": "Selecione um agente primeiro.",
+        "attachedToast": "{number} conectado ao agente",
+        "detachedToast": "{number} desconectado"
+      }
+    },
+    "calendar": {
+      "title": "Calendário",
+      "description": "Conecte o Cal.com para que o agente possa marcar consultas.",
+      "connect": {
+        "title": "API key do Cal.com",
+        "apiKeyLabel": "Cal.com API key",
+        "apiKeyHint": "Gere em Cal.com em Settings → Security → API Keys.",
+        "submit": "Conectar Cal.com",
+        "toastConnected": "Cal.com conectado",
+        "errors": { "invalidKey": "API key inválida.", "rejected": "Cal.com rejeitou a API key." }
+      },
+      "eventType": {
+        "title": "Tipo de evento padrão",
+        "description": "Quando o agente marcar uma consulta, vai usar esse tipo.",
+        "label": "Tipo de evento",
+        "save": "Salvar",
+        "saved": "Tipo padrão salvo",
+        "loading": "Carregando tipos…",
+        "loadFailed": "Não foi possível carregar os tipos de evento.",
+        "invalid": "Entrada inválida."
+      },
+      "disconnect": {
+        "title": "Desconectar",
+        "description": "Remove a chave. Os agendamentos passados continuam intactos.",
+        "confirm": "Desconectar Cal.com",
+        "toast": "Cal.com desconectado"
+      }
+    },
+    "phoneNumbers": {
+      "title": "Números de telefone",
+      "description": "Números conectados a esse workspace.",
+      "empty": "Nenhum número ainda. Conecte o Twilio e provisione um.",
+      "tableNumber": "Número",
+      "tableAgent": "Agente",
+      "tableInbound": "Entrada",
+      "tableOutbound": "Saída"
+    }
+  },
+  "calls": {
+    "list": {
+      "title": "Chamadas",
+      "description": "Histórico de todas as chamadas atendidas pelos seus agentes.",
+      "liveButton": "Chamadas ao vivo",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "paginationSummary": "Página {page} de {totalPages}, {total} chamadas",
+      "empty": {
+        "title": "Nenhuma chamada ainda",
+        "description": "Quando seu agente atender uma ligação, ela aparece aqui em segundos."
+      }
+    },
+    "detail": {
+      "agentFallback": "Agente",
+      "stat": { "duration": "Duração", "outcome": "Desfecho", "sentiment": "Sentimento" },
+      "aiSummary": "Resumo IA",
+      "summaryUnavailable": "Sem resumo disponível.",
+      "summaryProcessing": "Processando resumo no momento, atualize em alguns segundos.",
+      "toolsUsed": "Ferramentas usadas",
+      "transcript": "Transcrição",
+      "estimatedCost": "Custo estimado: {amount}"
+    },
+    "live": {
+      "title": "Chamadas ao vivo",
+      "description": "Acompanhe as ligações que estão acontecendo agora, clique numa pra ver a transcrição em tempo real.",
+      "empty": {
+        "title": "Nada acontecendo agora",
+        "description": "Quando uma chamada começar, ela aparece aqui em tempo real."
+      },
+      "viewHistory": "Ver histórico de chamadas",
+      "viewLive": "Ver ao vivo"
+    },
+    "liveDetail": {
+      "agentFallback": "Agente",
+      "titleInbound": "Chamada recebida",
+      "titleOutbound": "Chamada de saída",
+      "waveform": "Waveform ao vivo",
+      "noRoom": "sem sala",
+      "latencyPerLeg": "Latência por leg",
+      "toolsUsed": "Ferramentas usadas",
+      "liveTranscript": "Transcrição ao vivo",
+      "hangup": { "button": "Encerrar", "toastEnded": "Chamada encerrada" },
+      "errors": {
+        "invalidInput": "Entrada inválida.",
+        "callNotFound": "Chamada não encontrada.",
+        "alreadyEnded": "Chamada já encerrada."
+      }
+    }
+  },
+  "agents": {
+    "list": {
+      "title": "Agentes",
+      "description": "Configure persona, voz e base de conhecimento dos seus agentes de voz.",
+      "newAgent": "Novo agente",
+      "summary": "{calls} chamadas, {docs} docs",
+      "active": "Ativo",
+      "paused": "Pausado",
+      "noNumber": "Nenhum número conectado",
+      "empty": {
+        "title": "Você ainda não tem agentes",
+        "description": "Crie seu primeiro agente, leva uns 2 minutos.",
+        "cta": "Criar agente"
+      }
+    },
+    "new": {
+      "title": "Novo agente",
+      "description": "Comece com defaults sensatos, você ajusta tudo depois.",
+      "form": {
+        "defaultName": "Recepcionista",
+        "defaultGreeting": "Olá! Obrigada por ligar. Como posso ajudar?",
+        "nameLabel": "Nome do agente",
+        "namePlaceholder": "Recepcionista da Clínica Lumen",
+        "nameHint": "Só usado internamente, o cliente nunca vê esse nome.",
+        "languageLabel": "Idioma principal",
+        "greetingLabel": "Saudação inicial",
+        "greetingPlaceholder": "Olá! Obrigada por ligar.",
+        "greetingHint": "A primeira frase do agente quando atende.",
+        "personaLabel": "Persona",
+        "personaPlaceholder": "Ex: Você é a recepcionista da Clínica Lumen, especializada em ortopedia. Seja calorosa e direta.",
+        "submit": "Criar agente",
+        "toastCreated": "Agente criado"
+      },
+      "errors": { "invalidData": "Dados inválidos." }
+    },
+    "detail": {
+      "viewCalls": "Ver chamadas",
+      "tabs": {
+        "persona": "Persona",
+        "voice": "Voz",
+        "hours": "Horários",
+        "knowledge": "Conhecimento",
+        "phones": "Números"
+      },
+      "phones": {
+        "title": "Números conectados",
+        "connect": "Conectar",
+        "empty": "Nenhum número apontado pra esse agente."
+      },
+      "settings": {
+        "enabledLabel": "Agente ativo",
+        "enabledHint": "Quando desativado, chamadas recebem mensagem de indisponibilidade.",
+        "nameLabel": "Nome",
+        "languageLabel": "Idioma",
+        "languageAuto": "Auto-detectar",
+        "greetingLabel": "Saudação inicial",
+        "personaLabel": "Persona",
+        "personaPlaceholder": "Você é a recepcionista…",
+        "personaHint": "Vira parte do system prompt. Use cache prompt (sempre estável), evite informações que mudam por chamada.",
+        "fallbackLabel": "Número de transferência humana",
+        "fallbackHint": "Quando o agente usar a tool `transfer_to_human`, transferimos pra esse número.",
+        "submit": "Salvar",
+        "toastSaved": "Salvo"
+      },
+      "hours": {
+        "timezoneLabel": "Fuso horário",
+        "to": "até",
+        "closed": "Fechado",
+        "submit": "Salvar horários",
+        "toastSaved": "Horários salvos"
+      },
+      "voice": {
+        "title": "Voz do agente",
+        "hintWithElevenlabs": "Cartesia (default) é otimizada pra latência. ElevenLabs é a opção premium com naturalidade superior, mas adiciona ~35ms.",
+        "hintCartesiaOnly": "Cartesia (default) é otimizada pra latência. Configure ELEVENLABS_API_KEY pra liberar vozes premium.",
+        "premium": "Premium",
+        "toastChanged": "Voz alterada: {label}"
+      },
+      "knowledge": {
+        "title": "Base de conhecimento",
+        "description": "FAQs, políticas, horários especiais. O agente consulta antes de responder.",
+        "addDocument": "Adicionar documento",
+        "newDocument": "Novo documento",
+        "titleLabel": "Título",
+        "titlePlaceholder": "Ex: Política de cancelamento",
+        "bodyLabel": "Conteúdo",
+        "bodyPlaceholder": "Cole o texto / FAQ aqui...",
+        "cancel": "Cancelar",
+        "add": "Adicionar",
+        "toastAdded": "Documento adicionado",
+        "toastRemoved": "Removido",
+        "updatedAt": "Atualizado em {date}",
+        "removeDocAria": "Remover documento",
+        "confirmRemove": {
+          "title": "Remover documento?",
+          "description": "\"{title}\" será removido permanentemente. Essa ação não pode ser desfeita.",
+          "confirm": "Remover"
+        },
+        "empty": {
+          "title": "Nenhum documento ainda",
+          "description": "Adicione FAQs e políticas pra que o agente responda com precisão."
+        }
+      },
+      "testCall": {
+        "button": "Teste no navegador",
+        "toastStarted": "Teste iniciado",
+        "toastOpening": "Abrindo o monitor ao vivo..."
+      },
+      "errors": {
+        "invalidInput": "Entrada inválida.",
+        "invalidHours": "Horários inválidos.",
+        "invalidDocument": "Documento inválido.",
+        "useE164Format": "Use formato E.164: +5511999998888",
+        "deleteFailed": "Não foi possível remover o agente. Verifique se há chamadas ou campanhas ativas.",
+        "testCallFailed": "Falha no teste."
+      }
+    }
+  },
+  "campaigns": {
+    "list": {
+      "title": "Campanhas",
+      "description": "Execute campanhas de chamada ativa pra sua lista de leads.",
+      "newCampaign": "Nova campanha",
+      "empty": {
+        "title": "Nenhuma campanha ainda",
+        "description": "Crie sua primeira campanha para discar uma lista de leads.",
+        "cta": "Criar campanha"
+      },
+      "leadsCount": "{count, plural, one {# lead} other {# leads}}",
+      "statusLabel": "Status",
+      "agentLabel": "Agente",
+      "fromLabel": "Origem",
+      "createdAt": "Criada em {date}"
+    },
+    "new": {
+      "title": "Nova campanha",
+      "description": "Escolha um agente, um número de origem e um CSV com leads.",
+      "form": {
+        "nameLabel": "Nome da campanha",
+        "namePlaceholder": "Ex: Outreach Q3",
+        "agentLabel": "Agente",
+        "agentPlaceholder": "Escolha um agente",
+        "fromNumberLabel": "Número de origem",
+        "fromNumberPlaceholder": "Escolha um número",
+        "scriptLabel": "Roteiro",
+        "scriptPlaceholder": "Instruções extras para o agente durante essa campanha.",
+        "scriptHint": "Combinado com a persona do agente. Seja breve — o que é diferente nessa campanha.",
+        "leadsLabel": "CSV de leads",
+        "leadsHint": "Colunas: phone_e164 (obrigatório), name e quaisquer campos custom.",
+        "submit": "Criar campanha",
+        "toastCreated": "Campanha criada"
+      },
+      "errors": {
+        "invalidData": "Dados inválidos.",
+        "noAgents": "Crie um agente primeiro.",
+        "noNumbers": "Conecte um número de telefone primeiro.",
+        "invalidCsv": "CSV inválido. Verifique a formatação.",
+        "tooManyLeads": "Muitos leads. Divida em lotes menores."
+      }
+    },
+    "detail": {
+      "leadsTab": "Leads",
+      "attemptsTab": "Tentativas",
+      "settingsTab": "Configurações",
+      "start": "Iniciar",
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "cancel": "Cancelar",
+      "duplicate": "Duplicar",
+      "stats": {
+        "total": "Total",
+        "reached": "Atingidos",
+        "pending": "Pendentes",
+        "failed": "Falhas",
+        "scheduled": "Agendados"
+      },
+      "leadsEmpty": "Nenhum lead nessa campanha.",
+      "attemptsEmpty": "Nenhuma tentativa ainda.",
+      "toastStarted": "Campanha iniciada",
+      "toastPaused": "Campanha pausada",
+      "toastResumed": "Campanha retomada",
+      "toastCanceled": "Campanha cancelada",
+      "toastDuplicated": "Campanha duplicada",
+      "confirmCancel": {
+        "title": "Cancelar campanha?",
+        "description": "Os leads pendentes param de ser chamados. As tentativas anteriores ficam no histórico.",
+        "confirm": "Cancelar campanha"
+      },
+      "errors": {
+        "invalidInput": "Entrada inválida.",
+        "notFound": "Campanha não encontrada.",
+        "alreadyRunning": "Já está rodando.",
+        "notRunning": "Não está rodando.",
+        "alreadyCanceled": "Já está cancelada."
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "description": "Volume, conversão, latência e custo, últimos {days} dias.",
+    "stats": {
+      "totalCalls": "Total de chamadas",
+      "scheduledRate": "Taxa de agendamento",
+      "p95Latency": "Latência p95 (ponta a ponta)",
+      "totalCost": "Custo total"
+    },
+    "charts": {
+      "volume": "Volume de chamadas",
+      "heatmap": "Chamadas por dia e hora",
+      "latencyHistogram": "Distribuição de latência"
+    },
+    "rangePicker": {
+      "label": "Intervalo",
+      "days7": "7 dias",
+      "days30": "30 dias",
+      "days90": "90 dias"
+    },
+    "empty": "Ainda sem dados suficientes."
+  },
+  "calendar": {
+    "title": "Calendário",
+    "description": "Próximas consultas que seu agente marcou.",
+    "empty": {
+      "title": "Nenhuma consulta agendada",
+      "description": "Quando o agente marcar uma consulta, ela aparece aqui."
+    },
+    "viewInCalcom": "Abrir no Cal.com"
+  },
+  "enums": {
+    "callStatus": {
+      "RINGING": "Tocando",
+      "IN_PROGRESS": "Em curso",
+      "COMPLETED": "Finalizada",
+      "FAILED": "Falhou",
+      "NO_ANSWER": "Sem resposta",
+      "VOICEMAIL": "Caixa postal"
+    },
+    "callDirection": { "INBOUND": "Recebida", "OUTBOUND": "Realizada" },
+    "outcome": {
+      "SCHEDULED": "Agendou",
+      "QUALIFIED": "Qualificou",
+      "TRANSFERRED": "Transferiu",
+      "NOT_QUALIFIED": "Não qualificou",
+      "NO_ANSWER": "Não atendeu",
+      "OTHER": "Outro"
+    },
+    "sentiment": {
+      "POSITIVE": "Positivo",
+      "NEUTRAL": "Neutro",
+      "NEGATIVE": "Negativo",
+      "MIXED": "Misto"
+    },
+    "agentLanguageShort": {
+      "PT_BR": "Português",
+      "EN_US": "English",
+      "AUTO": "Auto"
+    },
+    "dayOfWeek": {
+      "monday": "Segunda-feira",
+      "tuesday": "Terça-feira",
+      "wednesday": "Quarta-feira",
+      "thursday": "Quinta-feira",
+      "friday": "Sexta-feira",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "voiceGender": { "female": "Feminino", "male": "Masculino", "neutral": "Neutro" },
+    "membershipRole": { "ADMIN": "Admin", "MEMBER": "Membro" },
+    "campaignStatus": {
+      "DRAFT": "Rascunho",
+      "RUNNING": "Rodando",
+      "PAUSED": "Pausada",
+      "COMPLETED": "Concluída",
+      "CANCELED": "Cancelada"
+    },
+    "campaignLeadStatus": {
+      "PENDING": "Pendente",
+      "CALLING": "Chamando",
+      "ATTEMPTED": "Tentado",
+      "REACHED": "Atingido",
+      "NO_ANSWER": "Sem resposta",
+      "VOICEMAIL": "Caixa postal",
+      "FAILED": "Falhou",
+      "EXCLUDED": "Excluído"
+    },
+    "metricLeg": {
+      "STT_FINALIZE": "STT finalize",
+      "LLM_TTFT": "LLM TTFT",
+      "LLM_TOTAL": "LLM total",
+      "TTS_TTFA": "TTS TTFA",
+      "TOOL_TOTAL": "Tool total",
+      "END_TO_END": "End-to-end"
+    }
+  },
+  "errors": {
+    "appBoundary": {
+      "title": "Algo deu errado",
+      "description": "Já registramos o erro. Recarregue a página para tentar de novo.",
+      "retry": "Tentar de novo",
+      "errorId": "id: {digest}"
+    },
+    "notFound": {
+      "title": "Página não encontrada",
+      "description": "A página que você procura não existe ou foi movida.",
+      "backHome": "Voltar para o início"
+    }
+  },
+  "globalError": {
+    "title": "Algo deu errado",
+    "description": "Já registramos o erro. Recarregue a página para tentar de novo."
+  }
+}
