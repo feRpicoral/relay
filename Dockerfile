@@ -30,7 +30,7 @@ COPY tsconfig.json ./
 # silently trying to connect to "buildtime".
 RUN DIRECT_URL=postgresql://buildtime/placeholder yarn install --immutable
 
-COPY lib ./lib
+COPY src/lib ./src/lib
 COPY worker ./worker
 
 # Drop to a non-root user. node:bookworm ships an unprivileged `node` user.

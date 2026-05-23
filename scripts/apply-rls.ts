@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { loadEnvConfig } from "@next/env";
 import { Client } from "pg";
 
-import { requireEnv } from "../lib/env";
+import { requireEnv } from "@/lib/env";
 
 loadEnvConfig(process.cwd());
 

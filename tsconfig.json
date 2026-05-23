@@ -19,7 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"]
     },
     "verbatimModuleSyntax": false,
     "noUncheckedIndexedAccess": true,
@@ -27,8 +27,13 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "worker/**/*.ts",
+    "scripts/**/*.ts",
+    "prisma/**/*.ts",
+    "*.ts",
+    "*.mjs",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
