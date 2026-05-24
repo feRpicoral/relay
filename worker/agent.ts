@@ -333,15 +333,24 @@ export default defineAgent({
 
       end_call: llmModule.tool({
         description:
-          "End the call after you've fully helped the caller and there's nothing left to do (e.g. appointment booked and confirmed verbally, question answered, caller said goodbye). ALWAYS say a brief farewell BEFORE calling this tool, since the line drops immediately after. Do NOT use this as a way to escape difficult conversations — for those, use `transfer_to_human` instead.",
+          "End the call after you've fully helped the caller and there's nothing left to do. Pass the farewell sentence you want spoken in the caller's language (e.g. 'Obrigada pela ligação, tenha um ótimo dia!'). The system will speak it cleanly and then disconnect — do NOT also say goodbye in your text response, that would say it twice. Do NOT use this as a way to escape difficult conversations — for those, use `transfer_to_human` instead.",
         parameters: z.object({
+          farewell: z
+            .string()
+            .min(2)
+            .max(200)
+            .describe(
+              "The brief farewell sentence to speak before hanging up, in the caller's language. Keep it natural and short — one sentence.",
+            ),
           summary: z
             .string()
             .min(2)
             .max(MAX_FREEFORM_REASON_LEN)
-            .describe("One short sentence on why the call is ending (e.g. 'appointment booked')."),
+            .describe(
+              "Internal one-sentence summary of why the call is ending (e.g. 'appointment booked'). Not spoken aloud — used for post-call analytics only.",
+            ),
         }),
-        async execute({ summary }) {
+        async execute({ farewell, summary }, opts) {
           const startedAt = new Date();
           // No dedicated AGENT_HANGUP event type in the CallEventType enum.
           // Use HANGUP with `initiator: "agent"` metadata so post-call analysis
@@ -349,23 +358,42 @@ export default defineAgent({
           await recordCallEvent(orgIdBranded, callIdBranded, "HANGUP", {
             initiator: "agent",
             summary,
+            farewell,
           });
           await recordToolCall(orgIdBranded, callIdBranded, {
             name: "end_call",
-            inputJson: { summary },
-            outputJson: { ok: true },
+            inputJson: { farewell, summary },
             startedAt,
             endedAt: new Date(),
             durationMs: 0,
           });
-          // Disconnect on a short delay so the farewell TTS that Claude
-          // queued just before invoking this tool has a chance to play out.
-          // 1.5s is enough for a "tchau, até logo!" utterance; without the
-          // delay the user hears the goodbye get cut mid-syllable.
-          setTimeout(() => {
+          // Fire-and-forget: speak the farewell ourselves with interruptions
+          // disabled, await the *actual* playout (not the RunContext's, which
+          // resolves the instant the framework marks the generation done and
+          // happily returns mid-syllable if any interrupt fires), then drop
+          // the room. Using `allowInterruptions: false` is the only way to
+          // guarantee user noise or backchannels can't cut the goodbye off.
+          // The 500ms grace covers the codec/network tail after the last
+          // frame is "played".
+          void (async () => {
+            try {
+              const handle = opts.ctx.session.say(farewell, {
+                allowInterruptions: false,
+              });
+              await handle.waitForPlayout();
+            } catch (err) {
+              console.warn("[agent] end_call farewell failed", err);
+            }
+            await new Promise((r) => setTimeout(r, 500));
             void ctx.room.disconnect().catch(() => undefined);
-          }, 1500);
-          return { ok: true };
+          })();
+          // Return undefined (not { ok: true }) so the framework sets
+          // replyRequired=false and skips the follow-up LLM turn. We don't
+          // want a "..., did you have anything else?" message queued behind
+          // our uninterruptible farewell — that would either play after the
+          // farewell (annoying) or race the room.disconnect() (audible
+          // garble). The tool call still gets recorded in chat ctx.
+          return undefined;
         },
       }),
     };
@@ -405,13 +433,30 @@ export default defineAgent({
             language: language === "pt-BR" ? "pt" : "en",
           });
 
-    const vad = await silero.VAD.load();
+    // Silero's default `minSilenceDuration: 550ms` declares end-of-speech the
+    // moment a caller takes a normal breath, which is what feeds the agent's
+    // "turn ended, time to respond" trigger. Bump to 800ms so the VAD itself
+    // is more tolerant of natural pauses before the endpointing delay even
+    // starts counting.
+    const vad = await silero.VAD.load({ minSilenceDuration: 800 });
 
     const session = new voice.AgentSession({
       stt,
       llm,
       tts,
       vad,
+      // Framework defaults (minDelay 500ms, minDuration 500ms, minWords 0) are
+      // tuned for fluent English speakers on a quiet line and are far too
+      // aggressive for pt-BR phone conversations. Callers routinely pause
+      // 1+ second mid-thought, and short backchannels ("sim", "uh-huh", "ok")
+      // were tripping the interruption detector before they'd finished a
+      // word. Wait 1500ms of silence before declaring the user's turn over,
+      // and require 1200ms+ of overlapping speech containing 4+ words before
+      // treating it as a real interruption.
+      turnHandling: {
+        endpointing: { minDelay: 1500, maxDelay: 8000 },
+        interruption: { minDuration: 1200, minWords: 4 },
+      },
     });
 
     const agent = new voice.Agent({

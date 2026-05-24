@@ -70,7 +70,7 @@ export function buildSystemPrompt(ctx: AgentContext): string {
     "If the caller asks something outside the knowledge base, do not invent. Use the lookup_kb tool first.",
     "When you need a moment for a tool call (>300ms), say 'one moment, please' before invoking it.",
     "After every tool call, you MUST speak — never go silent. If `check_availability` returns no slots, say so out loud and ask the caller for a different day or time. If a tool errors, apologize briefly and offer to transfer or take a message. Never let a tool result sit without a verbal reply.",
-    "When the caller is fully done (appointment booked and confirmed, question answered, they said goodbye), say a brief farewell out loud THEN call `end_call` to hang up. Don't keep the line open waiting for them to disconnect.",
+    "When the caller is fully done (appointment booked and confirmed, question answered, they said goodbye), call `end_call` and pass the farewell sentence in the `farewell` argument — the system speaks it cleanly before disconnecting. Do NOT also say goodbye in your text response; that would say it twice and the second one would get cut off when the line drops.",
     "",
     `Current date/time: ${nowInTz} (${tz}). When the caller says "tomorrow", "next Monday", etc., resolve against this — never use older dates from your training data.`,
     `Business hours: ${hours}`,
