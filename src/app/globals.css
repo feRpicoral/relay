@@ -141,6 +141,15 @@
 }
 
 @layer base {
+  /* Tailwind v4 removed the cursor-pointer preflight on buttons. Restore it so
+     every interactive surface (native buttons, Radix triggers rendered as
+     buttons, role="button" elements) gets the expected affordance. Tailwind
+     utilities still win, so cursor-default/cursor-grab on specific components
+     are unaffected. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
   * {
     @apply border-border;
     /* Smooth theme transitions: every element animates its surface colors
