@@ -5,6 +5,7 @@ import {
   Bot,
   CalendarClock,
   LayoutDashboard,
+  Loader2,
   Megaphone,
   PanelLeftClose,
   PanelLeftOpen,
@@ -12,7 +13,7 @@ import {
   Settings,
   Zap,
 } from "lucide-react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
@@ -71,6 +72,14 @@ function readCollapsed(): boolean {
 
 function serverCollapsed(): boolean {
   return false;
+}
+
+// Renders inside a <Link>. useLinkStatus reads the parent Link's pending
+// transition, so the icon swaps to a spinner the instant the user clicks —
+// before the new page's server data resolves.
+function NavIcon({ Icon }: { Icon: typeof LayoutDashboard }) {
+  const { pending } = useLinkStatus();
+  return pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />;
 }
 
 export function AppSidebar({ user, org, role }: SidebarProps) {
@@ -143,7 +152,7 @@ export function AppSidebar({ user, org, role }: SidebarProps) {
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
-              <Icon className="h-4 w-4" />
+              <NavIcon Icon={Icon} />
               {collapsed ? null : label}
             </Link>
           );

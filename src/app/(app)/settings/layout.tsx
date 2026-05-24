@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
 import { requireSession } from "@/lib/auth/session";
-import { cn } from "@/lib/utils";
+
+import { TabLink } from "./tab-link";
 
 type SettingsTabKey = "organization" | "preferences" | "members" | "telephony" | "calendar";
 
@@ -36,16 +36,7 @@ export default async function SettingsLayout({ children }: { children: React.Rea
       <div className="border-border border-b px-8">
         <nav className="-mb-px flex gap-6">
           {visible.map((tab) => (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={cn(
-                "text-muted-foreground hover:text-foreground border-b-2 border-transparent px-1 py-3 text-sm font-medium transition-colors",
-                "[&.active]:border-primary [&.active]:text-foreground",
-              )}
-            >
-              {tTabs(tab.labelKey)}
-            </Link>
+            <TabLink key={tab.href} href={tab.href} label={tTabs(tab.labelKey)} />
           ))}
         </nav>
       </div>
