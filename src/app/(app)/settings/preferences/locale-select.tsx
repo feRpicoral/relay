@@ -3,7 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,15 @@ export function LocaleSelect({ initialLocale }: { initialLocale: Locale }) {
     null,
   );
 
+  // Track which `state` we've already reacted to. Without this, `router.refresh()`
+  // rebuilds `messages` server-side, giving `useTranslations` a new `t` reference
+  // on every refresh — which re-fires this effect (state still `{ok: true}`) and
+  // loops the toast.
+  const handledStateRef = useRef<Result | null>(null);
+
   useEffect(() => {
-    if (!state) return;
+    if (!state || handledStateRef.current === state) return;
+    handledStateRef.current = state;
     if (state.ok) {
       toast.success(t("saved"));
       router.refresh();
