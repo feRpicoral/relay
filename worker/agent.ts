@@ -73,16 +73,30 @@ export default defineAgent({
     const attrs = participant.attributes ?? {};
     const sipFrom = attrs["sip.phoneNumber"] ?? attrs["sip.from"] ?? "";
     const sipTo = attrs["sip.trunkPhoneNumber"] ?? attrs["sip.to"] ?? "";
-    // No SIP attrs means the caller joined via WebRTC from the in-dashboard
-    // test page, not a real PSTN call. transfer_to_human, recording, and
-    // anything else that touches LiveKit's SIP plane has to be a no-op for
-    // these — there's no SIP session to transfer.
-    const isTestCall = !sipTo;
+    const hasSipAttrs = Boolean(sipFrom || sipTo);
+    // No SIP attrs means the participant joined via WebRTC (test page), not a
+    // real PSTN call. transfer_to_human and anything else that touches
+    // LiveKit's SIP plane has to be a no-op since there's no SIP session.
+    const isTestCall = !hasSipAttrs;
 
     let callId: string | null = null;
     let orgId: string | null = null;
 
-    if (sipTo) {
+    // Precreated rooms (test-call, outbound campaign dispatch) carry the
+    // callId/orgId in room.metadata. Read that first — for outbound calls the
+    // SIP `sip.to` is the callee's number (not one of our owned numbers), so
+    // falling into the inbound branch would 404 the lookup and disconnect.
+    let meta: { callId?: string; orgId?: string } = {};
+    try {
+      meta = JSON.parse(ctx.room.metadata ?? "{}");
+    } catch {
+      // Not JSON; treat as no metadata.
+    }
+
+    if (meta.callId && meta.orgId) {
+      callId = meta.callId;
+      orgId = meta.orgId;
+    } else if (sipTo) {
       const phone = await resolvePhoneNumber(sipTo);
       if (!phone?.agentId) {
         console.warn(`[agent] unknown inbound number ${sipTo}`);
@@ -100,24 +114,9 @@ export default defineAgent({
       callId = created.callId;
       orgId = created.orgId;
     } else {
-      // Test-call path: room.metadata is JSON {"callId":"...","orgId":"..."}.
-      try {
-        const meta = JSON.parse(ctx.room.metadata ?? "{}") as {
-          callId?: string;
-          orgId?: string;
-        };
-        if (meta.callId && meta.orgId) {
-          callId = meta.callId;
-          orgId = meta.orgId;
-        }
-      } catch {
-        // Not JSON, fall through to abort.
-      }
-      if (!callId || !orgId) {
-        console.warn(`[agent] no SIP attrs and no room metadata; disconnecting`);
-        await ctx.room.disconnect();
-        return;
-      }
+      console.warn(`[agent] no SIP attrs and no room metadata; disconnecting`);
+      await ctx.room.disconnect();
+      return;
     }
 
     const agentCtx = await loadAgentContext(callId);
