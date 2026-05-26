@@ -203,6 +203,17 @@ export interface AttachNumberInput {
  *   4. Persist the PhoneNumber row
  */
 export async function attachNumber(input: AttachNumberInput): Promise<{ phoneNumberId: string }> {
+  // Cross-tenant guard: phone_numbers.agent_id FK does not enforce that the
+  // agent belongs to the same org, so verify ownership before we wire any
+  // Twilio/LiveKit state to the relationship.
+  const agentRow = await getPrisma().agent.findFirst({
+    where: { id: input.agentId, orgId: input.orgId },
+    select: { id: true },
+  });
+  if (!agentRow) {
+    throw new Error("Agent not found in this organization.");
+  }
+
   const client = await getTwilioClient(input.orgId);
   const phone = await client.incomingPhoneNumbers(input.twilioSid).fetch();
 

@@ -109,6 +109,15 @@ export async function createKnowledgeDocAction(
   if (!parsed.success) return { ok: false, error: t("invalidDocument") };
 
   const db = getDb(session.orgId);
+  // Cross-tenant guard: knowledge_docs.agent_id FK does not enforce that the
+  // agent belongs to the same org. Without this lookup a known UUID from a
+  // different tenant could be stitched onto our org's knowledge base.
+  const agent = await db.agent.findFirst({
+    where: { id: parsed.data.agentId },
+    select: { id: true },
+  });
+  if (!agent) return { ok: false, error: t("invalidInput") };
+
   await db.knowledgeDoc.create({
     data: {
       orgId: session.orgId,
