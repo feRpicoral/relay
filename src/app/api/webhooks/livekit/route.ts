@@ -6,6 +6,7 @@ import { asCallId, asOrgId } from "@/lib/db/types";
 import { requireEnv } from "@/lib/env";
 import { parseCallIdFromRoomName } from "@/lib/voice/livekit";
 import { recordCallEvent } from "@/lib/voice/persistence";
+import { triggerPostCallAnalysis } from "@/lib/voice/post-call-trigger";
 
 export const dynamic = "force-dynamic";
 
@@ -77,10 +78,19 @@ export async function POST(request: NextRequest) {
         // updates. Subsequent redeliveries change zero rows and silently exit.
         const endedAt = new Date();
         const durationMs = call.startedAt ? endedAt.getTime() - call.startedAt.getTime() : null;
-        await getPrisma().call.updateMany({
+        const { count } = await getPrisma().call.updateMany({
           where: { id: callId, status: { notIn: ["COMPLETED", "FAILED"] } },
           data: { status: "COMPLETED", endedAt, durationMs },
         });
+        // Only fire post-call analysis when this delivery is the one that
+        // actually transitioned the call to COMPLETED. Without this guard the
+        // worker (which already triggers post-call on graceful hangup) and
+        // every retried `room_finished` delivery would both enqueue analysis;
+        // with it, crash recovery owns the trigger when the worker dies
+        // before sending its own `call/completed`.
+        if (count > 0 && !call.processedAt) {
+          await triggerPostCallAnalysis(callId);
+        }
         break;
       }
       case "egress_ended":
