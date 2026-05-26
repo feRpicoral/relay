@@ -4,9 +4,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/db/client";
 import { asCallId, asOrgId } from "@/lib/db/types";
 import { requireEnv } from "@/lib/env";
+import { inngest } from "@/lib/inngest/client";
 import { parseCallIdFromRoomName } from "@/lib/voice/livekit";
 import { recordCallEvent } from "@/lib/voice/persistence";
-import { triggerPostCallAnalysis } from "@/lib/voice/post-call-trigger";
 
 export const dynamic = "force-dynamic";
 
@@ -87,9 +87,12 @@ export async function POST(request: NextRequest) {
         // worker (which already triggers post-call on graceful hangup) and
         // every retried `room_finished` delivery would both enqueue analysis;
         // with it, crash recovery owns the trigger when the worker dies
-        // before sending its own `call/completed`.
+        // before sending its own `call/completed`. We call `inngest.send`
+        // directly (not the worker-side `triggerPostCallAnalysis` helper) so
+        // a send failure throws out of this handler — the outer catch returns
+        // 5xx and LiveKit re-delivers, which is the only safety net here.
         if (count > 0 && !call.processedAt) {
-          await triggerPostCallAnalysis(callId);
+          await inngest.send({ name: "call/completed", data: { callId } });
         }
         break;
       }
