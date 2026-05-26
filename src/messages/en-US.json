@@ -269,6 +269,7 @@
       "connected": {
         "accountLabel": "Account",
         "disconnect": "Disconnect",
+        "attach": "Attach",
         "confirmDisconnectTitle": "Disconnect Twilio?",
         "confirmDisconnectDescription": "Your numbers will stop receiving calls until you reconnect.",
         "confirmDisconnect": "Disconnect",
@@ -479,7 +480,8 @@
         "invalidDocument": "Invalid document.",
         "useE164Format": "Use E.164 format: +5511999998888",
         "deleteFailed": "Couldn't delete the agent. Check if there are active calls or campaigns.",
-        "testCallFailed": "Test call failed."
+        "testCallFailed": "Test call failed.",
+        "voiceRequiredToEnable": "Pick a voice in the Voice tab before enabling this agent."
       }
     }
   },

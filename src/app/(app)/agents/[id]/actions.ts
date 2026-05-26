@@ -35,6 +35,17 @@ export async function updateAgentSettingsAction(
   }
 
   const db = getDb(session.orgId);
+  if (parsed.data.enabled) {
+    // Cannot enable an agent without a voice — the worker would crash on
+    // first TTS setup. The agent is created with `voiceId: ""` by design
+    // (see agents/new/actions.ts) so we gate enable on a non-empty pick.
+    const current = await db.agent.findFirst({
+      where: { id: parsed.data.agentId },
+      select: { voiceId: true },
+    });
+    if (!current) return { ok: false, error: t("invalidInput") };
+    if (!current.voiceId) return { ok: false, error: t("voiceRequiredToEnable") };
+  }
   await db.agent.update({
     where: { id: parsed.data.agentId },
     data: {

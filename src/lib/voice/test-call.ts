@@ -32,9 +32,10 @@ export async function startTestCall(args: {
   // Org-scoped lookup: a forged agentId from another org simply returns null.
   const agent = await db.agent.findFirst({
     where: { id: args.agentId },
-    select: { id: true },
+    select: { id: true, voiceId: true },
   });
   if (!agent) throw new AgentNotFoundError();
+  if (!agent.voiceId) throw new AgentVoiceNotConfiguredError();
 
   const phone = await db.phoneNumber.findFirst({
     where: { agentId: args.agentId },
@@ -76,5 +77,12 @@ export class AgentNotFoundError extends Error {
   constructor() {
     super("agent_not_found");
     this.name = "AgentNotFoundError";
+  }
+}
+
+export class AgentVoiceNotConfiguredError extends Error {
+  constructor() {
+    super("agent_voice_not_configured");
+    this.name = "AgentVoiceNotConfiguredError";
   }
 }

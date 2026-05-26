@@ -28,7 +28,9 @@ export async function createAgentAction(
 
   // voiceId intentionally empty: the live Cartesia catalog is fetched in the
   // agent settings page and the operator picks a real UUID there. Hardcoding
-  // a default would 500 the worker the moment the catalog drifts.
+  // a default would 500 the worker the moment the catalog drifts. The agent
+  // starts disabled so it can't be attached/tested before a voice is picked —
+  // updateAgentSettingsAction + startTestCall + attachNumber refuse otherwise.
   const agent = await db.agent.create({
     data: {
       orgId: session.orgId,
@@ -37,6 +39,7 @@ export async function createAgentAction(
       personaPrompt: parsed.data.personaPrompt,
       greeting: parsed.data.greeting,
       voiceId: "",
+      enabled: false,
       ttsProvider: "CARTESIA",
       businessHours: {
         timezone: DEFAULT_TIMEZONE,
