@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { fromPrismaLocale } from "@/i18n/config";
+import { setActiveOrg } from "@/lib/auth/active-org";
 import { safeNextPath } from "@/lib/auth/safe-redirect";
 import { getPrisma } from "@/lib/db/client";
 import { LOCALE_COOKIE } from "@/lib/i18n/resolve-locale";
@@ -44,6 +45,20 @@ export async function GET(request: NextRequest) {
   } catch {
     // DB is down; redirect to login so the user retries instead of seeing a 500.
     return NextResponse.redirect(new URL("/login?error=auth_failed", request.url));
+  }
+
+  // Repair missing `app_metadata.active_org_id` here so the app layout doesn't
+  // bounce a returning member with intact membership rows back to /create-org.
+  if (membership) {
+    const activeOrgId =
+      typeof data.user.app_metadata?.active_org_id === "string"
+        ? data.user.app_metadata.active_org_id
+        : null;
+    if (!activeOrgId) {
+      await setActiveOrg(data.user.id, membership.orgId).catch((err) => {
+        console.warn("[auth/callback] setActiveOrg repair failed", err);
+      });
+    }
   }
 
   const target = next
