@@ -51,11 +51,14 @@ export const postCallAnalysis = inngest.createFunction(
     if (call.processedAt) return { skipped: "already processed" };
 
     if (call.transcripts.length === 0) {
+      // Defer `processedAt` to the last step. `if (call.processedAt) return`
+      // above is what gates the retry — if we set it here and the campaign
+      // propagation that follows fails, the retry would see the row already
+      // marked processed and exit without ever updating the lead.
       await step.run("mark-empty", async () => {
         await getPrisma().call.update({
           where: { id: callId },
           data: {
-            processedAt: new Date(),
             outcome: "NO_ANSWER",
             summary: "Sem transcrição disponível.",
             sentiment: "NEUTRAL",
@@ -74,6 +77,12 @@ export const postCallAnalysis = inngest.createFunction(
           });
         });
       }
+      await step.run("mark-empty-processed", async () => {
+        await getPrisma().call.update({
+          where: { id: callId },
+          data: { processedAt: new Date() },
+        });
+      });
       return { ok: true, empty: true };
     }
 
@@ -134,6 +143,11 @@ export const postCallAnalysis = inngest.createFunction(
       return SummarySchema.parse(block.input);
     });
 
+    // Persist the analytical fields, but defer `processedAt` to the very last
+    // step. `if (call.processedAt) return` above is what gates retries — if we
+    // mark processed here and the campaign propagation fails, the retry would
+    // see the row already processed and exit without ever updating the lead,
+    // leaving it permanently stuck in CALLING.
     await step.run("persist-summary", async () => {
       await getPrisma().call.update({
         where: { id: callId },
@@ -142,7 +156,6 @@ export const postCallAnalysis = inngest.createFunction(
           outcome: result.outcome,
           sentiment: result.sentiment,
           topics: result.topics,
-          processedAt: new Date(),
         },
       });
     });
@@ -159,6 +172,13 @@ export const postCallAnalysis = inngest.createFunction(
         });
       });
     }
+
+    await step.run("mark-processed", async () => {
+      await getPrisma().call.update({
+        where: { id: callId },
+        data: { processedAt: new Date() },
+      });
+    });
 
     return { ok: true, ...result };
   },

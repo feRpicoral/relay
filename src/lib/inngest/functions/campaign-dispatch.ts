@@ -49,10 +49,14 @@ export const campaignDispatch = inngest.createFunction(
     }
     if (lead.campaign.status !== "RUNNING") return { skipped: "campaign not running" };
 
-    // Pre-allocate the call id so we can persist `livekitRoomName` on the
-    // initial insert (live-monitor / hangup code needs it to issue tokens and
-    // delete the room) and so retries of `create-call` are idempotent.
-    const preallocatedCallId = randomUUID();
+    // Pre-allocate the call id so `livekitRoomName` lands on the initial
+    // insert (live-monitor / hangup code needs it to issue tokens and delete
+    // the room) and so retries are idempotent. The UUID generation MUST be
+    // inside `step.run` — Inngest replays cache each step's result, so a bare
+    // `randomUUID()` outside step.run would generate a new value on every
+    // replay while `create-call` returned the cached original id, leaving
+    // `roomName` and the row's `livekitRoomName` permanently out of sync.
+    const preallocatedCallId = await step.run("allocate-call-id", async () => randomUUID());
     const roomName = buildRoomName(preallocatedCallId);
 
     const { callId } = await step.run("create-call", async () => {
