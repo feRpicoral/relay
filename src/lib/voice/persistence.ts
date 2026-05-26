@@ -52,6 +52,11 @@ export async function createInboundCall(input: CreateInboundCallInput): Promise<
 }
 
 interface CreateOutboundCallInput {
+  /**
+   * Optional pre-allocated row id so `livekitRoomName` can be precomputed
+   * from `buildRoomName(id)`, avoiding a two-phase create-then-update.
+   */
+  id?: string;
   orgId: OrgId;
   agentId: AgentId;
   callerE164: string;
@@ -67,6 +72,7 @@ export async function createOutboundCall(input: CreateOutboundCallInput): Promis
   const db = getDb(input.orgId);
   const call = await db.call.create({
     data: {
+      id: input.id,
       orgId: input.orgId,
       agentId: input.agentId,
       callerE164: input.callerE164,

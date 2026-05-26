@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { CallOutcome } from "@prisma/client";
 import { z } from "zod";
 
 import { getPrisma } from "@/lib/db/client";
@@ -6,6 +7,7 @@ import { requireEnv } from "@/lib/env";
 import { PROVIDER_VERSIONS } from "@/lib/voice/provider-versions";
 
 import { inngest } from "../client";
+import { nextLeadStateForOutcome } from "./campaign-lead-state";
 
 const SummarySchema = z.object({
   summary: z.string().min(5).max(800),
@@ -36,6 +38,12 @@ export const postCallAnalysis = inngest.createFunction(
           transcripts: { orderBy: { startMs: "asc" } },
           toolCalls: { orderBy: { startedAt: "asc" } },
           agent: { select: { name: true, language: true } },
+          campaignAttempt: {
+            include: {
+              lead: { select: { id: true, attempts: true } },
+              campaign: { select: { maxAttempts: true, cooldownMinutes: true } },
+            },
+          },
         },
       });
     });
@@ -54,6 +62,18 @@ export const postCallAnalysis = inngest.createFunction(
           },
         });
       });
+      if (call.campaignAttempt) {
+        await step.run("propagate-empty-to-campaign", async () => {
+          await applyCampaignLeadTransition({
+            attemptId: call.campaignAttempt!.id,
+            leadId: call.campaignAttempt!.lead.id,
+            outcome: "NO_ANSWER",
+            priorAttempts: call.campaignAttempt!.lead.attempts,
+            maxAttempts: call.campaignAttempt!.campaign.maxAttempts,
+            cooldownMinutes: call.campaignAttempt!.campaign.cooldownMinutes,
+          });
+        });
+      }
       return { ok: true, empty: true };
     }
 
@@ -127,6 +147,52 @@ export const postCallAnalysis = inngest.createFunction(
       });
     });
 
+    if (call.campaignAttempt) {
+      await step.run("propagate-to-campaign", async () => {
+        await applyCampaignLeadTransition({
+          attemptId: call.campaignAttempt!.id,
+          leadId: call.campaignAttempt!.lead.id,
+          outcome: result.outcome,
+          priorAttempts: call.campaignAttempt!.lead.attempts,
+          maxAttempts: call.campaignAttempt!.campaign.maxAttempts,
+          cooldownMinutes: call.campaignAttempt!.campaign.cooldownMinutes,
+        });
+      });
+    }
+
     return { ok: true, ...result };
   },
 );
+
+interface ApplyTransitionInput {
+  attemptId: string;
+  leadId: string;
+  outcome: CallOutcome;
+  priorAttempts: number;
+  maxAttempts: number;
+  cooldownMinutes: number;
+}
+
+async function applyCampaignLeadTransition(input: ApplyTransitionInput): Promise<void> {
+  const transition = nextLeadStateForOutcome({
+    outcome: input.outcome,
+    priorAttempts: input.priorAttempts,
+    maxAttempts: input.maxAttempts,
+    cooldownMinutes: input.cooldownMinutes,
+  });
+  await getPrisma().$transaction([
+    getPrisma().campaignAttempt.update({
+      where: { id: input.attemptId },
+      data: { endedAt: new Date(), outcome: input.outcome },
+    }),
+    getPrisma().campaignLead.update({
+      where: { id: input.leadId },
+      data: {
+        status: transition.status,
+        outcome: transition.outcome,
+        nextEligibleAt: transition.nextEligibleAt,
+        reachedAt: transition.reachedAt,
+      },
+    }),
+  ]);
+}
