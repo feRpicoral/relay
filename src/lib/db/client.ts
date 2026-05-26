@@ -15,10 +15,13 @@ function createPrisma(): PrismaClient {
   });
 }
 
+/**
+ * Returns a process-wide PrismaClient. We cache in production too because the
+ * worker hits the DB many times per call, and minting a fresh client on every
+ * call exhausts the Supabase pooler's connection budget. The `global.__prisma`
+ * pattern also doubles as HMR resilience in dev.
+ */
 export function getPrisma(): PrismaClient {
-  if (process.env.NODE_ENV === "production") {
-    return createPrisma();
-  }
   if (!global.__prisma) {
     global.__prisma = createPrisma();
   }

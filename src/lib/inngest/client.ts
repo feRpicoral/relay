@@ -1,14 +1,22 @@
 import { Inngest } from "inngest";
 
-import { optionalEnv } from "@/lib/env";
+import { isProduction, optionalEnv, requireEnv } from "@/lib/env";
+
+// Inngest's `serve()` validates inbound function-invocation signatures using
+// `signingKey`. Without it anyone who can reach `/api/inngest` can trigger
+// arbitrary functions, so production must fail fast at module load rather
+// than silently boot in an unsafe configuration. The `eventKey` is what
+// `inngest.send(...)` uses to authenticate outbound events; mismatched or
+// missing keys in prod would silently drop campaign/post-call triggers.
+const eventKey = isProduction ? requireEnv("INNGEST_EVENT_KEY") : optionalEnv("INNGEST_EVENT_KEY");
+const signingKey = isProduction
+  ? requireEnv("INNGEST_SIGNING_KEY")
+  : optionalEnv("INNGEST_SIGNING_KEY");
 
 export const inngest = new Inngest({
   id: "relay",
-  eventKey: optionalEnv("INNGEST_EVENT_KEY"),
-  // Required so `inngest/next` serve() validates incoming function-invocation
-  // signatures. Without it, anyone who can POST to /api/inngest can trigger
-  // arbitrary functions.
-  signingKey: optionalEnv("INNGEST_SIGNING_KEY"),
+  eventKey,
+  signingKey,
 });
 
 export type RelayEvent =
