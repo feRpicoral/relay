@@ -225,7 +225,7 @@ function NumberItem({
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              {t("disconnect" /* fallthrough to keep word neutral */)}
+              {t("attach")}
             </Button>
           </>
         )}

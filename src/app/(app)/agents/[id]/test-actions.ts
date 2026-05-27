@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { asAgentId } from "@/lib/db/types";
 import type { Result } from "@/lib/types/result";
-import { startTestCall } from "@/lib/voice/test-call";
+import { AgentVoiceNotConfiguredError, startTestCall } from "@/lib/voice/test-call";
 
 const Schema = z.object({ agentId: z.string().uuid() });
 
@@ -26,6 +26,9 @@ export async function startTestCallAction(
     });
     return { ok: true, ...result };
   } catch (err) {
+    if (err instanceof AgentVoiceNotConfiguredError) {
+      return { ok: false, error: t("voiceRequiredToEnable") };
+    }
     return { ok: false, error: err instanceof Error ? err.message : t("testCallFailed") };
   }
 }

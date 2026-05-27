@@ -2,13 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { requireEnv } from "@/lib/env";
+import { getSupabasePublishableKey } from "@/lib/supabase/env-keys";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    getSupabasePublishableKey(),
     {
       cookies: {
         getAll() {

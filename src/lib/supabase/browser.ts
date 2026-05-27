@@ -6,9 +6,15 @@ let cached: ReturnType<typeof createBrowserClient> | null = null;
 
 export function getBrowserSupabase() {
   if (cached) return cached;
+  // Both names are read so deployments can roll over from the legacy `anon`
+  // key to Supabase's newer `publishable` naming without coordinating with
+  // every env file at the same time. `NEXT_PUBLIC_*` vars are baked at build
+  // time, so the precedence is locked once the bundle is built.
   const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+      "",
   );
 
   // Wire the user's JWT into the Realtime client on session restore. The

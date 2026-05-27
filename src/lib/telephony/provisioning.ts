@@ -205,13 +205,17 @@ export interface AttachNumberInput {
 export async function attachNumber(input: AttachNumberInput): Promise<{ phoneNumberId: string }> {
   // Cross-tenant guard: phone_numbers.agent_id FK does not enforce that the
   // agent belongs to the same org, so verify ownership before we wire any
-  // Twilio/LiveKit state to the relationship.
+  // Twilio/LiveKit state. We also refuse if no voice is picked yet — the
+  // worker would crash on first TTS setup once a real call lands.
   const agentRow = await getPrisma().agent.findFirst({
     where: { id: input.agentId, orgId: input.orgId },
-    select: { id: true },
+    select: { voiceId: true },
   });
   if (!agentRow) {
     throw new Error("Agent not found in this organization.");
+  }
+  if (!agentRow.voiceId) {
+    throw new Error("Pick a voice for this agent before attaching a number.");
   }
 
   const client = await getTwilioClient(input.orgId);
