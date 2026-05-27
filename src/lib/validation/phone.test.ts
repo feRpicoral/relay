@@ -4,57 +4,102 @@ import { E164_REGEX, isE164 } from "./phone";
 
 describe("isE164 — accepts", () => {
   it("Brazilian mobile", () => {
-    expect(isE164("+5511987654321")).toBe(true);
+    const result = isE164("+5511987654321");
+
+    expect(result).toBe(true);
   });
+
   it("US", () => {
-    expect(isE164("+14155551234")).toBe(true);
+    const result = isE164("+14155551234");
+
+    expect(result).toBe(true);
   });
+
   it("UK", () => {
-    expect(isE164("+442012345678")).toBe(true);
+    const result = isE164("+442012345678");
+
+    expect(result).toBe(true);
   });
+
   it("minimum length (7 digits = leading + 6)", () => {
-    expect(isE164("+1234567")).toBe(true);
+    const result = isE164("+1234567");
+
+    expect(result).toBe(true);
   });
+
   it("maximum length (18 digits = leading + 17)", () => {
-    expect(isE164("+123456789012345678")).toBe(true);
+    const result = isE164("+123456789012345678");
+
+    expect(result).toBe(true);
   });
 });
 
 describe("isE164 — rejects", () => {
   it("missing leading plus", () => {
-    expect(isE164("5511987654321")).toBe(false);
+    const result = isE164("5511987654321");
+
+    expect(result).toBe(false);
   });
+
   it("country code starting with 0", () => {
-    expect(isE164("+0511987654321")).toBe(false);
+    const result = isE164("+0511987654321");
+
+    expect(result).toBe(false);
   });
+
   it("letters anywhere", () => {
-    expect(isE164("+551198765432a")).toBe(false);
-    expect(isE164("+abc")).toBe(false);
+    const trailing = isE164("+551198765432a");
+    const abc = isE164("+abc");
+
+    expect(trailing).toBe(false);
+    expect(abc).toBe(false);
   });
+
   it("spaces", () => {
-    expect(isE164("+55 11 98765 4321")).toBe(false);
+    const result = isE164("+55 11 98765 4321");
+
+    expect(result).toBe(false);
   });
+
   it("dashes", () => {
-    expect(isE164("+55-11-98765-4321")).toBe(false);
+    const result = isE164("+55-11-98765-4321");
+
+    expect(result).toBe(false);
   });
+
   it("parentheses", () => {
-    expect(isE164("+1(415)5551234")).toBe(false);
+    const result = isE164("+1(415)5551234");
+
+    expect(result).toBe(false);
   });
+
   it("empty / only plus", () => {
-    expect(isE164("")).toBe(false);
-    expect(isE164("+")).toBe(false);
+    const empty = isE164("");
+    const plus = isE164("+");
+
+    expect(empty).toBe(false);
+    expect(plus).toBe(false);
   });
+
   it("too short (6 digits total)", () => {
-    expect(isE164("+123456")).toBe(false);
+    const result = isE164("+123456");
+
+    expect(result).toBe(false);
   });
+
   it("too long (19 digits total)", () => {
-    expect(isE164("+1234567890123456789")).toBe(false);
+    const result = isE164("+1234567890123456789");
+
+    expect(result).toBe(false);
   });
 });
 
 describe("E164_REGEX", () => {
   it("is exported and behaves like isE164", () => {
-    expect(E164_REGEX.test("+14155551234")).toBe(true);
-    expect(E164_REGEX.test("invalid")).toBe(false);
+    const valid = E164_REGEX.test("+14155551234");
+    const invalid = E164_REGEX.test("invalid");
+
+    expect(valid).toBe(true);
+    expect(invalid).toBe(false);
   });
 });

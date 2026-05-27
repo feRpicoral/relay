@@ -82,38 +82,50 @@ function makeHandler(orgId: string) {
 
 describe("with-org tenant injection", () => {
   it("injects orgId into findMany where clause for multi-tenant models", () => {
-    const h = makeHandler(ORG_A);
-    const out = h("Agent", "findMany", { where: { enabled: true } }) as {
+    const handler = makeHandler(ORG_A);
+
+    const out = handler("Agent", "findMany", { where: { enabled: true } }) as {
       where: { orgId: string; enabled: boolean };
     };
+
     expect(out.where.orgId).toBe(ORG_A);
     expect(out.where.enabled).toBe(true);
   });
 
   it("uses the correct orgId per tenant", () => {
-    expect(
-      (makeHandler(ORG_B)("Agent", "findMany", {}) as { where: { orgId: string } }).where.orgId,
-    ).toBe(ORG_B);
+    const handler = makeHandler(ORG_B);
+
+    const out = handler("Agent", "findMany", {}) as { where: { orgId: string } };
+
+    expect(out.where.orgId).toBe(ORG_B);
   });
 
   it("injects orgId into create data", () => {
-    const out = makeHandler(ORG_A)("Agent", "create", { data: { name: "Atendimento" } }) as {
+    const handler = makeHandler(ORG_A);
+
+    const out = handler("Agent", "create", { data: { name: "Atendimento" } }) as {
       data: { orgId: string; name: string };
     };
+
     expect(out.data.orgId).toBe(ORG_A);
     expect(out.data.name).toBe("Atendimento");
   });
 
   it("injects orgId into every row of createMany array", () => {
-    const out = makeHandler(ORG_A)("Agent", "createMany", {
+    const handler = makeHandler(ORG_A);
+
+    const out = handler("Agent", "createMany", {
       data: [{ name: "A" }, { name: "B" }],
     }) as { data: Array<{ orgId: string; name: string }> };
+
     expect(out.data).toHaveLength(2);
     expect(out.data.every((row) => row.orgId === ORG_A)).toBe(true);
   });
 
   it("injects orgId into upsert where + create, leaves update alone", () => {
-    const out = makeHandler(ORG_A)("Agent", "upsert", {
+    const handler = makeHandler(ORG_A);
+
+    const out = handler("Agent", "upsert", {
       where: { id: "abc" },
       create: { name: "A" },
       update: { name: "A2" },
@@ -122,6 +134,7 @@ describe("with-org tenant injection", () => {
       create: { orgId: string };
       update: { orgId?: string; name: string };
     };
+
     expect(out.where.orgId).toBe(ORG_A);
     expect(out.create.orgId).toBe(ORG_A);
     expect(out.update.orgId).toBeUndefined();
@@ -129,9 +142,12 @@ describe("with-org tenant injection", () => {
   });
 
   it("does not touch single-tenant models like User", () => {
-    const out = makeHandler(ORG_A)("User", "findMany", { where: { email: "x@y.com" } }) as {
+    const handler = makeHandler(ORG_A);
+
+    const out = handler("User", "findMany", { where: { email: "x@y.com" } }) as {
       where: { orgId?: string; email: string };
     };
+
     expect(out.where.orgId).toBeUndefined();
     expect(out.where.email).toBe("x@y.com");
   });
@@ -139,17 +155,24 @@ describe("with-org tenant injection", () => {
 
 describe("with-org cross-tenant negative checks", () => {
   it("does not leak data from a different org's scope", () => {
-    const a = makeHandler(ORG_A)("Agent", "findMany", { where: { enabled: true } }) as {
+    const handlerA = makeHandler(ORG_A);
+    const handlerB = makeHandler(ORG_B);
+
+    const a = handlerA("Agent", "findMany", { where: { enabled: true } }) as {
       where: { orgId: string };
     };
-    const b = makeHandler(ORG_B)("Agent", "findMany", { where: { enabled: true } }) as {
+    const b = handlerB("Agent", "findMany", { where: { enabled: true } }) as {
       where: { orgId: string };
     };
+
     expect(a.where.orgId).not.toBe(b.where.orgId);
   });
 
   it("createMany with empty array still produces an array (degenerate ok)", () => {
-    const out = makeHandler(ORG_A)("Agent", "createMany", { data: [] }) as { data: unknown[] };
+    const handler = makeHandler(ORG_A);
+
+    const out = handler("Agent", "createMany", { data: [] }) as { data: unknown[] };
+
     expect(Array.isArray(out.data)).toBe(true);
     expect(out.data).toHaveLength(0);
   });

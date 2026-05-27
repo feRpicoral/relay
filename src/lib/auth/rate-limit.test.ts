@@ -13,19 +13,28 @@ const small = { capacity: 3, refillIntervalMs: 1000 };
 describe("consumeToken — basic semantics", () => {
   it("allows up to capacity then denies", () => {
     const key = "rl:test-basic";
-    expect(consumeToken(key, small)).toBe(true);
-    expect(consumeToken(key, small)).toBe(true);
-    expect(consumeToken(key, small)).toBe(true);
-    expect(consumeToken(key, small)).toBe(false);
+
+    const first = consumeToken(key, small);
+    const second = consumeToken(key, small);
+    const third = consumeToken(key, small);
+    const fourth = consumeToken(key, small);
+
+    expect(first).toBe(true);
+    expect(second).toBe(true);
+    expect(third).toBe(true);
+    expect(fourth).toBe(false);
   });
 
   it("isolates buckets per key", () => {
-    // Drain one key fully — a different key must still have all its tokens.
     const a = "rl:isolation-a";
     const b = "rl:isolation-b";
+
     for (let i = 0; i < small.capacity; i++) consumeToken(a, small);
-    expect(consumeToken(a, small)).toBe(false);
-    expect(consumeToken(b, small)).toBe(true);
+    const aAfterDrain = consumeToken(a, small);
+    const bFresh = consumeToken(b, small);
+
+    expect(aAfterDrain).toBe(false);
+    expect(bFresh).toBe(true);
   });
 });
 
@@ -33,21 +42,32 @@ describe("consumeToken — refill", () => {
   it("refills one token after the configured interval", async () => {
     const key = "rl:test-refill";
     const fast = { capacity: 2, refillIntervalMs: 50 };
-    expect(consumeToken(key, fast)).toBe(true);
-    expect(consumeToken(key, fast)).toBe(true);
-    expect(consumeToken(key, fast)).toBe(false);
+
+    const first = consumeToken(key, fast);
+    const second = consumeToken(key, fast);
+    const drained = consumeToken(key, fast);
     await new Promise((r) => setTimeout(r, 80));
-    expect(consumeToken(key, fast)).toBe(true);
+    const afterRefill = consumeToken(key, fast);
+
+    expect(first).toBe(true);
+    expect(second).toBe(true);
+    expect(drained).toBe(false);
+    expect(afterRefill).toBe(true);
   });
 
   it("caps refill at capacity (no overflow after a long idle period)", async () => {
     const key = "rl:test-cap";
     const fast = { capacity: 1, refillIntervalMs: 25 };
-    expect(consumeToken(key, fast)).toBe(true);
+
+    const initial = consumeToken(key, fast);
     // Wait long enough that without a cap we'd accumulate many tokens.
     await new Promise((r) => setTimeout(r, 250));
-    expect(consumeToken(key, fast)).toBe(true);
-    expect(consumeToken(key, fast)).toBe(false);
+    const afterIdle = consumeToken(key, fast);
+    const second = consumeToken(key, fast);
+
+    expect(initial).toBe(true);
+    expect(afterIdle).toBe(true);
+    expect(second).toBe(false);
   });
 });
 
