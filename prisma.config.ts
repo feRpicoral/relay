@@ -6,12 +6,13 @@ import { defineConfig } from "prisma/config";
 // `prisma db seed` see the same vars the app sees at runtime.
 loadEnvConfig(process.cwd());
 
-const migrationUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
-if (!migrationUrl) {
-  throw new Error(
-    "DIRECT_URL (or DATABASE_URL as fallback) is not set. Copy .env.example to .env.local and fill in your Supabase connection strings.",
-  );
-}
+// Placeholder used only when the env is empty (e.g. CI jobs that run
+// `yarn install` → `prisma generate` without ever connecting). Throwing here
+// would crash unrelated jobs like commitlint that just need the install to
+// succeed. Real DB-touching commands (`prisma migrate`, `db seed`) fail later
+// with a clear "couldn't connect" error if the env was actually missing.
+const PLACEHOLDER_URL = "postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder";
+const migrationUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? PLACEHOLDER_URL;
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
