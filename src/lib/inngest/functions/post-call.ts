@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { CallOutcome } from "@prisma/client";
 import { z } from "zod";
 
 import { getPrisma } from "@/lib/db/client";
@@ -6,6 +7,7 @@ import { requireEnv } from "@/lib/env";
 import { PROVIDER_VERSIONS } from "@/lib/voice/provider-versions";
 
 import { inngest } from "../client";
+import { nextLeadStateForOutcome } from "./campaign-lead-state";
 
 const SummarySchema = z.object({
   summary: z.string().min(5).max(800),
@@ -36,6 +38,12 @@ export const postCallAnalysis = inngest.createFunction(
           transcripts: { orderBy: { startMs: "asc" } },
           toolCalls: { orderBy: { startedAt: "asc" } },
           agent: { select: { name: true, language: true } },
+          campaignAttempt: {
+            include: {
+              lead: { select: { id: true, attempts: true } },
+              campaign: { select: { maxAttempts: true, cooldownMinutes: true } },
+            },
+          },
         },
       });
     });
@@ -43,15 +51,36 @@ export const postCallAnalysis = inngest.createFunction(
     if (call.processedAt) return { skipped: "already processed" };
 
     if (call.transcripts.length === 0) {
+      // Defer `processedAt` to the last step. `if (call.processedAt) return`
+      // above is what gates the retry — if we set it here and the campaign
+      // propagation that follows fails, the retry would see the row already
+      // marked processed and exit without ever updating the lead.
       await step.run("mark-empty", async () => {
         await getPrisma().call.update({
           where: { id: callId },
           data: {
-            processedAt: new Date(),
             outcome: "NO_ANSWER",
             summary: "Sem transcrição disponível.",
             sentiment: "NEUTRAL",
           },
+        });
+      });
+      if (call.campaignAttempt) {
+        await step.run("propagate-empty-to-campaign", async () => {
+          await applyCampaignLeadTransition({
+            attemptId: call.campaignAttempt!.id,
+            leadId: call.campaignAttempt!.lead.id,
+            outcome: "NO_ANSWER",
+            priorAttempts: call.campaignAttempt!.lead.attempts,
+            maxAttempts: call.campaignAttempt!.campaign.maxAttempts,
+            cooldownMinutes: call.campaignAttempt!.campaign.cooldownMinutes,
+          });
+        });
+      }
+      await step.run("mark-empty-processed", async () => {
+        await getPrisma().call.update({
+          where: { id: callId },
+          data: { processedAt: new Date() },
         });
       });
       return { ok: true, empty: true };
@@ -114,6 +143,11 @@ export const postCallAnalysis = inngest.createFunction(
       return SummarySchema.parse(block.input);
     });
 
+    // Persist the analytical fields, but defer `processedAt` to the very last
+    // step. `if (call.processedAt) return` above is what gates retries — if we
+    // mark processed here and the campaign propagation fails, the retry would
+    // see the row already processed and exit without ever updating the lead,
+    // leaving it permanently stuck in CALLING.
     await step.run("persist-summary", async () => {
       await getPrisma().call.update({
         where: { id: callId },
@@ -122,11 +156,63 @@ export const postCallAnalysis = inngest.createFunction(
           outcome: result.outcome,
           sentiment: result.sentiment,
           topics: result.topics,
-          processedAt: new Date(),
         },
+      });
+    });
+
+    if (call.campaignAttempt) {
+      await step.run("propagate-to-campaign", async () => {
+        await applyCampaignLeadTransition({
+          attemptId: call.campaignAttempt!.id,
+          leadId: call.campaignAttempt!.lead.id,
+          outcome: result.outcome,
+          priorAttempts: call.campaignAttempt!.lead.attempts,
+          maxAttempts: call.campaignAttempt!.campaign.maxAttempts,
+          cooldownMinutes: call.campaignAttempt!.campaign.cooldownMinutes,
+        });
+      });
+    }
+
+    await step.run("mark-processed", async () => {
+      await getPrisma().call.update({
+        where: { id: callId },
+        data: { processedAt: new Date() },
       });
     });
 
     return { ok: true, ...result };
   },
 );
+
+interface ApplyTransitionInput {
+  attemptId: string;
+  leadId: string;
+  outcome: CallOutcome;
+  priorAttempts: number;
+  maxAttempts: number;
+  cooldownMinutes: number;
+}
+
+async function applyCampaignLeadTransition(input: ApplyTransitionInput): Promise<void> {
+  const transition = nextLeadStateForOutcome({
+    outcome: input.outcome,
+    priorAttempts: input.priorAttempts,
+    maxAttempts: input.maxAttempts,
+    cooldownMinutes: input.cooldownMinutes,
+  });
+  await getPrisma().$transaction([
+    getPrisma().campaignAttempt.update({
+      where: { id: input.attemptId },
+      data: { endedAt: new Date(), outcome: input.outcome },
+    }),
+    getPrisma().campaignLead.update({
+      where: { id: input.leadId },
+      data: {
+        status: transition.status,
+        outcome: transition.outcome,
+        nextEligibleAt: transition.nextEligibleAt,
+        reachedAt: transition.reachedAt,
+      },
+    }),
+  ]);
+}

@@ -1,9 +1,12 @@
+import { randomUUID } from "node:crypto";
+
 import { getPrisma } from "@/lib/db/client";
 import { asAgentId, asOrgId } from "@/lib/db/types";
 import { buildRoomName, createRoom, placeOutboundSipCall } from "@/lib/voice/livekit";
 import { createOutboundCall } from "@/lib/voice/persistence";
 
 import { inngest } from "../client";
+import { nextLeadStateForDispatchFailure } from "./campaign-lead-state";
 
 /**
  * Dispatch the next call in a campaign. Triggered both on demand and by a cron
@@ -46,16 +49,27 @@ export const campaignDispatch = inngest.createFunction(
     }
     if (lead.campaign.status !== "RUNNING") return { skipped: "campaign not running" };
 
+    // Pre-allocate the call id so `livekitRoomName` lands on the initial
+    // insert (live-monitor / hangup code needs it to issue tokens and delete
+    // the room) and so retries are idempotent. The UUID generation MUST be
+    // inside `step.run` — Inngest replays cache each step's result, so a bare
+    // `randomUUID()` outside step.run would generate a new value on every
+    // replay while `create-call` returned the cached original id, leaving
+    // `roomName` and the row's `livekitRoomName` permanently out of sync.
+    const preallocatedCallId = await step.run("allocate-call-id", async () => randomUUID());
+    const roomName = buildRoomName(preallocatedCallId);
+
     const { callId } = await step.run("create-call", async () => {
       return createOutboundCall({
+        id: preallocatedCallId,
         orgId: asOrgId(lead.orgId),
         agentId: asAgentId(lead.campaign.agentId),
         callerE164: lead.campaign.fromPhoneNumberE164,
         calleeE164: lead.phoneE164,
+        livekitRoomName: roomName,
       });
     });
 
-    const roomName = buildRoomName(callId);
     await step.run("livekit-room", async () => {
       await createRoom(roomName, {
         callId,
@@ -89,24 +103,62 @@ export const campaignDispatch = inngest.createFunction(
       ]);
     });
 
-    await step.run("livekit-sip-outbound", async () => {
-      const conn = await getPrisma().twilioConnection.findUnique({
-        where: { orgId: lead.orgId },
-        select: { livekitOutboundTrunkId: true },
-      });
-      if (!conn?.livekitOutboundTrunkId) {
-        throw new Error(
-          "Org has no LiveKit outbound trunk. Connect Twilio in Settings → Telefonia first.",
-        );
+    // Catch dispatch errors inside the step so Inngest doesn't retry forever
+    // with the lead pinned in CALLING. After max attempts the lead is freed
+    // (FAILED or scheduled for cooldown retry) so it stops consuming a
+    // concurrency slot.
+    const dispatchResult = await step.run("livekit-sip-outbound", async () => {
+      try {
+        const conn = await getPrisma().twilioConnection.findUnique({
+          where: { orgId: lead.orgId },
+          select: { livekitOutboundTrunkId: true },
+        });
+        if (!conn?.livekitOutboundTrunkId) {
+          throw new Error(
+            "Org has no LiveKit outbound trunk. Connect Twilio in Settings → Telefonia first.",
+          );
+        }
+        await placeOutboundSipCall({
+          trunkId: conn.livekitOutboundTrunkId,
+          roomName,
+          toE164: lead.phoneE164,
+          participantIdentity: `sip-${lead.id}`,
+          participantName: lead.name ?? lead.phoneE164,
+        });
+        return { ok: true as const };
+      } catch (err) {
+        return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
       }
-      await placeOutboundSipCall({
-        trunkId: conn.livekitOutboundTrunkId,
-        roomName,
-        toE164: lead.phoneE164,
-        participantIdentity: `sip-${lead.id}`,
-        participantName: lead.name ?? lead.phoneE164,
-      });
     });
+
+    if (!dispatchResult.ok) {
+      await step.run("compensate-failed-dispatch", async () => {
+        const transition = nextLeadStateForDispatchFailure({
+          priorAttempts: lead.attempts + 1,
+          maxAttempts: lead.campaign.maxAttempts,
+          cooldownMinutes: lead.campaign.cooldownMinutes,
+        });
+        await getPrisma().$transaction([
+          getPrisma().campaignAttempt.updateMany({
+            where: { leadId: lead.id, callId, endedAt: null },
+            data: { endedAt: new Date(), errorMessage: dispatchResult.error },
+          }),
+          getPrisma().campaignLead.update({
+            where: { id: leadId },
+            data: {
+              status: transition.status,
+              outcome: transition.outcome,
+              nextEligibleAt: transition.nextEligibleAt,
+            },
+          }),
+          getPrisma().call.updateMany({
+            where: { id: callId },
+            data: { status: "FAILED", endedAt: new Date() },
+          }),
+        ]);
+      });
+      return { ok: false, callId, leadId, error: dispatchResult.error };
+    }
 
     return { ok: true, callId, leadId };
   },
