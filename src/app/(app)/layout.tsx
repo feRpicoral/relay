@@ -7,6 +7,7 @@ import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeSync } from "@/components/theme-sync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { fromPrismaLocale } from "@/i18n/config";
+import { resolveActiveOrgId } from "@/lib/auth/active-org";
 import { getPrisma } from "@/lib/db/client";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -17,8 +18,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const activeOrgId =
+  const rawActiveOrgId =
     typeof user.app_metadata?.active_org_id === "string" ? user.app_metadata.active_org_id : null;
+  const activeOrgId = await resolveActiveOrgId({ userId: user.id, activeOrgId: rawActiveOrgId });
   if (!activeOrgId) redirect("/create-org");
 
   const membership = await getPrisma().membership.findUnique({

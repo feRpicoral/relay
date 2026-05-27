@@ -3,6 +3,7 @@ import "server-only";
 import type { MembershipRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
+import { resolveActiveOrgId } from "@/lib/auth/active-org";
 import { getPrisma } from "@/lib/db/client";
 import { asOrgId, asUserId, type OrgId, type UserId } from "@/lib/db/types";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -79,19 +80,15 @@ export async function requireAdmin(): Promise<Session> {
 export async function requireSessionOrOnboard(): Promise<Session> {
   const { userId, email, activeOrgId } = await getAuthState();
   if (!userId) redirect("/login");
+  if (!email) redirect("/login");
 
-  if (!activeOrgId) {
-    const anyMembership = await getPrisma().membership.findFirst({
-      where: { userId },
-      include: { organization: { select: { id: true } } },
-    });
-    if (!anyMembership) redirect("/create-org");
-    // We have a membership but no active_org_id, set it now (rare).
-    redirect(`/auth/select-org?defaultOrgId=${anyMembership.organization.id}`);
-  }
+  // Repair `app_metadata.active_org_id` in-place if missing so the caller can
+  // resolve a session on this same request instead of bouncing through a
+  // separate redirect (the previous `/auth/select-org` target never existed).
+  const resolvedOrgId = await resolveActiveOrgId({ userId, activeOrgId });
+  if (!resolvedOrgId) redirect("/create-org");
 
   const session = await getSession();
   if (!session) redirect("/login");
-  if (!email) redirect("/login");
   return session;
 }
