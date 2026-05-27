@@ -23,71 +23,112 @@ describe("locales / defaultLocale", () => {
 
 describe("isLocale", () => {
   it("accepts supported BCP-47 tags", () => {
-    expect(isLocale("en-US")).toBe(true);
-    expect(isLocale("pt-BR")).toBe(true);
+    const enUs = isLocale("en-US");
+    const ptBr = isLocale("pt-BR");
+
+    expect(enUs).toBe(true);
+    expect(ptBr).toBe(true);
   });
 
   it("rejects unsupported strings", () => {
-    expect(isLocale("fr-FR")).toBe(false);
-    expect(isLocale("en")).toBe(false); // primary tag without region
-    expect(isLocale("pt-PT")).toBe(false);
-    expect(isLocale("")).toBe(false);
+    const frFr = isLocale("fr-FR");
+    const en = isLocale("en");
+    const ptPt = isLocale("pt-PT");
+    const empty = isLocale("");
+
+    expect(frFr).toBe(false);
+    expect(en).toBe(false);
+    expect(ptPt).toBe(false);
+    expect(empty).toBe(false);
   });
 
   it("rejects non-string values", () => {
-    expect(isLocale(undefined)).toBe(false);
-    expect(isLocale(null)).toBe(false);
-    expect(isLocale(42)).toBe(false);
-    expect(isLocale({})).toBe(false);
+    const undef = isLocale(undefined);
+    const nul = isLocale(null);
+    const num = isLocale(42);
+    const obj = isLocale({});
+
+    expect(undef).toBe(false);
+    expect(nul).toBe(false);
+    expect(num).toBe(false);
+    expect(obj).toBe(false);
   });
 });
 
 describe("isUrlSlug", () => {
   it("accepts known URL slugs (lowercase)", () => {
-    expect(isUrlSlug("en")).toBe(true);
-    expect(isUrlSlug("pt-br")).toBe(true);
+    const en = isUrlSlug("en");
+    const ptBr = isUrlSlug("pt-br");
+
+    expect(en).toBe(true);
+    expect(ptBr).toBe(true);
   });
 
   it("rejects BCP-47 tags (case-sensitive)", () => {
-    expect(isUrlSlug("en-US")).toBe(false);
-    expect(isUrlSlug("pt-BR")).toBe(false);
-    expect(isUrlSlug("EN")).toBe(false);
+    const enUs = isUrlSlug("en-US");
+    const ptBr = isUrlSlug("pt-BR");
+    const upper = isUrlSlug("EN");
+
+    expect(enUs).toBe(false);
+    expect(ptBr).toBe(false);
+    expect(upper).toBe(false);
   });
 
   it("rejects unknown slugs and non-strings", () => {
-    expect(isUrlSlug("fr")).toBe(false);
-    expect(isUrlSlug("")).toBe(false);
-    expect(isUrlSlug(undefined)).toBe(false);
-    expect(isUrlSlug(null)).toBe(false);
+    const fr = isUrlSlug("fr");
+    const empty = isUrlSlug("");
+    const undef = isUrlSlug(undefined);
+    const nul = isUrlSlug(null);
+
+    expect(fr).toBe(false);
+    expect(empty).toBe(false);
+    expect(undef).toBe(false);
+    expect(nul).toBe(false);
   });
 });
 
 describe("slugToLocale", () => {
   it("converts known URL slugs to BCP-47 locales", () => {
-    expect(slugToLocale("en")).toBe("en-US");
-    expect(slugToLocale("pt-br")).toBe("pt-BR");
+    const en = slugToLocale("en");
+    const ptBr = slugToLocale("pt-br");
+
+    expect(en).toBe("en-US");
+    expect(ptBr).toBe("pt-BR");
   });
 
   it("returns null for unknown slugs", () => {
-    expect(slugToLocale("fr")).toBeNull();
-    expect(slugToLocale("EN")).toBeNull(); // case-sensitive
-    expect(slugToLocale("")).toBeNull();
+    const fr = slugToLocale("fr");
+    const upper = slugToLocale("EN");
+    const empty = slugToLocale("");
+
+    expect(fr).toBeNull();
+    expect(upper).toBeNull();
+    expect(empty).toBeNull();
   });
 });
 
 describe("fromPrismaLocale / toPrismaLocale", () => {
   it("converts Prisma enum to BCP-47", () => {
-    expect(fromPrismaLocale("EN_US")).toBe("en-US");
-    expect(fromPrismaLocale("PT_BR")).toBe("pt-BR");
+    const enUs = fromPrismaLocale("EN_US");
+    const ptBr = fromPrismaLocale("PT_BR");
+
+    expect(enUs).toBe("en-US");
+    expect(ptBr).toBe("pt-BR");
   });
 
   it("converts BCP-47 to Prisma enum", () => {
-    expect(toPrismaLocale("en-US")).toBe("EN_US");
-    expect(toPrismaLocale("pt-BR")).toBe("PT_BR");
+    const enUs = toPrismaLocale("en-US");
+    const ptBr = toPrismaLocale("pt-BR");
+
+    expect(enUs).toBe("EN_US");
+    expect(ptBr).toBe("PT_BR");
   });
 
   it("round-trips through both functions", () => {
-    expect(fromPrismaLocale(toPrismaLocale("en-US"))).toBe("en-US");
-    expect(fromPrismaLocale(toPrismaLocale("pt-BR"))).toBe("pt-BR");
+    const enUs = fromPrismaLocale(toPrismaLocale("en-US"));
+    const ptBr = fromPrismaLocale(toPrismaLocale("pt-BR"));
+
+    expect(enUs).toBe("en-US");
+    expect(ptBr).toBe("pt-BR");
   });
 });

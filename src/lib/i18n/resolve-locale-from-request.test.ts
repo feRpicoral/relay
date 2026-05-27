@@ -31,40 +31,76 @@ function makeReq(
 
 describe("resolveLocaleFromRequest — cookie tier (highest priority)", () => {
   it("returns a valid cookie locale", () => {
-    expect(resolveLocaleFromRequest(makeReq("pt-BR"))).toBe("pt-BR");
-    expect(resolveLocaleFromRequest(makeReq("en-US"))).toBe("en-US");
+    const ptReq = makeReq("pt-BR");
+    const enReq = makeReq("en-US");
+
+    const pt = resolveLocaleFromRequest(ptReq);
+    const en = resolveLocaleFromRequest(enReq);
+
+    expect(pt).toBe("pt-BR");
+    expect(en).toBe("en-US");
   });
 
   it("ignores an invalid cookie locale and falls through to the header", () => {
-    expect(resolveLocaleFromRequest(makeReq("fr-FR", "pt-BR;q=0.9"))).toBe("pt-BR");
+    const req = makeReq("fr-FR", "pt-BR;q=0.9");
+
+    const result = resolveLocaleFromRequest(req);
+
+    expect(result).toBe("pt-BR");
   });
 
   it("prefers a valid cookie over the Accept-Language header", () => {
-    expect(resolveLocaleFromRequest(makeReq("pt-BR", "en-US,en;q=0.9"))).toBe("pt-BR");
+    const req = makeReq("pt-BR", "en-US,en;q=0.9");
+
+    const result = resolveLocaleFromRequest(req);
+
+    expect(result).toBe("pt-BR");
   });
 });
 
 describe("resolveLocaleFromRequest — header tier (middle priority)", () => {
   it("uses Accept-Language when no cookie is present", () => {
-    expect(resolveLocaleFromRequest(makeReq(null, "pt-BR,en;q=0.5"))).toBe("pt-BR");
+    const req = makeReq(null, "pt-BR,en;q=0.5");
+
+    const result = resolveLocaleFromRequest(req);
+
+    expect(result).toBe("pt-BR");
   });
 
   it("respects q-value ordering when picking between supported tags", () => {
-    expect(resolveLocaleFromRequest(makeReq(null, "en;q=0.5,pt-BR;q=0.9"))).toBe("pt-BR");
+    const req = makeReq(null, "en;q=0.5,pt-BR;q=0.9");
+
+    const result = resolveLocaleFromRequest(req);
+
+    expect(result).toBe("pt-BR");
   });
 
   it("maps en-GB to en-US (primary-tag bucket)", () => {
-    expect(resolveLocaleFromRequest(makeReq(null, "en-GB"))).toBe("en-US");
+    const req = makeReq(null, "en-GB");
+
+    const result = resolveLocaleFromRequest(req);
+
+    expect(result).toBe("en-US");
   });
 });
 
 describe("resolveLocaleFromRequest — default tier (lowest priority)", () => {
   it("falls back to en-US when nothing matches", () => {
-    expect(resolveLocaleFromRequest(makeReq(null, null))).toBe("en-US");
-    expect(resolveLocaleFromRequest(makeReq(null, "fr-FR,de;q=0.8"))).toBe("en-US");
+    const emptyReq = makeReq(null, null);
+    const unsupportedReq = makeReq(null, "fr-FR,de;q=0.8");
+
+    const empty = resolveLocaleFromRequest(emptyReq);
+    const unsupported = resolveLocaleFromRequest(unsupportedReq);
+
+    expect(empty).toBe("en-US");
+    expect(unsupported).toBe("en-US");
   });
 
   it("falls back when both cookie and header are unrecognized", () => {
-    expect(resolveLocaleFromRequest(makeReq("unknown", "fr-FR"))).toBe("en-US");
+    const req = makeReq("unknown", "fr-FR");
+
+    const result = resolveLocaleFromRequest(req);
+
+    expect(result).toBe("en-US");
   });
 });

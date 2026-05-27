@@ -19,46 +19,67 @@ afterAll(() => {
 describe("encryptSecret / decryptSecret", () => {
   it("round-trips a plaintext", () => {
     const pt = "AC1234567890abcdef-fake-twilio-token";
-    expect(decryptSecret(encryptSecret(pt))).toBe(pt);
+
+    const roundTripped = decryptSecret(encryptSecret(pt));
+
+    expect(roundTripped).toBe(pt);
   });
 
   it("produces different ciphertexts for the same plaintext (non-deterministic nonce)", () => {
-    expect(encryptSecret("hello")).not.toBe(encryptSecret("hello"));
+    const a = encryptSecret("hello");
+    const b = encryptSecret("hello");
+
+    expect(a).not.toBe(b);
   });
 
   it("uses the gcm: prefix for forward-compat with algorithm rotation", () => {
-    expect(encryptSecret("x").startsWith("gcm:")).toBe(true);
+    const ct = encryptSecret("x");
+
+    expect(ct.startsWith("gcm:")).toBe(true);
   });
 
   it("emits four colon-separated base64 segments", () => {
-    const parts = encryptSecret("x").split(":");
+    const ct = encryptSecret("x");
+
+    const parts = ct.split(":");
+
     expect(parts).toHaveLength(4);
     expect(parts[0]).toBe("gcm");
-    // nonce, tag, ciphertext are base64
     for (const p of parts.slice(1)) {
       expect(p).toMatch(/^[A-Za-z0-9+/=]+$/);
     }
   });
 
   it("handles empty string", () => {
-    expect(decryptSecret(encryptSecret(""))).toBe("");
+    const roundTripped = decryptSecret(encryptSecret(""));
+
+    expect(roundTripped).toBe("");
   });
 
   it("handles unicode multi-byte characters", () => {
     const pt = "Olá, multi-tenant 🚀 voz";
-    expect(decryptSecret(encryptSecret(pt))).toBe(pt);
+
+    const roundTripped = decryptSecret(encryptSecret(pt));
+
+    expect(roundTripped).toBe(pt);
   });
 });
 
 describe("decryptSecret negative paths", () => {
   it("rejects an unknown algorithm prefix", () => {
-    expect(() => decryptSecret("aes:foo:bar:baz")).toThrow(/expected format/i);
+    const malformed = "aes:foo:bar:baz";
+
+    expect(() => decryptSecret(malformed)).toThrow(/expected format/i);
   });
 
   it("rejects a payload with the wrong number of segments", () => {
-    expect(() => decryptSecret("gcm:onlyone")).toThrow(/expected format/i);
-    expect(() => decryptSecret("gcm:a:b")).toThrow(/expected format/i);
-    expect(() => decryptSecret("gcm:a:b:c:d")).toThrow(/expected format/i);
+    const oneSeg = "gcm:onlyone";
+    const twoSeg = "gcm:a:b";
+    const fiveSeg = "gcm:a:b:c:d";
+
+    expect(() => decryptSecret(oneSeg)).toThrow(/expected format/i);
+    expect(() => decryptSecret(twoSeg)).toThrow(/expected format/i);
+    expect(() => decryptSecret(fiveSeg)).toThrow(/expected format/i);
   });
 
   it("rejects tampered ciphertext (auth tag detects the flip)", () => {
@@ -67,6 +88,7 @@ describe("decryptSecret negative paths", () => {
     const tamperedBody = Buffer.from(body!, "base64");
     tamperedBody[0] = tamperedBody[0]! ^ 0x01;
     const tampered = [prefix, nonce, tag, tamperedBody.toString("base64")].join(":");
+
     expect(() => decryptSecret(tampered)).toThrow();
   });
 
@@ -76,6 +98,7 @@ describe("decryptSecret negative paths", () => {
     const tamperedTag = Buffer.from(tag!, "base64");
     tamperedTag[0] = tamperedTag[0]! ^ 0x01;
     const tampered = [prefix, nonce, tamperedTag.toString("base64"), body].join(":");
+
     expect(() => decryptSecret(tampered)).toThrow();
   });
 });

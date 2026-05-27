@@ -19,59 +19,83 @@ const WEEKDAYS = {
 
 describe("withinWorkingHours — empty / invalid hours", () => {
   it("returns true (no restriction) for null/undefined/non-object", () => {
-    expect(withinWorkingHours(null, THURSDAY_10AM)).toBe(true);
-    expect(withinWorkingHours(undefined, THURSDAY_10AM)).toBe(true);
-    expect(withinWorkingHours("not-an-object", THURSDAY_10AM)).toBe(true);
-    expect(withinWorkingHours(42, THURSDAY_10AM)).toBe(true);
+    const nul = withinWorkingHours(null, THURSDAY_10AM);
+    const undef = withinWorkingHours(undefined, THURSDAY_10AM);
+    const str = withinWorkingHours("not-an-object", THURSDAY_10AM);
+    const num = withinWorkingHours(42, THURSDAY_10AM);
+
+    expect(nul).toBe(true);
+    expect(undef).toBe(true);
+    expect(str).toBe(true);
+    expect(num).toBe(true);
   });
 });
 
 describe("withinWorkingHours — schedule matching", () => {
   it("returns true when current day's block contains the current time", () => {
-    expect(withinWorkingHours(WEEKDAYS, THURSDAY_10AM)).toBe(true);
+    const result = withinWorkingHours(WEEKDAYS, THURSDAY_10AM);
+
+    expect(result).toBe(true);
   });
 
   it("returns false when there is no block for the current day", () => {
-    expect(withinWorkingHours({ monday: { open: "09:00", close: "18:00" } }, THURSDAY_10AM)).toBe(
-      false,
-    );
+    const result = withinWorkingHours({ monday: { open: "09:00", close: "18:00" } }, THURSDAY_10AM);
+
+    expect(result).toBe(false);
   });
 
   it("returns false on a weekend day when only weekdays are configured", () => {
-    expect(withinWorkingHours(WEEKDAYS, SATURDAY_NOON)).toBe(false);
+    const result = withinWorkingHours(WEEKDAYS, SATURDAY_NOON);
+
+    expect(result).toBe(false);
   });
 });
 
 describe("withinWorkingHours — time bounds", () => {
   it("returns false when the current time is before the open time", () => {
-    expect(withinWorkingHours({ thursday: { open: "11:00", close: "18:00" } }, THURSDAY_10AM)).toBe(
-      false,
+    const result = withinWorkingHours(
+      { thursday: { open: "11:00", close: "18:00" } },
+      THURSDAY_10AM,
     );
+
+    expect(result).toBe(false);
   });
 
   it("returns false when the current time is after the close time", () => {
-    expect(withinWorkingHours({ thursday: { open: "09:00", close: "19:00" } }, THURSDAY_8PM)).toBe(
-      false,
+    const result = withinWorkingHours(
+      { thursday: { open: "09:00", close: "19:00" } },
+      THURSDAY_8PM,
     );
+
+    expect(result).toBe(false);
   });
 
   it("treats the close time as exclusive (right at close = closed)", () => {
-    expect(withinWorkingHours({ thursday: { open: "09:00", close: "18:00" } }, THURSDAY_6PM)).toBe(
-      false,
+    const result = withinWorkingHours(
+      { thursday: { open: "09:00", close: "18:00" } },
+      THURSDAY_6PM,
     );
+
+    expect(result).toBe(false);
   });
 });
 
 describe("withinWorkingHours — degenerate blocks", () => {
   it("rejects a null block for the current day", () => {
-    expect(withinWorkingHours({ thursday: null }, THURSDAY_10AM)).toBe(false);
+    const result = withinWorkingHours({ thursday: null }, THURSDAY_10AM);
+
+    expect(result).toBe(false);
   });
 
   it("rejects a block missing the close time", () => {
-    expect(withinWorkingHours({ thursday: { open: "09:00" } }, THURSDAY_10AM)).toBe(false);
+    const result = withinWorkingHours({ thursday: { open: "09:00" } }, THURSDAY_10AM);
+
+    expect(result).toBe(false);
   });
 
   it("rejects a block missing the open time", () => {
-    expect(withinWorkingHours({ thursday: { close: "18:00" } }, THURSDAY_10AM)).toBe(false);
+    const result = withinWorkingHours({ thursday: { close: "18:00" } }, THURSDAY_10AM);
+
+    expect(result).toBe(false);
   });
 });

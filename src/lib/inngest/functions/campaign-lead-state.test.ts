@@ -6,14 +6,19 @@ const NOW = new Date("2026-05-22T10:00:00Z");
 
 describe("nextLeadStateForOutcome", () => {
   it("marks reached for SCHEDULED/QUALIFIED/TRANSFERRED/NOT_QUALIFIED", () => {
-    for (const outcome of ["SCHEDULED", "QUALIFIED", "TRANSFERRED", "NOT_QUALIFIED"] as const) {
-      const result = nextLeadStateForOutcome({
+    const outcomes = ["SCHEDULED", "QUALIFIED", "TRANSFERRED", "NOT_QUALIFIED"] as const;
+
+    const results = outcomes.map((outcome) =>
+      nextLeadStateForOutcome({
         outcome,
         priorAttempts: 1,
         maxAttempts: 3,
         cooldownMinutes: 60,
         now: NOW,
-      });
+      }),
+    );
+
+    for (const result of results) {
       expect(result.status).toBe("REACHED");
       expect(result.reachedAt).toEqual(NOW);
       expect(result.nextEligibleAt).toBeNull();
@@ -28,6 +33,7 @@ describe("nextLeadStateForOutcome", () => {
       cooldownMinutes: 30,
       now: NOW,
     });
+
     expect(result.status).toBe("NO_ANSWER");
     expect(result.reachedAt).toBeNull();
     expect(result.nextEligibleAt).toEqual(new Date(NOW.getTime() + 30 * 60_000));
@@ -41,19 +47,25 @@ describe("nextLeadStateForOutcome", () => {
       cooldownMinutes: 30,
       now: NOW,
     });
+
     expect(result.status).toBe("ATTEMPTED");
     expect(result.nextEligibleAt).toBeNull();
   });
 
   it("falls back to ATTEMPTED with no retry on OTHER/null", () => {
-    for (const outcome of ["OTHER", null] as const) {
-      const result = nextLeadStateForOutcome({
+    const outcomes = ["OTHER", null] as const;
+
+    const results = outcomes.map((outcome) =>
+      nextLeadStateForOutcome({
         outcome,
         priorAttempts: 1,
         maxAttempts: 3,
         cooldownMinutes: 60,
         now: NOW,
-      });
+      }),
+    );
+
+    for (const result of results) {
       expect(result.status).toBe("ATTEMPTED");
       expect(result.reachedAt).toBeNull();
       expect(result.nextEligibleAt).toBeNull();
@@ -69,6 +81,7 @@ describe("nextLeadStateForDispatchFailure", () => {
       cooldownMinutes: 15,
       now: NOW,
     });
+
     expect(result.status).toBe("NO_ANSWER");
     expect(result.nextEligibleAt).toEqual(new Date(NOW.getTime() + 15 * 60_000));
   });
@@ -80,6 +93,7 @@ describe("nextLeadStateForDispatchFailure", () => {
       cooldownMinutes: 15,
       now: NOW,
     });
+
     expect(result.status).toBe("FAILED");
     expect(result.nextEligibleAt).toBeNull();
   });

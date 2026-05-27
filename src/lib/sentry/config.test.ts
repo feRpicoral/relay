@@ -21,8 +21,10 @@ describe("scrubPii — request headers", () => {
         },
       },
     });
+
     const out = scrubPii(e, hint)!;
     const headers = out.request!.headers!;
+
     expect(headers).not.toHaveProperty("authorization");
     expect(headers).not.toHaveProperty("cookie");
     expect(headers).not.toHaveProperty("x-twilio-signature");
@@ -31,7 +33,9 @@ describe("scrubPii — request headers", () => {
 
   it("clears the cookies object wholesale", () => {
     const e = event({ request: { cookies: { session: "abc", refresh: "def" } } });
+
     const out = scrubPii(e, hint)!;
+
     expect(out.request!.cookies).toEqual({});
   });
 });
@@ -39,13 +43,17 @@ describe("scrubPii — request headers", () => {
 describe("scrubPii — user", () => {
   it("keeps id but drops email/ip for correlation without PII", () => {
     const e = event({ user: { id: "u-1", email: "a@b.com", ip_address: "1.2.3.4" } });
+
     const out = scrubPii(e, hint)!;
+
     expect(out.user).toEqual({ id: "u-1" });
   });
 
   it("drops the user object when there is no id", () => {
     const e = event({ user: { email: "a@b.com" } });
+
     const out = scrubPii(e, hint)!;
+
     expect(out.user).toBeUndefined();
   });
 });
@@ -62,7 +70,9 @@ describe("scrubPii — JSON payload regex", () => {
         nested: { apiKeyEncrypted: "encrypted-leak" },
       },
     });
+
     const json = JSON.stringify(scrubPii(e, hint));
+
     for (const leak of [
       "auth-leak",
       "key-leak",
@@ -78,7 +88,9 @@ describe("scrubPii — JSON payload regex", () => {
 
   it("redacts E.164 phone numbers anywhere they appear", () => {
     const e = event({ extra: { caller: "+5511987654321", callee: "+14155551234" } });
+
     const json = JSON.stringify(scrubPii(e, hint));
+
     expect(json).not.toContain("5511987654321");
     expect(json).not.toContain("4155551234");
     expect(json).toContain("[phone-redacted]");
@@ -86,7 +98,9 @@ describe("scrubPii — JSON payload regex", () => {
 
   it("returns the original event reference when nothing scrubbable matched", () => {
     const e = event({ extra: { harmless: "data" } });
+
     const out = scrubPii(e, hint);
+
     expect(out).toBe(e);
   });
 });

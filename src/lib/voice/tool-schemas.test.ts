@@ -10,96 +10,119 @@ import {
 
 describe("CheckAvailabilityInputSchema", () => {
   it("accepts well-formed input", () => {
-    const parsed = CheckAvailabilityInputSchema.parse({
+    const input = {
       from: "2026-05-21T10:00:00Z",
       to: "2026-05-21T18:00:00Z",
       durationMin: 30,
-    });
+    };
+
+    const parsed = CheckAvailabilityInputSchema.parse(input);
+
     expect(parsed.durationMin).toBe(30);
   });
 
   it("rejects when fields are missing", () => {
-    expect(() => CheckAvailabilityInputSchema.parse({ from: "x", to: "y" })).toThrow();
+    const input = { from: "x", to: "y" };
+
+    expect(() => CheckAvailabilityInputSchema.parse(input)).toThrow();
   });
 
   it("rejects non-positive durationMin", () => {
-    expect(() =>
-      CheckAvailabilityInputSchema.parse({ from: "x", to: "y", durationMin: 0 }),
-    ).toThrow();
-    expect(() =>
-      CheckAvailabilityInputSchema.parse({ from: "x", to: "y", durationMin: -5 }),
-    ).toThrow();
+    const zero = { from: "x", to: "y", durationMin: 0 };
+    const negative = { from: "x", to: "y", durationMin: -5 };
+
+    expect(() => CheckAvailabilityInputSchema.parse(zero)).toThrow();
+    expect(() => CheckAvailabilityInputSchema.parse(negative)).toThrow();
   });
 
   it("rejects non-integer durationMin", () => {
-    expect(() =>
-      CheckAvailabilityInputSchema.parse({ from: "x", to: "y", durationMin: 30.5 }),
-    ).toThrow();
+    const input = { from: "x", to: "y", durationMin: 30.5 };
+
+    expect(() => CheckAvailabilityInputSchema.parse(input)).toThrow();
   });
 });
 
 describe("BookAppointmentInputSchema", () => {
   it("accepts without an optional reason", () => {
-    const parsed = BookAppointmentInputSchema.parse({
+    const input = {
       slotIso: "2026-05-21T14:00:00Z",
       durationMin: 30,
       patientName: "João",
       patientPhone: "+5511987654321",
-    });
+    };
+
+    const parsed = BookAppointmentInputSchema.parse(input);
+
     expect(parsed.reason).toBeUndefined();
   });
 
   it("accepts with a reason", () => {
-    const parsed = BookAppointmentInputSchema.parse({
+    const input = {
       slotIso: "2026-05-21T14:00:00Z",
       durationMin: 30,
       patientName: "João",
       patientPhone: "+5511987654321",
       reason: "consulta",
-    });
+    };
+
+    const parsed = BookAppointmentInputSchema.parse(input);
+
     expect(parsed.reason).toBe("consulta");
   });
 
   it("rejects when patientName is missing", () => {
-    expect(() =>
-      BookAppointmentInputSchema.parse({
-        slotIso: "2026-05-21T14:00:00Z",
-        durationMin: 30,
-        patientPhone: "+5511987654321",
-      }),
-    ).toThrow();
+    const input = {
+      slotIso: "2026-05-21T14:00:00Z",
+      durationMin: 30,
+      patientPhone: "+5511987654321",
+    };
+
+    expect(() => BookAppointmentInputSchema.parse(input)).toThrow();
   });
 });
 
 describe("BookAppointmentOutputSchema", () => {
   it("accepts a basic confirmation", () => {
-    const parsed = BookAppointmentOutputSchema.parse({
+    const input = {
       confirmationId: "cal_123",
       status: "ACCEPTED",
-    });
+    };
+
+    const parsed = BookAppointmentOutputSchema.parse(input);
+
     expect(parsed.confirmationId).toBe("cal_123");
   });
 
   it("rejects when confirmationId is missing", () => {
-    expect(() => BookAppointmentOutputSchema.parse({ status: "ACCEPTED" })).toThrow();
+    const input = { status: "ACCEPTED" };
+
+    expect(() => BookAppointmentOutputSchema.parse(input)).toThrow();
   });
 });
 
 describe("LookupKbInputSchema", () => {
   it("accepts a string query", () => {
-    expect(LookupKbInputSchema.parse({ query: "hours" }).query).toBe("hours");
+    const input = { query: "hours" };
+
+    const parsed = LookupKbInputSchema.parse(input);
+
+    expect(parsed.query).toBe("hours");
   });
 
   it("rejects a non-string query", () => {
-    expect(() => LookupKbInputSchema.parse({ query: 42 })).toThrow();
+    const input = { query: 42 };
+
+    expect(() => LookupKbInputSchema.parse(input)).toThrow();
   });
 });
 
 describe("TransferToHumanInputSchema", () => {
   it("accepts a reason string", () => {
-    expect(TransferToHumanInputSchema.parse({ reason: "complex case" }).reason).toBe(
-      "complex case",
-    );
+    const input = { reason: "complex case" };
+
+    const parsed = TransferToHumanInputSchema.parse(input);
+
+    expect(parsed.reason).toBe("complex case");
   });
 
   it("rejects when reason is missing", () => {
