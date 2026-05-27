@@ -55,7 +55,6 @@
 :root {
   --radius: 0.625rem;
 
-  /* Light mode — clean, paper-white. */
   --background: oklch(0.99 0 0);
   --foreground: oklch(0.18 0.02 286);
 
@@ -98,7 +97,6 @@
 }
 
 .dark {
-  /* Dark mode — Linear / Vercel inspired. */
   --background: oklch(0.13 0.005 286);
   --foreground: oklch(0.97 0.005 286);
 

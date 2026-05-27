@@ -144,11 +144,6 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   );
 }
 
-/**
- * The ElevenLabs voices are only offered when the worker has a key. If the
- * env var is unset, we filter them out, preventing a state where the UI sets
- * `ttsProvider = ELEVENLABS` against a worker that can't synthesize.
- */
 async function loadCartesiaVoicesForLang(language: "PT_BR" | "EN_US" | "AUTO") {
   const langPrefix = language === "EN_US" ? "en" : "pt";
   const voices = await listCartesiaVoices({ language: langPrefix });

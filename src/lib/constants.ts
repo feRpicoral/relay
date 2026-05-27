@@ -1,8 +1,3 @@
-/**
- * Application-wide constants. Avoid scattering magic numbers/strings across
- * the codebase; add new ones here and import where needed.
- */
-
 /** Default timezone for orgs that haven't picked one yet (Brazilian portfolio bias). */
 export const DEFAULT_TIMEZONE = "America/Sao_Paulo";
 

@@ -20,7 +20,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     try {
       posthog.people.set({ locale });
     } catch {
-      /* posthog may not be initialized yet, fine */
+      /* PostHog may not be initialized before the first locale effect. */
     }
     Sentry.setTag("locale", locale);
   }, [locale]);

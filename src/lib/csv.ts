@@ -32,7 +32,6 @@ export function parseCsvRows(input: string): string[][] {
       }
       continue;
     }
-    // Unquoted state.
     if (c === '"') {
       inQuotes = true;
     } else if (c === ",") {

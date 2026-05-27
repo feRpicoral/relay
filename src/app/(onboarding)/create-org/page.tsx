@@ -13,7 +13,6 @@ export default async function CreateOrgPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // If user already has a membership, send them to the dashboard.
   const existing = await getPrisma().membership.findFirst({ where: { userId: user.id } });
   if (existing) redirect("/dashboard");
 

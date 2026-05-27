@@ -9,9 +9,7 @@ import { parseCsvRows } from "@/lib/csv";
 import { getDb } from "@/lib/db/with-org";
 import type { Result } from "@/lib/types/result";
 
-/** Cap the CSV body to keep the action from buffering an unbounded blob. */
 const MAX_CSV_BYTES = 2 * 1024 * 1024; // 2 MiB
-/** Cap how many leads a single campaign can ingest in one upload. */
 const MAX_LEADS_PER_UPLOAD = 10_000;
 
 const E164 = /^\+\d{6,18}$/;
@@ -77,7 +75,6 @@ export async function createCampaignAction(
     },
   });
 
-  // Bulk insert leads. Skip duplicates inside the same campaign.
   await db.campaignLead.createMany({
     data: leads.map((l) => ({
       orgId: session.orgId,

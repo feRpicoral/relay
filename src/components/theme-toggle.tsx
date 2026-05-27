@@ -9,11 +9,6 @@ import { setThemePreferenceAction } from "@/app/(app)/actions";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-/**
- * Sun↔Moon icon toggle. Updates next-themes' local state immediately for
- * instant visual feedback, then fires the server action in a transition so
- * the persisted preference catches up without blocking the click.
- */
 export function ThemeToggle() {
   const t = useTranslations("themeToggle");
   const { theme, setTheme } = useTheme();
