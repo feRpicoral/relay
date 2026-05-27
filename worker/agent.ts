@@ -64,7 +64,6 @@ export default defineAgent({
   entry: async (ctx: JobContext) => {
     await ctx.connect();
 
-    // Resolve tenant + agent
     // For an inbound SIP call, LiveKit attaches SIP attributes to the
     // participant. For the test-call feature, the room metadata carries the
     // pre-created callId. We support both paths.
@@ -397,8 +396,6 @@ export default defineAgent({
       }),
     };
 
-    // Pipeline.
-    //
     // We deliberately use deepgram.STT (V1, /v1/listen) rather than STTv2
     // (Flux). STTv2 only accepts flux-general-en or flux-general-multi —
     // passing nova-3 fails the WebSocket handshake with a generic 400. Nova-3
@@ -463,7 +460,6 @@ export default defineAgent({
       tools,
     });
 
-    // Observability hooks
     // Persist every finalized user/agent turn into our DB.
     session.on(AgentSessionEventTypes.ConversationItemAdded, (event) => {
       const item = event.item as unknown as
@@ -553,7 +549,6 @@ export default defineAgent({
       }
     });
 
-    // Start
     await session.start({ agent, room: ctx.room });
     await session.say(buildGreeting(agentCtx));
 

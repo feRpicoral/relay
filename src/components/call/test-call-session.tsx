@@ -19,17 +19,6 @@ interface AttachableTrack {
   attach: () => HTMLMediaElement;
 }
 
-/**
- * Test-call participant. Joins the LiveKit room with publish permission,
- * captures the browser microphone (so the worker has audio to react to),
- * plays back agent audio, and renders a waveform of it.
- *
- * Critical: every per-mount resource (room, audio context, attached <audio>
- * elements) lives in closure variables inside the effect — NOT in refs.
- * React Strict Mode double-invokes effects in dev, and shared refs would
- * cause cleanup-1 to teardown room-2 mid-connect, triggering "could not
- * createOffer with closed peer connection" and silent audio.
- */
 export function TestCallSession({ livekitUrl, roomName, token, active }: TestCallSessionProps) {
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [micState, setMicState] = useState<"idle" | "live" | "blocked">("idle");
@@ -82,7 +71,6 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
         el.style.display = "none";
         document.body.appendChild(el);
         attachedEls.push(el);
-        // Also pipe through Web Audio so the waveform reacts.
         const stream = new MediaStream([track.mediaStreamTrack]);
         const source = audioCtx!.createMediaStreamSource(stream);
         source.connect(localAnalyser);
@@ -119,7 +107,6 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
 
       setAnalyser(localAnalyser);
 
-      // Capture mic and publish. Browser prompts permission on first call.
       try {
         const micTrack = await createLocalAudioTrack({
           echoCancellation: true,
@@ -140,9 +127,6 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
         // the human's turn and makes it unclear whether the mic is actually
         // being captured.
         const micStream = new MediaStream([micTrack.mediaStreamTrack]);
-        // audioCtx is the closure variable seeded above; TS doesn't track
-        // that it's been assigned across the async boundary, hence the
-        // non-null assertion (same pattern as in onTrack).
         const micSource = audioCtx!.createMediaStreamSource(micStream);
         micSource.connect(localAnalyser);
 

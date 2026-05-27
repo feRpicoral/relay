@@ -2,12 +2,6 @@ import "server-only";
 
 import { optionalEnv } from "@/lib/env";
 
-/**
- * Live voice catalog from Cartesia's API. We fetch this on every agent page
- * render so we never go stale — Cartesia rotates and adds voices, and the
- * IDs are UUIDs (not slugs), so caching them in source code is a recipe for
- * "voice ID must be a valid UUID" failures down the line.
- */
 import { PROVIDER_VERSIONS } from "./provider-versions";
 
 const CARTESIA_BASE = "https://api.cartesia.ai";
@@ -20,11 +14,6 @@ export interface CartesiaVoice {
   description: string | null;
 }
 
-/**
- * Shape consumed by the agent voice-picker UI. The catalog lives in this
- * module (Cartesia-only today; ElevenLabs would be a sibling), so the UI type
- * lives here too — no separate `lib/voice/voices.ts` needed.
- */
 export interface VoiceOption {
   provider: "cartesia" | "elevenlabs";
   voiceId: string;

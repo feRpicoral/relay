@@ -1,10 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Shown via React Suspense when navigating between (app) pages while the
-// destination's RSC data loads. Sidebar links also swap their icon to a
-// spinner via useLinkStatus, so this is the secondary indicator that covers
-// card clicks, button-triggered router.push, and any nav surface without an
-// inline pending state.
 export default function AppLoading() {
   return (
     <>

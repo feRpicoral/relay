@@ -16,18 +16,6 @@ interface AttachableTrack {
   mediaStreamTrack: MediaStreamTrack;
 }
 
-/**
- * Joins a LiveKit room as a passive listener (no publish) to render the live
- * waveform. If LiveKit isn't configured (token/url missing), renders a
- * synthetic animated waveform so the screen still looks alive.
- *
- * Critical: every per-mount resource (room, audio context, graph nodes) lives
- * in closure variables inside the effect — NOT in refs. React Strict Mode
- * double-invokes effects in dev, and shared refs would cause cleanup-1 to
- * teardown room-2 mid-connect. The setup is also delayed by one tick so the
- * StrictMode cleanup flips `cancelled` before any LiveKit work starts; only
- * the surviving mount actually negotiates.
- */
 export function LiveCallListener({ livekitUrl, roomName, token, active }: LiveCallListenerProps) {
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 

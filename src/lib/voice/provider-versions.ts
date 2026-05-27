@@ -7,17 +7,12 @@ import { envOr } from "@/lib/env";
  * `.env.example`, and the README.
  */
 export const PROVIDER_VERSIONS = {
-  /** Anthropic model used by the LiveKit agent for the real-time loop. */
   anthropicFast: () => envOr("ANTHROPIC_MODEL_FAST", "claude-haiku-4-5-20251001"),
-  /** Anthropic model used by the post-call summary Inngest job. */
   anthropicSummary: () => envOr("ANTHROPIC_MODEL_SUMMARY", "claude-sonnet-4-6"),
   /** Deepgram STT model. v1 endpoint, supports nova-3 + pt-BR. */
   deepgram: () => envOr("DEEPGRAM_MODEL", "nova-3"),
-  /** ElevenLabs voice model. */
   elevenlabs: () => envOr("ELEVENLABS_MODEL", "eleven_flash_v2_5"),
-  /** Cartesia voice model. */
   cartesia: () => envOr("CARTESIA_MODEL", "sonic-3"),
-  /** Cartesia API version header sent with voice-catalog requests. */
   cartesiaApiVersion: () => "2024-11-13",
 } as const;
 
@@ -29,7 +24,6 @@ export const AGENT_PARTICIPANT_IDENTITY_PREFIX = "agent";
 /** Cap on slot candidates returned to the LLM. Keeps tool output compact. */
 export const MAX_AVAILABILITY_CANDIDATES = 5;
 
-/** Knowledge base chunks loaded per agent at call start. */
 export const MAX_KB_CHUNKS_PER_AGENT = 20;
 
 /** Free-form description / reason length cap shared by several tool inputs. */

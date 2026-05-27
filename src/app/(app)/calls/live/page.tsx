@@ -46,7 +46,6 @@ export default async function LiveCallsPage() {
           }))}
         />
       </div>
-      {/* Quick link to history at the bottom. */}
       <div className="px-8 pb-8">
         <Link
           href="/calls"

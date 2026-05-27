@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=auth_failed", request.url));
   }
 
-  // Check whether the user already has any membership.
   let membership: { orgId: string } | null = null;
   let userLocale: string | null = null;
   try {

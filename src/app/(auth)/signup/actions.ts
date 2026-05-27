@@ -14,6 +14,7 @@ const Schema = z.object({
   name: z.string().trim().min(1).max(120),
 });
 
+const SIGNUP_REDIRECT_PATH = "/create-org";
 const GENERIC_SUCCESS: Result = { ok: true };
 
 export async function signupAction(formData: FormData): Promise<Result> {
@@ -35,8 +36,7 @@ export async function signupAction(formData: FormData): Promise<Result> {
   const supabase = await createServerSupabase();
   const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
   const emailRedirectTo = new URL("/auth/callback", appUrl);
-  // Hard-code the post-signup destination: signup always lands on org creation.
-  emailRedirectTo.searchParams.set("next", "/create-org");
+  emailRedirectTo.searchParams.set("next", SIGNUP_REDIRECT_PATH);
 
   const { error } = await supabase.auth.signInWithOtp({
     email: normalizedEmail,
