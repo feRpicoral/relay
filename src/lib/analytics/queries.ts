@@ -1,7 +1,12 @@
 import "server-only";
 
+import type { CallOutcome, CallStatus } from "@prisma/client";
+
 import type { OrgId } from "@/lib/db/types";
 import { getDb } from "@/lib/db/with-org";
+import { daysAgo } from "@/lib/utils";
+
+const DAY = 1;
 
 export interface AnalyticsSummary {
   totalCalls: number;
@@ -156,6 +161,139 @@ export async function loadAgentComparison(orgId: OrgId, rangeStart: Date): Promi
       };
     })
     .sort((a, b) => b.totalCalls - a.totalCalls);
+}
+
+export interface InProgressCall {
+  id: string;
+  callerE164: string;
+  agentName: string | null;
+  startedAt: Date;
+  status: CallStatus;
+}
+
+const LIVE_STATUSES: CallStatus[] = ["RINGING", "IN_PROGRESS"];
+
+export async function loadInProgressCalls(orgId: OrgId): Promise<InProgressCall[]> {
+  const db = getDb(orgId);
+  const calls = await db.call.findMany({
+    where: { status: { in: LIVE_STATUSES } },
+    orderBy: { startedAt: "desc" },
+    select: {
+      id: true,
+      callerE164: true,
+      startedAt: true,
+      status: true,
+      agent: { select: { name: true } },
+    },
+  });
+  return calls.map((c) => ({
+    id: c.id,
+    callerE164: c.callerE164,
+    agentName: c.agent?.name ?? null,
+    startedAt: c.startedAt,
+    status: c.status,
+  }));
+}
+
+export interface RecentCall {
+  id: string;
+  callerE164: string;
+  outcome: CallOutcome | null;
+  status: CallStatus;
+  direction: "INBOUND" | "OUTBOUND";
+  startedAt: Date;
+}
+
+export async function loadRecentCalls(orgId: OrgId, limit = 5): Promise<RecentCall[]> {
+  const db = getDb(orgId);
+  const calls = await db.call.findMany({
+    where: { startedAt: { gte: daysAgo(DAY) } },
+    orderBy: { startedAt: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      callerE164: true,
+      outcome: true,
+      status: true,
+      direction: true,
+      startedAt: true,
+    },
+  });
+  return calls;
+}
+
+export interface OutcomeBreakdown {
+  scheduled: number;
+  qualified: number;
+  transferred: number;
+  noAnswer: number;
+  notQualified: number;
+  other: number;
+  total: number;
+}
+
+export async function loadTodayOutcomes(orgId: OrgId): Promise<OutcomeBreakdown> {
+  const db = getDb(orgId);
+  const calls = await db.call.findMany({
+    where: { startedAt: { gte: daysAgo(DAY) } },
+    select: { outcome: true },
+  });
+
+  const breakdown: OutcomeBreakdown = {
+    scheduled: 0,
+    qualified: 0,
+    transferred: 0,
+    noAnswer: 0,
+    notQualified: 0,
+    other: 0,
+    total: calls.length,
+  };
+  for (const c of calls) {
+    switch (c.outcome) {
+      case "SCHEDULED":
+        breakdown.scheduled += 1;
+        break;
+      case "QUALIFIED":
+        breakdown.qualified += 1;
+        break;
+      case "TRANSFERRED":
+        breakdown.transferred += 1;
+        break;
+      case "NO_ANSWER":
+        breakdown.noAnswer += 1;
+        break;
+      case "NOT_QUALIFIED":
+        breakdown.notQualified += 1;
+        break;
+      default:
+        breakdown.other += 1;
+    }
+  }
+  return breakdown;
+}
+
+export async function loadConversionToday(orgId: OrgId): Promise<number> {
+  const breakdown = await loadTodayOutcomes(orgId);
+  if (breakdown.total === 0) return 0;
+  return (breakdown.scheduled + breakdown.qualified) / breakdown.total;
+}
+
+export interface ActiveAgents {
+  enabled: number;
+  withCallsToday: number;
+}
+
+export async function loadActiveAgents(orgId: OrgId): Promise<ActiveAgents> {
+  const db = getDb(orgId);
+  const [enabled, callerAgents] = await Promise.all([
+    db.agent.count({ where: { enabled: true } }),
+    db.call.findMany({
+      where: { startedAt: { gte: daysAgo(DAY) }, agentId: { not: null } },
+      select: { agentId: true },
+      distinct: ["agentId"],
+    }),
+  ]);
+  return { enabled, withCallsToday: callerAgents.length };
 }
 
 function quantile(sorted: number[], q: number): number {
