@@ -25,7 +25,7 @@ export default async function SettingsLayout({ children }: { children: React.Rea
   const session = await requireSession();
   const t = await getTranslations("settings");
   const tTabs = await getTranslations("settings.tabs");
-  const visible = tabs.filter((tab) => !tab.adminOnly || session.role === "ADMIN");
+  const isAdmin = session.role === "ADMIN";
 
   return (
     <>
@@ -33,14 +33,20 @@ export default async function SettingsLayout({ children }: { children: React.Rea
         title={t("title")}
         description={t("workspaceDescription", { orgName: session.orgName })}
       />
-      <div className="border-border border-b px-8">
-        <nav className="-mb-px flex gap-6">
-          {visible.map((tab) => (
-            <TabLink key={tab.href} href={tab.href} label={tTabs(tab.labelKey)} />
+      <div className="border-border overflow-x-auto border-b px-4 sm:px-8">
+        <nav className="-mb-px flex gap-4 sm:gap-6">
+          {tabs.map((tab) => (
+            <TabLink
+              key={tab.href}
+              href={tab.href}
+              label={tTabs(tab.labelKey)}
+              locked={Boolean(tab.adminOnly) && !isAdmin}
+              lockLabel={t("memberLockTooltip")}
+            />
           ))}
         </nav>
       </div>
-      <div className="p-8">{children}</div>
+      <div className="p-4 sm:p-8">{children}</div>
     </>
   );
 }

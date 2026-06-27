@@ -7,7 +7,7 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -45,51 +45,39 @@ export function InviteMemberForm() {
     }
   }, [state, router, t]);
 
-  // Derive the input's remount key from the action state: every successful
-  // submit produces a new state reference, so the input resets to "" without
-  // setState-in-effect (banned by React 19's lint rule).
   const resetKey = state && state.ok ? 1 : 0;
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          action={formAction}
-          className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_10rem_auto] md:items-end"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="invite-email">{t("emailLabel")}</Label>
-            <Input
-              key={resetKey}
-              id="invite-email"
-              name="email"
-              type="email"
-              placeholder={t("emailPlaceholder")}
-              defaultValue=""
-              required
-              disabled={pending}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="invite-role">{t("roleLabel")}</Label>
-            <Select
-              value={role}
-              onValueChange={(v) => setRole(v as "ADMIN" | "MEMBER")}
-              disabled={pending}
-            >
-              <SelectTrigger id="invite-role" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MEMBER">{tRole("MEMBER")}</SelectItem>
-                <SelectItem value="ADMIN">{tRole("ADMIN")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <CardContent className="pt-5">
+        <Label htmlFor="invite-email" className="mb-2.5 block">
+          {t("title")}
+        </Label>
+        <form action={formAction} className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+          <Input
+            key={resetKey}
+            id="invite-email"
+            name="email"
+            type="email"
+            placeholder={t("emailPlaceholder")}
+            defaultValue=""
+            required
+            disabled={pending}
+            className="sm:flex-1"
+          />
+          <Select
+            value={role}
+            onValueChange={(v) => setRole(v as "ADMIN" | "MEMBER")}
+            disabled={pending}
+          >
+            <SelectTrigger id="invite-role" className="sm:w-36" aria-label={t("roleLabel")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="MEMBER">{tRole("MEMBER")}</SelectItem>
+              <SelectItem value="ADMIN">{tRole("ADMIN")}</SelectItem>
+            </SelectContent>
+          </Select>
           <Button type="submit" disabled={pending}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             {t("submit")}

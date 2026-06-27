@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
@@ -36,14 +36,14 @@ export function ConnectForm() {
   }, [state, router, t]);
 
   return (
-    <form action={() => runConnect()} className="grid w-full max-w-md gap-3 text-left">
+    <form action={() => runConnect()} className="grid w-full gap-3.5 text-left">
       <div className="space-y-1.5">
         <Label htmlFor="accountSid">{t("accountSidLabel")}</Label>
         <Input
           id="accountSid"
           value={accountSid}
           onChange={(e) => setAccountSid(e.target.value.trim())}
-          placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          placeholder="AC…"
           required
           disabled={pending}
         />
@@ -54,7 +54,7 @@ export function ConnectForm() {
           id="apiKeySid"
           value={apiKeySid}
           onChange={(e) => setApiKeySid(e.target.value.trim())}
-          placeholder="SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          placeholder="SK…"
           required
           disabled={pending}
         />
@@ -66,13 +66,14 @@ export function ConnectForm() {
           type="password"
           value={apiKeySecret}
           onChange={(e) => setApiKeySecret(e.target.value.trim())}
-          placeholder="(visible once at creation in Twilio Console)"
+          placeholder="••••••••"
           required
           disabled={pending}
         />
       </div>
       <Button type="submit" disabled={pending} className="w-fit">
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
+        {t("submit")}
       </Button>
     </form>
   );

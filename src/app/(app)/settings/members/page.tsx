@@ -1,12 +1,20 @@
-import { requireAdmin } from "@/lib/auth/session";
+import { getLocale } from "next-intl/server";
+
+import { AdminLockedNotice } from "@/components/settings/admin-locked-notice";
+import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 
 import { InviteMemberForm } from "./invite-form";
 import { MembersTable } from "./members-table";
 
 export default async function MembersPage() {
-  const session = await requireAdmin();
+  const session = await requireSession();
 
+  if (session.role !== "ADMIN") {
+    return <AdminLockedNotice />;
+  }
+
+  const locale = await getLocale();
   const db = getDb(session.orgId);
   const [memberships, invites] = await Promise.all([
     db.membership.findMany({
@@ -19,10 +27,13 @@ export default async function MembersPage() {
     }),
   ]);
 
+  const adminCount = memberships.filter((m) => m.role === "ADMIN").length;
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl space-y-4">
       <InviteMemberForm />
       <MembersTable
+        adminCount={adminCount}
         memberships={memberships.map((m) => ({
           id: m.id,
           userId: m.userId,
@@ -35,8 +46,9 @@ export default async function MembersPage() {
           id: i.id,
           email: i.email,
           role: i.role,
-          expiresAt: i.expiresAt.toISOString(),
+          createdAt: i.createdAt.toISOString(),
         }))}
+        locale={locale}
       />
     </div>
   );
