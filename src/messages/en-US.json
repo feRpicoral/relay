@@ -595,38 +595,63 @@
   "agents": {
     "list": {
       "title": "Agents",
-      "description": "Configure persona, voice, and knowledge base for your voice agents.",
+      "description": "Voice agents that answer and place calls for your workspace.",
       "newAgent": "New agent",
-      "summary": "{calls} calls, {docs} docs",
-      "active": "Active",
-      "paused": "Paused",
-      "noNumber": "No number connected",
+      "callsMetric": "{count, number} calls",
+      "docsMetric": "{count, number} knowledge docs",
+      "noNumber": "No number pointed here",
+      "configure": "Configure",
+      "test": "Test",
+      "addVoice": "Add a voice",
+      "languageCode": {
+        "PT_BR": "PT-BR",
+        "EN_US": "EN-US",
+        "AUTO": "Auto"
+      },
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "needsSetup": "Needs setup"
+      },
+      "member": {
+        "label": "Member",
+        "adminsOnly": "Admins only",
+        "banner": "You're a member — you can view and test agents, but only admins can create or edit them."
+      },
       "empty": {
         "title": "You don't have any agents yet",
-        "description": "Create your first agent — takes about 2 minutes.",
+        "description": "Create an agent to give it a persona and a voice, then point a number at it to start taking calls.",
         "cta": "Create agent"
       }
     },
     "new": {
       "title": "New agent",
-      "description": "Start with sensible defaults — you can tweak everything later.",
+      "subtitle": "Create a voice agent for {orgName}",
+      "back": "Back to agents",
       "form": {
-        "defaultName": "Receptionist",
-        "defaultGreeting": "Hi! Thanks for calling. How can I help?",
-        "nameLabel": "Agent name",
-        "namePlaceholder": "Lumen Clinic receptionist",
-        "nameHint": "Used internally — the caller never sees this name.",
-        "languageLabel": "Primary language",
-        "greetingLabel": "Initial greeting",
-        "greetingPlaceholder": "Hi! Thanks for calling.",
-        "greetingHint": "The first sentence the agent speaks when answering.",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. Front Desk",
+        "nameHint": "Shown in the agents list and on calls.",
+        "languageLabel": "Language",
+        "languageHint": "Primary language the agent speaks. Default is PT-BR.",
+        "greetingLabel": "Greeting",
+        "greetingPlaceholder": "Hello, thanks for calling…",
         "personaLabel": "Persona",
-        "personaPlaceholder": "e.g. You're the receptionist at Lumen Clinic, specialized in orthopedics. Be warm and direct.",
+        "personaPlaceholder": "Describe how the agent should behave — tone, what it can book, when to transfer to a human…",
+        "pausedHint": "Agents are created paused — you'll pick a voice next to enable it.",
+        "cancel": "Cancel",
         "submit": "Create agent",
+        "creating": "Creating…",
         "toastCreated": "Agent created"
       },
-      "errors": {
-        "invalidData": "Invalid data."
+      "fieldErrors": {
+        "nameRequired": "Name is required.",
+        "personaRequired": "Add a persona so the agent knows how to behave."
+      },
+      "adminOnly": {
+        "title": "Admins only",
+        "description": "Only admins can create agents. Ask an admin to set this up, or switch to an admin account.",
+        "back": "Back to agents"
       }
     },
     "detail": {

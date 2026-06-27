@@ -595,38 +595,63 @@
   "agents": {
     "list": {
       "title": "Agentes",
-      "description": "Configure persona, voz e base de conhecimento dos seus agentes de voz.",
+      "description": "Agentes de voz que atendem e fazem chamadas pra sua área de trabalho.",
       "newAgent": "Novo agente",
-      "summary": "{calls} chamadas, {docs} docs",
-      "active": "Ativo",
-      "paused": "Pausado",
-      "noNumber": "Nenhum número conectado",
+      "callsMetric": "{count, number} chamadas",
+      "docsMetric": "{count, number} docs de conhecimento",
+      "noNumber": "Nenhum número apontado aqui",
+      "configure": "Configurar",
+      "test": "Testar",
+      "addVoice": "Adicionar voz",
+      "languageCode": {
+        "PT_BR": "PT-BR",
+        "EN_US": "EN-US",
+        "AUTO": "Auto"
+      },
+      "status": {
+        "active": "Ativo",
+        "paused": "Pausado",
+        "needsSetup": "Precisa configurar"
+      },
+      "member": {
+        "label": "Membro",
+        "adminsOnly": "Apenas admins",
+        "banner": "Você é membro — pode ver e testar agentes, mas só admins podem criar ou editar."
+      },
       "empty": {
         "title": "Você ainda não tem agentes",
-        "description": "Crie seu primeiro agente, leva uns 2 minutos.",
+        "description": "Crie um agente pra dar a ele uma persona e uma voz, depois aponte um número pra começar a receber chamadas.",
         "cta": "Criar agente"
       }
     },
     "new": {
       "title": "Novo agente",
-      "description": "Comece com defaults sensatos, você ajusta tudo depois.",
+      "subtitle": "Crie um agente de voz para {orgName}",
+      "back": "Voltar aos agentes",
       "form": {
-        "defaultName": "Recepcionista",
-        "defaultGreeting": "Olá! Obrigada por ligar. Como posso ajudar?",
-        "nameLabel": "Nome do agente",
-        "namePlaceholder": "Recepcionista da Clínica Lumen",
-        "nameHint": "Só usado internamente, o cliente nunca vê esse nome.",
-        "languageLabel": "Idioma principal",
-        "greetingLabel": "Saudação inicial",
-        "greetingPlaceholder": "Olá! Obrigada por ligar.",
-        "greetingHint": "A primeira frase do agente quando atende.",
+        "nameLabel": "Nome",
+        "namePlaceholder": "ex: Recepção",
+        "nameHint": "Aparece na lista de agentes e nas chamadas.",
+        "languageLabel": "Idioma",
+        "languageHint": "Idioma principal que o agente fala. O padrão é PT-BR.",
+        "greetingLabel": "Saudação",
+        "greetingPlaceholder": "Olá, obrigada por ligar…",
         "personaLabel": "Persona",
-        "personaPlaceholder": "Ex: Você é a recepcionista da Clínica Lumen, especializada em ortopedia. Seja calorosa e direta.",
+        "personaPlaceholder": "Descreva como o agente deve se comportar — tom, o que pode agendar, quando transferir pra um humano…",
+        "pausedHint": "Agentes são criados pausados — você escolhe uma voz em seguida pra ativar.",
+        "cancel": "Cancelar",
         "submit": "Criar agente",
+        "creating": "Criando…",
         "toastCreated": "Agente criado"
       },
-      "errors": {
-        "invalidData": "Dados inválidos."
+      "fieldErrors": {
+        "nameRequired": "O nome é obrigatório.",
+        "personaRequired": "Adicione uma persona pra que o agente saiba como se comportar."
+      },
+      "adminOnly": {
+        "title": "Apenas admins",
+        "description": "Só admins podem criar agentes. Peça pra um admin configurar, ou troque pra uma conta admin.",
+        "back": "Voltar aos agentes"
       }
     },
     "detail": {
