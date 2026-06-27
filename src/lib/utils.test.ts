@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { compactNumber, currency, formatDuration, formatPhone, percent } from "./utils";
+import {
+  compactNumber,
+  currency,
+  formatCostUsdBrl,
+  formatDuration,
+  formatPhone,
+  formatRelativeTime,
+  percent,
+} from "./utils";
 
 describe("formatDuration", () => {
   it("formats sub-second", () => {
@@ -63,5 +71,31 @@ describe("currency", () => {
     const result = currency(1234);
 
     expect(result).toBe("$12.34");
+  });
+});
+
+describe("formatCostUsdBrl", () => {
+  it("renders USD with a BRL estimate", () => {
+    const result = formatCostUsdBrl(26_330);
+
+    expect(result).toContain("$263.30");
+    expect(result).toContain("≈");
+    expect(result).toMatch(/R\$\s?1,461/);
+  });
+});
+
+describe("formatRelativeTime", () => {
+  const now = new Date("2026-06-27T12:00:00Z");
+
+  it("formats hours in the past", () => {
+    const result = formatRelativeTime(new Date("2026-06-27T10:00:00Z"), "en-US", now);
+
+    expect(result).toBe("2 hours ago");
+  });
+
+  it("formats days in the future", () => {
+    const result = formatRelativeTime(new Date("2026-06-30T12:00:00Z"), "en-US", now);
+
+    expect(result).toBe("in 3 days");
   });
 });

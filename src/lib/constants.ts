@@ -17,6 +17,12 @@ export const SIP_TRANSPORT_UDP = 1;
 /** How long an invite link stays valid before requiring a re-send. */
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Static USD→BRL rate for the "$X ≈ R$Y" cost display. Refreshed manually;
+ * this is a presentational estimate, not a live FX feed.
+ */
+export const USD_TO_BRL = 5.55;
+
 /** Latency budgets per pipeline leg (ms). Surfaced in the UI as alerting thresholds. */
 export const LEG_BUDGET_MS = {
   STT_FINALIZE: 300,

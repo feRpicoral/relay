@@ -1,6 +1,8 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { USD_TO_BRL } from "@/lib/constants";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -49,6 +51,37 @@ export function currency(
   }).format(cents / 100);
 }
 
+/**
+ * Cost shown as "$X.XX ≈ R$Y" using the static USD_TO_BRL estimate. Both the
+ * call detail KPI and the analytics total use this.
+ */
+export function formatCostUsdBrl(cents: number, locale = "en-US"): string {
+  const usd = currency(cents, "USD", locale);
+  const brl = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(((cents / 100) * USD_TO_BRL) | 0);
+  return `${usd} ≈ ${brl}`;
+}
+
+const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+
+/**
+ * Locale-aware relative time ("2h ago", "in 3 days"). Used for invite ages and
+ * campaign lead last-call timestamps. `now` is injectable for testing.
+ */
+export function formatRelativeTime(date: Date, locale = "en-US", now: Date = new Date()): string {
+  const diffMs = date.getTime() - now.getTime();
+  const abs = Math.abs(diffMs);
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  if (abs < MS_PER_HOUR) return rtf.format(Math.round(diffMs / MS_PER_MINUTE), "minute");
+  if (abs < MS_PER_DAY) return rtf.format(Math.round(diffMs / MS_PER_HOUR), "hour");
+  return rtf.format(Math.round(diffMs / MS_PER_DAY), "day");
+}
+
 export function safeStringify(value: unknown): string {
   try {
     return JSON.stringify(value);
@@ -56,8 +89,6 @@ export function safeStringify(value: unknown): string {
     return String(value);
   }
 }
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export function daysAgo(days: number): Date {
   return new Date(Date.now() - days * MS_PER_DAY);
