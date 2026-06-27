@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { CircleCheck, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect } from "react";
@@ -21,7 +21,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    if (state && state.ok) {
+    if (state?.ok) {
       toast.success(t("toastWelcome"));
       router.push("/overview");
       router.refresh();
@@ -31,17 +31,23 @@ export function AcceptInviteForm({ token }: { token: string }) {
   const error = state && !state.ok ? state.error : null;
 
   return (
-    <div className="space-y-3">
+    <div className="mt-5 space-y-3">
       <form
         action={() => {
           // useActionState's bound action runs as part of a transition without
-          // FormData; we wrap in a `<form action>` so React threads the
-          // pending state correctly.
+          // FormData; the <form action> wrapper lets React thread pending state.
           runAccept();
         }}
       >
-        <Button type="submit" disabled={pending}>
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
+        <Button type="submit" className="w-full gap-2" disabled={pending}>
+          {pending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <>
+              <CircleCheck className="size-4" />
+              {t("submit")}
+            </>
+          )}
         </Button>
       </form>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}

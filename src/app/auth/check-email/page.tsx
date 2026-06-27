@@ -1,8 +1,12 @@
 import { Mail } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations } from "next-intl/server";
 
+import { AuthCenteredShell } from "@/components/auth/auth-centered-shell";
 import { Button } from "@/components/ui/button";
+import { StateCard } from "@/components/ui/state-card";
+import { resolveLocale } from "@/lib/i18n/resolve-locale";
 
 export default async function CheckEmailPage({
   searchParams,
@@ -10,25 +14,35 @@ export default async function CheckEmailPage({
   searchParams: Promise<{ email?: string }>;
 }) {
   const { email } = await searchParams;
-  const t = await getTranslations("checkEmail");
+  const locale = await resolveLocale();
+  const messages = await getMessages({ locale });
+  const t = await getTranslations({ locale, namespace: "checkEmail" });
+
+  const description = email
+    ? t.rich("descriptionWithEmail", {
+        email,
+        strong: (chunks) => <strong className="text-foreground font-semibold">{chunks}</strong>,
+      })
+    : t("descriptionGeneric");
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-md space-y-6 text-center">
-        <div className="bg-primary/10 text-primary mx-auto flex h-12 w-12 items-center justify-center rounded-full">
-          <Mail className="h-5 w-5" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm">
-            {t("descriptionHead")}
-            {email ? <span className="text-foreground ml-1 font-medium">{email}</span> : ""}
-            {t("descriptionTail")}
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/login">{t("backToLogin")}</Link>
-        </Button>
-      </div>
-    </div>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <AuthCenteredShell>
+        <StateCard
+          icon={<Mail />}
+          iconTone="primary"
+          title={t("title")}
+          description={description}
+          actions={
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-muted-foreground text-[12.5px]">{t("expiryNote")}</p>
+              <Button asChild variant="outline">
+                <Link href="/login">{t("backToLogin")}</Link>
+              </Button>
+            </div>
+          }
+        />
+      </AuthCenteredShell>
+    </NextIntlClientProvider>
   );
 }

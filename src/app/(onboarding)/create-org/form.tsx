@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect } from "react";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Result } from "@/lib/types/result";
+import { cn } from "@/lib/utils";
 
 import { createOrgAction } from "./actions";
 
@@ -25,11 +26,10 @@ export function CreateOrgForm() {
   );
 
   useEffect(() => {
-    if (state && state.ok) {
+    if (state?.ok) {
       toast.success(t("toastCreated"));
-      // No router.refresh() here: push() alone runs the RSC for /overview;
-      // refresh would re-render the current (create-org) page mid-transition
-      // and keep the spinner active until that re-fetch finished.
+      // push() alone runs the RSC for /overview; refresh would re-render this
+      // page mid-transition and keep the spinner active until the re-fetch ends.
       router.push("/overview");
     }
   }, [state, router, t]);
@@ -47,11 +47,20 @@ export function CreateOrgForm() {
           autoFocus
           required
           disabled={pending}
+          aria-invalid={error ? true : undefined}
+          className={cn(error && "border-destructive focus-visible:ring-destructive")}
         />
       </div>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      <Button type="submit" disabled={pending}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
+      <Button type="submit" className="w-full gap-2" disabled={pending}>
+        {pending ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <>
+            {t("submit")}
+            <ArrowRight className="size-4" />
+          </>
+        )}
       </Button>
     </form>
   );
