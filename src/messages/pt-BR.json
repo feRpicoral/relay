@@ -383,29 +383,105 @@
   "calls": {
     "list": {
       "title": "Chamadas",
-      "description": "Histórico de todas as chamadas atendidas pelos seus agentes.",
+      "description": "Todas as chamadas atendidas ou feitas pelos seus agentes. Busque e filtre para encontrar uma conversa.",
       "liveButton": "Chamadas ao vivo",
-      "previous": "Anterior",
-      "next": "Próxima",
-      "paginationSummary": "Página {page} de {totalPages}, {total} chamadas",
+      "count": "{count, plural, one {# chamada} other {# chamadas}}",
+      "export": "Exportar",
+      "searchPlaceholder": "Buscar telefone ou nome…",
+      "paginationSummary": "Mostrando {from}–{to} de {total}",
+      "previous": "Página anterior",
+      "next": "Próxima página",
+      "columns": {
+        "status": "Status",
+        "caller": "Quem ligou",
+        "agent": "Agente",
+        "started": "Início",
+        "duration": "Duração",
+        "sentiment": "Sentimento",
+        "outcome": "Desfecho"
+      },
+      "filters": {
+        "status": "Status",
+        "outcome": "Desfecho",
+        "sentiment": "Sentimento",
+        "direction": "Direção",
+        "date": "Data",
+        "all": "Todos",
+        "mobileTrigger": "Filtros",
+        "clear": "Limpar filtros",
+        "remove": "Remover filtro"
+      },
+      "dateRange": {
+        "1d": "Últimas 24h",
+        "7d": "Últimos 7 dias",
+        "30d": "Últimos 30 dias",
+        "90d": "Últimos 90 dias",
+        "all": "Todo período"
+      },
       "empty": {
         "title": "Nenhuma chamada ainda",
-        "description": "Quando seu agente atender uma ligação, ela aparece aqui em segundos."
+        "description": "As chamadas atendidas ou feitas pelos seus agentes vão aparecer aqui. Conecte um número de telefone para começar a recebê-las.",
+        "cta": "Conectar um número"
+      },
+      "noResults": {
+        "title": "Nenhuma chamada corresponde aos filtros",
+        "description": "Tente ampliar o período ou limpar um filtro.",
+        "cta": "Limpar filtros"
+      },
+      "error": {
+        "title": "Não foi possível carregar as chamadas",
+        "description": "Algo deu errado ao buscar esta página. Seus filtros foram preservados — tente novamente.",
+        "retry": "Tentar de novo"
       }
     },
     "detail": {
       "agentFallback": "Agente",
+      "back": "Voltar para chamadas",
+      "viewAgent": "Ver agente",
+      "postCall": "pós-chamada",
       "stat": {
         "duration": "Duração",
         "outcome": "Desfecho",
-        "sentiment": "Sentimento"
+        "sentiment": "Sentimento",
+        "cost": "Custo est."
       },
       "aiSummary": "Resumo IA",
-      "summaryUnavailable": "Sem resumo disponível.",
-      "summaryProcessing": "Processando resumo no momento, atualize em alguns segundos.",
-      "toolsUsed": "Ferramentas usadas",
-      "transcript": "Transcrição",
-      "estimatedCost": "Custo estimado: {amount}"
+      "summaryProcessing": {
+        "title": "Resumo em processamento",
+        "description": "O processamento pós-chamada ainda está rodando. Atualize em alguns segundos para ver o resumo, os tópicos e o desfecho.",
+        "refresh": "Atualizar"
+      },
+      "summaryUnavailable": {
+        "title": "Sem resumo disponível",
+        "description": "Esta chamada foi processada mas não gerou um resumo — pode ter sido curta demais."
+      },
+      "toolTimeline": {
+        "title": "Linha do tempo de ferramentas",
+        "count": "{count, plural, one {# chamada} other {# chamadas}}",
+        "empty": "Nenhuma ferramenta foi usada nesta chamada.",
+        "success": "sucesso",
+        "error": "erro",
+        "pending": "rodando"
+      },
+      "recording": {
+        "title": "Gravação",
+        "meta": "mp3 · {duration}",
+        "play": "Reproduzir",
+        "pause": "Pausar",
+        "none": "Sem gravação disponível",
+        "noneDescription": "Esta chamada não foi gravada.",
+        "autoplayBlocked": "A reprodução automática foi bloqueada — toque em reproduzir para ouvir.",
+        "streaming": "Transmitindo · duração total desconhecida até a chamada terminar.",
+        "unknownDuration": "--:--"
+      },
+      "transcript": {
+        "title": "Transcrição",
+        "synced": "sincronizado · {time}",
+        "now": "agora",
+        "agent": "Agente",
+        "caller": "Cliente",
+        "empty": "Sem transcrição para esta chamada."
+      }
     },
     "live": {
       "title": "Chamadas ao vivo",
