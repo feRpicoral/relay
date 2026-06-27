@@ -55,6 +55,11 @@ model Organization {
   id                String              @id @default(uuid()) @db.Uuid
   name              String
   slug              String              @unique
+  // Org-wide display timezone. Drives the analytics heatmap day/hour grouping
+  // and is shown read-only in Settings → Organization. Calls stay stored in UTC.
+  timezone             String           @default("America/Sao_Paulo")
+  // Default language pre-selected when creating a new agent.
+  defaultAgentLanguage AgentLanguage    @default(PT_BR) @map("default_agent_language")
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
   memberships       Membership[]
@@ -397,6 +402,9 @@ model TwilioConnection {
   orgId                    String       @unique @map("org_id") @db.Uuid
   // Twilio account identifier (AC...). Public-ish, paired with auth token below.
   accountSid               String       @map("account_sid")
+  // Twilio account friendly name, cached on connect so Settings can show it
+  // without a Twilio API round-trip on every page load.
+  accountName              String?      @map("account_name")
   // API Key SID (SK...) used in lieu of the master auth token. Always paired
   // with `authTokenEncrypted` which holds the corresponding API Key secret,
   // encrypted at rest via lib/crypto (AES-256-GCM, key from ENCRYPTION_KEY).
