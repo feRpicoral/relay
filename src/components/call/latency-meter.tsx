@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { useRealtimeList } from "@/hooks/use-realtime";
+import { LEG_BUDGET_MS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface MetricRow {
@@ -20,15 +21,6 @@ const LEG_LABELS: Record<MetricRow["leg"], string> = {
   TTS_TTFA: "TTS",
   TOOL_TOTAL: "Tool",
   END_TO_END: "Total",
-};
-
-const LEG_BUDGET: Record<MetricRow["leg"], number> = {
-  STT_FINALIZE: 300,
-  LLM_TTFT: 400,
-  LLM_TOTAL: 800,
-  TTS_TTFA: 150,
-  TOOL_TOTAL: 600,
-  END_TO_END: 900,
 };
 
 interface LatencyMeterProps {
@@ -89,7 +81,7 @@ export function LatencyMeter({ callId, initial }: LatencyMeterProps) {
             </div>
           );
         }
-        const budget = LEG_BUDGET[leg];
+        const budget = LEG_BUDGET_MS[leg];
         const overBudget = agg.last > budget;
         return (
           <div
