@@ -4,15 +4,14 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth/session";
-import { parseCsvRows } from "@/lib/csv";
+import { E164, parseLeads } from "@/lib/campaigns/parse-leads";
 import { getDb } from "@/lib/db/with-org";
 import type { Result } from "@/lib/types/result";
 
 const MAX_CSV_BYTES = 2 * 1024 * 1024; // 2 MiB
 const MAX_LEADS_PER_UPLOAD = 10_000;
-
-const E164 = /^\+\d{6,18}$/;
 
 const Schema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -48,75 +47,55 @@ export async function createCampaignAction(
   });
   if (!phone) return { ok: false, error: t("noNumbers") };
 
-  const leads = parseCsv(parsed.data.csv);
+  const { valid: leads } = parseLeads(parsed.data.csv);
   if (leads.length === 0) return { ok: false, error: t("invalidCsv") };
   if (leads.length > MAX_LEADS_PER_UPLOAD) {
     return { ok: false, error: t("tooManyLeads") };
   }
 
-  const campaign = await db.campaign.create({
-    data: {
-      orgId: session.orgId,
-      name: parsed.data.name,
-      agentId: parsed.data.agentId,
-      fromPhoneNumberE164: parsed.data.fromPhoneNumberE164,
-      scriptPrompt: parsed.data.scriptPrompt,
-      maxAttempts: parsed.data.maxAttempts,
-      cooldownMinutes: parsed.data.cooldownMinutes,
-      concurrencyLimit: parsed.data.concurrencyLimit,
-      workingHours: {
-        timezone: "America/Sao_Paulo",
-        monday: { open: "09:00", close: "18:00" },
-        tuesday: { open: "09:00", close: "18:00" },
-        wednesday: { open: "09:00", close: "18:00" },
-        thursday: { open: "09:00", close: "18:00" },
-        friday: { open: "09:00", close: "18:00" },
+  const campaign = await db.$transaction(async (tx) => {
+    const created = await tx.campaign.create({
+      data: {
+        orgId: session.orgId,
+        name: parsed.data.name,
+        agentId: parsed.data.agentId,
+        fromPhoneNumberE164: parsed.data.fromPhoneNumberE164,
+        scriptPrompt: parsed.data.scriptPrompt,
+        maxAttempts: parsed.data.maxAttempts,
+        cooldownMinutes: parsed.data.cooldownMinutes,
+        concurrencyLimit: parsed.data.concurrencyLimit,
+        workingHours: {
+          timezone: "America/Sao_Paulo",
+          monday: { open: "09:00", close: "18:00" },
+          tuesday: { open: "09:00", close: "18:00" },
+          wednesday: { open: "09:00", close: "18:00" },
+          thursday: { open: "09:00", close: "18:00" },
+          friday: { open: "09:00", close: "18:00" },
+        },
       },
-    },
+    });
+
+    await tx.campaignLead.createMany({
+      data: leads.map((l) => ({
+        orgId: session.orgId,
+        campaignId: created.id,
+        phoneE164: l.phone,
+        name: l.name ?? null,
+      })),
+      skipDuplicates: true,
+    });
+
+    return created;
   });
 
-  await db.campaignLead.createMany({
-    data: leads.map((l) => ({
-      orgId: session.orgId,
-      campaignId: campaign.id,
-      phoneE164: l.phone,
-      name: l.name ?? null,
-    })),
-    skipDuplicates: true,
+  await audit(db, session.orgId, {
+    action: "CREATE",
+    entity: "CAMPAIGN",
+    entityId: campaign.id,
+    userId: session.userId,
+    metadata: { name: campaign.name, leads: leads.length },
   });
 
   revalidatePath("/campaigns");
   return { ok: true, campaignId: campaign.id, leadsAdded: leads.length };
-}
-
-interface Lead {
-  phone: string;
-  name?: string;
-}
-
-/**
- * Pulls `phone` (required) and optional `name` out of an RFC 4180-ish CSV.
- * Quoted fields with embedded commas, CRLF endings, BOM, and doubled-up
- * quotes are handled by `parseCsvRows`. Rows without a valid E.164 phone are
- * silently skipped — campaigns ingest user-supplied data and we don't want a
- * single bad row to fail the whole import.
- */
-function parseCsv(csv: string): Lead[] {
-  const rows = parseCsvRows(csv).filter((r) => r.some((c) => c.trim().length > 0));
-  if (rows.length === 0) return [];
-  const headerRow = rows[0];
-  if (!headerRow) return [];
-  const header = headerRow.map((c) => c.trim().toLowerCase());
-  const phoneIdx = header.indexOf("phone");
-  const nameIdx = header.indexOf("name");
-  if (phoneIdx === -1) return [];
-
-  const out: Lead[] = [];
-  for (const row of rows.slice(1)) {
-    const phone = row[phoneIdx]?.trim();
-    if (!phone || !E164.test(phone)) continue;
-    const name = nameIdx >= 0 ? row[nameIdx]?.trim() : undefined;
-    out.push({ phone, name: name || undefined });
-  }
-  return out;
 }

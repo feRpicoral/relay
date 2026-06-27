@@ -52,3 +52,12 @@ export const TERMINAL_LEAD_STATUSES: ReadonlyArray<CampaignLeadStatus> = [
   "FAILED",
   "EXCLUDED",
 ];
+
+/**
+ * "X of Y called" accounting shared by the list cards and the detail header so
+ * both surfaces agree on what counts as called. A lead is called once it
+ * reaches a terminal status; pending/calling/retry-eligible leads are not.
+ */
+export function calledCount(counts: Partial<Record<CampaignLeadStatus, number>>): number {
+  return TERMINAL_LEAD_STATUSES.reduce((acc, s) => acc + (counts[s] ?? 0), 0);
+}
