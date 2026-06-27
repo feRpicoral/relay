@@ -2,7 +2,7 @@ import "./globals.css";
 
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -17,6 +17,18 @@ export const metadata: Metadata = {
   description:
     "Voice AI agents that answer your calls, schedule appointments, and qualify leads 24/7.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#6c47e4",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
