@@ -255,11 +255,17 @@
       "calendar": "Calendário"
     },
     "organization": {
-      "title": "Organização",
+      "title": "Identidade da organização",
       "description": "Detalhes que identificam seu workspace.",
       "nameLabel": "Nome",
       "slugLabel": "Slug",
-      "slugHint": "Usado nas URLs de convite."
+      "slugHint": "Usado nas URLs de convite.",
+      "readOnly": "Somente leitura",
+      "workspaceIdLabel": "ID do workspace",
+      "timezoneLabel": "Fuso horário padrão",
+      "defaultLanguageLabel": "Idioma padrão do agente",
+      "membersLabel": "Membros",
+      "readOnlyHint": "Os detalhes de identidade são somente leitura. Para alterar o nome legal ou a região, fale com o suporte."
     },
     "preferences": {
       "title": "Preferências",
@@ -277,7 +283,7 @@
       "title": "Membros",
       "description": "Gerencie quem tem acesso a esse workspace.",
       "invite": {
-        "title": "Convidar membro",
+        "title": "Convidar colega",
         "description": "Envie um link de convite por email. Expira em 7 dias.",
         "emailLabel": "Email",
         "emailPlaceholder": "colega@empresa.com",
@@ -300,7 +306,14 @@
         "memberRemoved": "Membro removido",
         "roleUpdated": "Papel atualizado",
         "inviteRevoked": "Convite revogado",
-        "inviteResent": "Convite reenviado"
+        "inviteResent": "Convite reenviado",
+        "cannotRemoveLastAdmin": "Não dá para remover o último admin",
+        "removeTitle": "Remover {name}?",
+        "removeDescription": "A pessoa perde o acesso a este workspace imediatamente. Você pode convidá-la de novo depois.",
+        "keepMember": "Manter membro",
+        "removeMember": "Remover membro",
+        "invitedAgo": "Convidado {ago}",
+        "pendingStatus": "Pendente"
       },
       "errors": {
         "invalidEmail": "Email inválido.",
@@ -311,7 +324,11 @@
         "lastAdmin": "Precisa ter ao menos um admin no workspace.",
         "inviteNotFound": "Convite não encontrado.",
         "memberNotFound": "Membro não encontrado."
-      }
+      },
+      "memberCount": "{count, plural, one {# pessoa} other {# pessoas}}",
+      "inviteCount": "{count, plural, one {# convidado} other {# convidados}}",
+      "pendingTitle": "Convites pendentes",
+      "lastAdminBanner": "Você não pode mudar o papel do último admin. Promova outro membro a admin primeiro."
     },
     "telephony": {
       "title": "Telefonia",
@@ -335,6 +352,30 @@
         "confirmDisconnectDescription": "Seus números vão parar de receber chamadas até você reconectar.",
         "confirmDisconnect": "Desconectar",
         "attachAgent": "Selecione um agente primeiro.",
+        "attachedToast": "{number} conectado ao agente",
+        "detachedToast": "{number} desconectado",
+        "title": "Twilio",
+        "status": "Conectado",
+        "accountNameLabel": "Nome da conta",
+        "accountSidLabel": "Account SID",
+        "trunkSidLabel": "SID do tronco SIP",
+        "livekitTrunkLabel": "ID do tronco LiveKit",
+        "diagnosticsLabel": "Diagnóstico do tronco",
+        "healthy": "Saudável",
+        "pendingSetup": "Configuração pendente",
+        "keepConnected": "Manter conectado"
+      },
+      "numbers": {
+        "title": "Números de telefone",
+        "buyNumber": "Comprar um número",
+        "empty": "Nenhum número nesta conta ainda.",
+        "inbound": "ENTRADA",
+        "outbound": "SAÍDA",
+        "unassigned": "Sem agente",
+        "agentLabel": "Agente",
+        "selectAgent": "Selecione um agente primeiro.",
+        "attach": "Conectar",
+        "detach": "Desconectar",
         "attachedToast": "{number} conectado ao agente",
         "detachedToast": "{number} desconectado"
       }
@@ -378,6 +419,12 @@
       "tableAgent": "Agente",
       "tableInbound": "Entrada",
       "tableOutbound": "Saída"
+    },
+    "memberLockTooltip": "Gerenciado por admins",
+    "memberLockBanner": "Você é membro. Membros, Telefonia e Calendário são gerenciados por admins — visíveis, mas bloqueados.",
+    "common": {
+      "copy": "Copiar",
+      "copied": "Copiado"
     }
   },
   "calls": {

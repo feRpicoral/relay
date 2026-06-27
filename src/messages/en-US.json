@@ -255,11 +255,17 @@
       "calendar": "Calendar"
     },
     "organization": {
-      "title": "Organization",
+      "title": "Organization identity",
       "description": "Details that identify your workspace.",
       "nameLabel": "Name",
       "slugLabel": "Slug",
-      "slugHint": "Used in invite URLs."
+      "slugHint": "Used in invite URLs.",
+      "readOnly": "Read-only",
+      "workspaceIdLabel": "Workspace ID",
+      "timezoneLabel": "Default timezone",
+      "defaultLanguageLabel": "Default agent language",
+      "membersLabel": "Members",
+      "readOnlyHint": "Identity details are read-only. To change your legal name or region, contact support."
     },
     "preferences": {
       "title": "Preferences",
@@ -277,7 +283,7 @@
       "title": "Members",
       "description": "Manage the people in this workspace.",
       "invite": {
-        "title": "Invite a member",
+        "title": "Invite a teammate",
         "description": "Send an invite link by email. Expires in 7 days.",
         "emailLabel": "Email",
         "emailPlaceholder": "colleague@company.com",
@@ -300,7 +306,14 @@
         "memberRemoved": "Member removed",
         "roleUpdated": "Role updated",
         "inviteRevoked": "Invite revoked",
-        "inviteResent": "Invite resent"
+        "inviteResent": "Invite resent",
+        "cannotRemoveLastAdmin": "Can't remove the last admin",
+        "removeTitle": "Remove {name}?",
+        "removeDescription": "They'll lose access to this workspace immediately. You can re-invite them later.",
+        "keepMember": "Keep member",
+        "removeMember": "Remove member",
+        "invitedAgo": "Invited {ago}",
+        "pendingStatus": "Pending"
       },
       "errors": {
         "invalidEmail": "Invalid email.",
@@ -311,7 +324,11 @@
         "lastAdmin": "Need at least one admin in the workspace.",
         "inviteNotFound": "Invite not found.",
         "memberNotFound": "Member not found."
-      }
+      },
+      "memberCount": "{count, plural, one {# person} other {# people}}",
+      "inviteCount": "{count, plural, one {# invited} other {# invited}}",
+      "pendingTitle": "Pending invites",
+      "lastAdminBanner": "You can't change the last admin's role. Promote another member to admin first."
     },
     "telephony": {
       "title": "Telephony",
@@ -335,6 +352,30 @@
         "confirmDisconnectDescription": "Your numbers will stop receiving calls until you reconnect.",
         "confirmDisconnect": "Disconnect",
         "attachAgent": "Select an agent first.",
+        "attachedToast": "{number} attached to the agent",
+        "detachedToast": "{number} detached",
+        "title": "Twilio",
+        "status": "Connected",
+        "accountNameLabel": "Account name",
+        "accountSidLabel": "Account SID",
+        "trunkSidLabel": "SIP trunk SID",
+        "livekitTrunkLabel": "LiveKit trunk ID",
+        "diagnosticsLabel": "Trunk diagnostics",
+        "healthy": "Healthy",
+        "pendingSetup": "Pending setup",
+        "keepConnected": "Keep connected"
+      },
+      "numbers": {
+        "title": "Phone numbers",
+        "buyNumber": "Buy a number",
+        "empty": "No numbers on this account yet.",
+        "inbound": "INBOUND",
+        "outbound": "OUTBOUND",
+        "unassigned": "Unassigned",
+        "agentLabel": "Agent",
+        "selectAgent": "Select an agent first.",
+        "attach": "Attach",
+        "detach": "Detach",
         "attachedToast": "{number} attached to the agent",
         "detachedToast": "{number} detached"
       }
@@ -378,6 +419,12 @@
       "tableAgent": "Agent",
       "tableInbound": "Inbound",
       "tableOutbound": "Outbound"
+    },
+    "memberLockTooltip": "Managed by admins",
+    "memberLockBanner": "You're a member. Members, Telephony and Calendar are managed by admins — shown, but locked.",
+    "common": {
+      "copy": "Copy",
+      "copied": "Copied"
     }
   },
   "calls": {
