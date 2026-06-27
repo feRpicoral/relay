@@ -1,7 +1,7 @@
 /**
  * RFC 4180-compliant CSV parser. Handles quoted fields with embedded commas,
  * doubled-up quotes (`""` → `"`), CRLF / LF / mixed line endings, and a
- * leading UTF-8 BOM. State machine, ~60 lines, no dependency.
+ * leading UTF-8 BOM. State machine, no dependency.
  *
  * Returns rows as `string[][]`. Header parsing is the caller's job.
  */
@@ -54,4 +54,19 @@ export function parseCsvRows(input: string): string[][] {
     rows.push(row);
   }
   return rows;
+}
+
+function escapeCsvField(value: string): string {
+  if (/[",\r\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
+ * Serializes rows to an RFC 4180 CSV string with CRLF line endings. Each cell
+ * is coerced with `String()`; quoting is applied only where required.
+ */
+export function toCsv(rows: string[][]): string {
+  return rows.map((row) => row.map(escapeCsvField).join(",")).join("\r\n");
 }
