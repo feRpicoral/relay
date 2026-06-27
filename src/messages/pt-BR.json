@@ -752,7 +752,11 @@
       "statusLabel": "Status",
       "agentLabel": "Agente",
       "fromLabel": "Origem",
-      "createdAt": "Criada em {date}"
+      "createdAt": "Criada em {date}",
+      "viewCampaign": "Ver campanha",
+      "notStarted": "Ainda não iniciada.",
+      "progressCalled": "{called} de {total} chamados",
+      "loadError": "Não foi possível carregar as campanhas."
     },
     "new": {
       "title": "Nova campanha",
@@ -770,7 +774,36 @@
         "leadsLabel": "CSV de leads",
         "leadsHint": "Colunas: phone_e164 (obrigatório), name e quaisquer campos custom.",
         "submit": "Criar campanha",
-        "toastCreated": "Campanha criada"
+        "toastCreated": "Campanha criada",
+        "nameRequired": "*",
+        "scriptPromptLabel": "Roteiro",
+        "scriptPromptPlaceholder": "O que o agente deve dizer e tentar realizar em cada chamada…",
+        "leadsDropTitle": "Solte um CSV ou cole as linhas",
+        "leadsDropHint": "Formato: phone,name — um por linha. Máx. 5.000 linhas.",
+        "chooseFile": "Escolher arquivo",
+        "cancel": "Cancelar",
+        "callingRules": "Regras de chamada",
+        "maxAttemptsLabel": "Máx. tentativas",
+        "maxAttemptsHint": "1–10 tentativas por lead",
+        "cooldownLabel": "Intervalo (min)",
+        "cooldownHint": "5–1440 entre tentativas",
+        "concurrencyLabel": "Simultâneas",
+        "concurrencyHint": "1–10 ao mesmo tempo",
+        "preview": {
+          "title": "Prévia processada",
+          "colPhone": "Telefone",
+          "colName": "Nome",
+          "colStatus": "Status",
+          "valid": "{count} válidos",
+          "invalid": "{count} inválidos",
+          "invalidE164": "E.164 inválido",
+          "missingPhone": "Telefone ausente",
+          "unnamed": "—",
+          "summary": "{invalid, plural, one {# linha será ignorada} other {# linhas serão ignoradas}} — corrija os números ou remova-os. Linhas válidas: <b>{valid}</b>.",
+          "allValid": "Todas as {valid} linhas estão certas.",
+          "empty": "Nenhuma linha ainda. Solte um CSV para ver a prévia.",
+          "missingHeader": "Adicione uma linha de cabeçalho com uma coluna phone."
+        }
       },
       "errors": {
         "invalidData": "Dados inválidos.",
@@ -778,6 +811,19 @@
         "noNumbers": "Conecte um número de telefone primeiro.",
         "invalidCsv": "CSV inválido. Verifique a formatação.",
         "tooManyLeads": "Muitos leads. Divida em lotes menores."
+      },
+      "backToCampaigns": "Campanhas",
+      "subtitle": "Ligue para uma lista de leads com um agente",
+      "adminOnly": {
+        "title": "Apenas admins",
+        "description": "Só admins podem criar campanhas. Peça para um admin configurar isso.",
+        "back": "Voltar para campanhas"
+      },
+      "setupRequired": {
+        "title": "Crie um agente primeiro",
+        "description": "Campanhas fazem chamadas através de um agente, e esse agente precisa de um número com saída habilitada. Você ainda não tem um configurado.",
+        "createAgent": "Criar agente",
+        "connectNumber": "Conectar um número"
       }
     },
     "detail": {
@@ -806,7 +852,8 @@
       "confirmCancel": {
         "title": "Cancelar campanha?",
         "description": "Os leads pendentes param de ser chamados. As tentativas anteriores ficam no histórico.",
-        "confirm": "Cancelar campanha"
+        "confirm": "Cancelar campanha",
+        "keepRunning": "Manter rodando"
       },
       "errors": {
         "invalidInput": "Entrada inválida.",
@@ -814,6 +861,35 @@
         "alreadyRunning": "Já está rodando.",
         "notRunning": "Não está rodando.",
         "alreadyCanceled": "Já está cancelada."
+      },
+      "back": "Campanhas",
+      "progressLabel": "Progresso",
+      "progressValue": "{called} / {total} · {percent}%",
+      "progressEmpty": "{called} / {total}",
+      "futureBadge": "Futuro",
+      "futureNote": "Log de tentativas · Configurações · Retomar · Duplicar — planejado, ainda não disponível.",
+      "kpis": {
+        "total": "Total",
+        "calling": "Chamando",
+        "reached": "Atingidos",
+        "pending": "Pendentes"
+      },
+      "leadsTable": {
+        "phone": "Telefone",
+        "name": "Nome",
+        "status": "Status",
+        "attempts": "Tentativas",
+        "lastCall": "Última chamada",
+        "never": "—",
+        "unnamed": "—",
+        "paginationSummary": "Mostrando {from}–{to} de {total}",
+        "previous": "Página anterior",
+        "next": "Próxima página"
+      },
+      "zeroLeads": {
+        "title": "Nenhum lead nessa campanha",
+        "description": "Essa campanha foi criada sem leads. Adicione uma lista de leads para começar a ligar.",
+        "cta": "Adicionar leads"
       }
     }
   },
