@@ -2,11 +2,29 @@ import "server-only";
 
 import type { CallOutcome, CallStatus } from "@prisma/client";
 
+import {
+  ANSWERED_STATUSES,
+  computePeriodMetrics,
+  CONVERTED_OUTCOMES,
+  deltaPct,
+  deltaPoints,
+  quantile,
+} from "@/lib/analytics/metrics";
+import { DEFAULT_TIMEZONE } from "@/lib/constants";
+import { getPrisma } from "@/lib/db/client";
 import type { OrgId } from "@/lib/db/types";
 import { getDb } from "@/lib/db/with-org";
 import { daysAgo } from "@/lib/utils";
 
 const DAY = 1;
+
+export async function loadOrgTimezone(orgId: OrgId): Promise<string> {
+  const org = await getPrisma().organization.findUnique({
+    where: { id: orgId },
+    select: { timezone: true },
+  });
+  return org?.timezone ?? DEFAULT_TIMEZONE;
+}
 
 export interface AnalyticsSummary {
   totalCalls: number;
@@ -16,6 +34,17 @@ export interface AnalyticsSummary {
   totalCostCents: number;
   latencyP50: number;
   latencyP95: number;
+  prevTotalCalls: number;
+  prevAttendanceRate: number;
+  prevConversionRate: number;
+  prevAvgHandleTimeMs: number;
+  prevTotalCostCents: number;
+  prevLatencyP95: number;
+  deltaTotalCallsPct: number;
+  deltaAttendancePts: number;
+  deltaConversionPts: number;
+  deltaAvgHandleTimeMs: number;
+  deltaLatencyP95Ms: number;
 }
 
 export interface VolumeBucket {
@@ -37,44 +66,54 @@ export async function loadAnalyticsSummary(
   rangeStart: Date,
 ): Promise<AnalyticsSummary> {
   const db = getDb(orgId);
-  const calls = await db.call.findMany({
-    where: { startedAt: { gte: rangeStart } },
-    select: {
-      id: true,
-      status: true,
-      outcome: true,
-      durationMs: true,
-      costCents: true,
-    },
-  });
+  const periodMs = Date.now() - rangeStart.getTime();
+  const prevStart = new Date(rangeStart.getTime() - periodMs);
 
-  const total = calls.length;
-  const answered = calls.filter(
-    (c) => c.status === "COMPLETED" || c.status === "IN_PROGRESS",
-  ).length;
-  const converted = calls.filter(
-    (c) => c.outcome === "SCHEDULED" || c.outcome === "QUALIFIED",
-  ).length;
-  const totalDur = calls.reduce((sum, c) => sum + (c.durationMs ?? 0), 0);
-  const totalCost = calls.reduce((sum, c) => sum + (c.costCents ?? 0), 0);
-  const avgHandleTimeMs = answered === 0 ? 0 : totalDur / answered;
+  const callSelect = {
+    status: true,
+    outcome: true,
+    durationMs: true,
+    costCents: true,
+  } as const;
 
-  const metrics = await db.callMetric.findMany({
-    where: { leg: "END_TO_END", occurredAt: { gte: rangeStart } },
-    select: { valueMs: true },
-  });
-  const sorted = metrics.map((m) => m.valueMs).sort((a, b) => a - b);
-  const p50 = quantile(sorted, 0.5);
-  const p95 = quantile(sorted, 0.95);
+  const [currentCalls, prevCalls, currentMetrics, prevMetrics] = await Promise.all([
+    db.call.findMany({ where: { startedAt: { gte: rangeStart } }, select: callSelect }),
+    db.call.findMany({
+      where: { startedAt: { gte: prevStart, lt: rangeStart } },
+      select: callSelect,
+    }),
+    db.callMetric.findMany({
+      where: { leg: "END_TO_END", occurredAt: { gte: rangeStart } },
+      select: { valueMs: true },
+    }),
+    db.callMetric.findMany({
+      where: { leg: "END_TO_END", occurredAt: { gte: prevStart, lt: rangeStart } },
+      select: { valueMs: true },
+    }),
+  ]);
+
+  const current = computePeriodMetrics(
+    currentCalls,
+    currentMetrics.map((m) => m.valueMs),
+  );
+  const prev = computePeriodMetrics(
+    prevCalls,
+    prevMetrics.map((m) => m.valueMs),
+  );
 
   return {
-    totalCalls: total,
-    attendanceRate: total === 0 ? 0 : answered / total,
-    conversionRate: total === 0 ? 0 : converted / total,
-    avgHandleTimeMs,
-    totalCostCents: totalCost,
-    latencyP50: p50,
-    latencyP95: p95,
+    ...current,
+    prevTotalCalls: prev.totalCalls,
+    prevAttendanceRate: prev.attendanceRate,
+    prevConversionRate: prev.conversionRate,
+    prevAvgHandleTimeMs: prev.avgHandleTimeMs,
+    prevTotalCostCents: prev.totalCostCents,
+    prevLatencyP95: prev.latencyP95,
+    deltaTotalCallsPct: deltaPct(current.totalCalls, prev.totalCalls),
+    deltaAttendancePts: deltaPoints(current.attendanceRate, prev.attendanceRate),
+    deltaConversionPts: deltaPoints(current.conversionRate, prev.conversionRate),
+    deltaAvgHandleTimeMs: Math.round(current.avgHandleTimeMs - prev.avgHandleTimeMs),
+    deltaLatencyP95Ms: current.latencyP95 - prev.latencyP95,
   };
 }
 
@@ -104,17 +143,41 @@ export async function loadVolumeByDay(orgId: OrgId, rangeStart: Date): Promise<V
   return [...map.values()].sort((a, b) => a.day.localeCompare(b.day));
 }
 
-export async function loadHeatmap(orgId: OrgId, rangeStart: Date): Promise<HeatmapCell[]> {
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+export async function loadHeatmap(
+  orgId: OrgId,
+  rangeStart: Date,
+  timezone: string = DEFAULT_TIMEZONE,
+): Promise<HeatmapCell[]> {
   const db = getDb(orgId);
   const calls = await db.call.findMany({
     where: { startedAt: { gte: rangeStart } },
     select: { startedAt: true },
   });
 
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "short",
+    hour: "numeric",
+    hour12: false,
+  });
+
   const counts: Record<string, number> = {};
   for (const c of calls) {
-    const wd = c.startedAt.getDay();
-    const h = c.startedAt.getHours();
+    const parts = formatter.formatToParts(c.startedAt);
+    const weekdayPart = parts.find((p) => p.type === "weekday")?.value ?? "Sun";
+    const hourPart = parts.find((p) => p.type === "hour")?.value ?? "0";
+    const wd = WEEKDAY_INDEX[weekdayPart] ?? 0;
+    const h = Number(hourPart) % 24;
     const key = `${wd}-${h}`;
     counts[key] = (counts[key] ?? 0) + 1;
   }
@@ -131,33 +194,62 @@ export interface AgentRow {
   id: string;
   name: string;
   totalCalls: number;
+  attendanceRate: number;
   conversionRate: number;
   avgHandleTimeMs: number;
+  totalCostCents: number;
+  p95LatencyMs: number;
 }
 
 export async function loadAgentComparison(orgId: OrgId, rangeStart: Date): Promise<AgentRow[]> {
   const db = getDb(orgId);
-  const agents = await db.agent.findMany({
-    include: {
-      calls: {
-        where: { startedAt: { gte: rangeStart } },
-        select: { outcome: true, durationMs: true },
+  const [agents, metrics] = await Promise.all([
+    db.agent.findMany({
+      include: {
+        calls: {
+          where: { startedAt: { gte: rangeStart } },
+          select: { status: true, outcome: true, durationMs: true, costCents: true },
+        },
       },
-    },
-  });
+    }),
+    db.callMetric.findMany({
+      where: {
+        leg: "END_TO_END",
+        occurredAt: { gte: rangeStart },
+        call: { agentId: { not: null } },
+      },
+      select: { valueMs: true, call: { select: { agentId: true } } },
+    }),
+  ]);
+
+  const latencyByAgent = new Map<string, number[]>();
+  for (const m of metrics) {
+    const agentId = m.call.agentId;
+    if (!agentId) continue;
+    const list = latencyByAgent.get(agentId) ?? [];
+    list.push(m.valueMs);
+    latencyByAgent.set(agentId, list);
+  }
+
   return agents
     .map((a) => {
       const total = a.calls.length;
+      const answered = a.calls.filter((c) => ANSWERED_STATUSES.includes(c.status)).length;
       const converted = a.calls.filter(
-        (c) => c.outcome === "SCHEDULED" || c.outcome === "QUALIFIED",
+        (c) => c.outcome != null && CONVERTED_OUTCOMES.includes(c.outcome),
       ).length;
       const durSum = a.calls.reduce((sum, c) => sum + (c.durationMs ?? 0), 0);
+      const costSum = a.calls.reduce((sum, c) => sum + (c.costCents ?? 0), 0);
+      const samples = (latencyByAgent.get(a.id) ?? []).sort((x, y) => x - y);
       return {
         id: a.id,
         name: a.name,
         totalCalls: total,
+        attendanceRate: total === 0 ? 0 : answered / total,
         conversionRate: total === 0 ? 0 : converted / total,
-        avgHandleTimeMs: total === 0 ? 0 : durSum / total,
+        avgHandleTimeMs: answered === 0 ? 0 : durSum / answered,
+        totalCostCents: costSum,
+        p95LatencyMs: quantile(samples, 0.95),
       };
     })
     .sort((a, b) => b.totalCalls - a.totalCalls);
@@ -294,15 +386,4 @@ export async function loadActiveAgents(orgId: OrgId): Promise<ActiveAgents> {
     }),
   ]);
   return { enabled, withCallsToday: callerAgents.length };
-}
-
-function quantile(sorted: number[], q: number): number {
-  if (sorted.length === 0) return 0;
-  const pos = (sorted.length - 1) * q;
-  const lo = Math.floor(pos);
-  const hi = Math.ceil(pos);
-  if (lo === hi) return sorted[lo] ?? 0;
-  const a = sorted[lo] ?? 0;
-  const b = sorted[hi] ?? 0;
-  return Math.round(a + (b - a) * (pos - lo));
 }
