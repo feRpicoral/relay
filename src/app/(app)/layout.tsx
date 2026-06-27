@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar, MobileNav } from "@/components/app-sidebar";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeSync } from "@/components/theme-sync";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,18 +40,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const locale = fromPrismaLocale(membership.user.locale);
   const messages = await getMessages({ locale });
 
+  const activeCalls = await getPrisma().call.count({
+    where: { orgId: activeOrgId, status: { in: ["RINGING", "IN_PROGRESS"] } },
+  });
+  const hasActiveCalls = activeCalls > 0;
+  const sidebarProps = {
+    user: { email: membership.user.email, name: membership.user.name },
+    org: { name: membership.organization.name, slug: membership.organization.slug },
+    role: membership.role,
+    hasActiveCalls,
+  };
+
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <PostHogProvider>
         <TooltipProvider delayDuration={300}>
           <ThemeSync initial={initialTheme} />
           <div className="flex">
-            <AppSidebar
-              user={{ email: membership.user.email, name: membership.user.name }}
-              org={{ name: membership.organization.name, slug: membership.organization.slug }}
-              role={membership.role}
-            />
-            <main className="bg-background flex min-h-screen flex-1 flex-col">{children}</main>
+            <AppSidebar {...sidebarProps} />
+            <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+              <MobileNav {...sidebarProps} />
+              <main className="bg-background flex flex-1 flex-col">{children}</main>
+            </div>
           </div>
         </TooltipProvider>
       </PostHogProvider>
