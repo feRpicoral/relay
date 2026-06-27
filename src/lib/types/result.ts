@@ -6,4 +6,4 @@
  */
 export type Result<T = void> =
   | (T extends void ? { ok: true } : { ok: true } & T)
-  | { ok: false; error: string };
+  | { ok: false; error: string; code?: string };
