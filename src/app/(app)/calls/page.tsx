@@ -1,49 +1,38 @@
-import { ChevronLeft, ChevronRight, PhoneCall } from "lucide-react";
+import { Phone, PhoneCall } from "lucide-react";
 import Link from "next/link";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
-import { CallStatusBadge } from "@/components/call/call-status-badge";
+import { CallCard } from "@/components/calls/call-card";
+import { CallsTable, type CallsTableRow } from "@/components/calls/calls-table";
+import { ExportButton } from "@/components/calls/export-button";
+import { CallsFilterBar } from "@/components/calls/filter-bar";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Empty } from "@/components/ui/empty";
+import { Pagination } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StateCard } from "@/components/ui/state-card";
 import { requireSession } from "@/lib/auth/session";
-import { outcomeLabel } from "@/lib/calls/labels";
-import { getDb } from "@/lib/db/with-org";
-import { formatDuration, formatPhone } from "@/lib/utils";
+import {
+  type CallSearchParams,
+  hasActiveFilters,
+  parseCallFilters,
+  searchParamsToQuery,
+} from "@/lib/calls/filters";
+import { loadCallsPage } from "@/lib/calls/queries";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
+const SKELETON_ROWS = 8;
 
 export default async function CallsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<CallSearchParams>;
 }) {
-  const session = await requireSession();
-  const db = getDb(session.orgId);
   const params = await searchParams;
-  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
-
   const t = await getTranslations("calls.list");
-  const tDirection = await getTranslations("enums.callDirection");
-  const tOutcome = await getTranslations("enums.outcome");
-  const formatter = await getFormatter();
-  void (await getLocale());
-
-  // Aggregate count + page in parallel so pagination doesn't double the latency.
-  const [total, calls] = await Promise.all([
-    db.call.count(),
-    db.call.findMany({
-      orderBy: { startedAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      include: { agent: { select: { name: true } } },
-    }),
-  ]);
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasPrev = page > 1;
-  const hasNext = page < totalPages;
+  const suspenseKey = searchParamsToQuery(params).toString();
 
   return (
     <>
@@ -51,83 +40,149 @@ export default async function CallsPage({
         title={t("title")}
         description={t("description")}
         actions={
+          <div className="flex items-center gap-2">
+            <ExportButton />
+            <Button asChild variant="outline" size="sm">
+              <Link href="/live">
+                <PhoneCall className="size-3.5" />
+                {t("liveButton")}
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+      <div className="flex flex-col gap-4 p-6 md:p-8">
+        <CallsFilterBar />
+        <Suspense key={suspenseKey} fallback={<CallsSkeleton />}>
+          <CallsResults params={params} />
+        </Suspense>
+      </div>
+    </>
+  );
+}
+
+async function CallsResults({ params }: { params: CallSearchParams }) {
+  const session = await requireSession();
+  const t = await getTranslations("calls.list");
+  const tDirection = await getTranslations("enums.callDirection");
+  const formatter = await getFormatter();
+
+  const filters = parseCallFilters(params);
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const { items, total } = await loadCallsPage(session.orgId, filters, page, PAGE_SIZE);
+
+  if (total === 0) {
+    return hasActiveFilters(filters) ? (
+      <StateCard
+        bordered
+        icon={<Phone />}
+        title={t("noResults.title")}
+        description={t("noResults.description")}
+        actions={
           <Button asChild variant="outline">
-            <Link href="/live">
-              <PhoneCall className="h-4 w-4" />
-              {t("liveButton")}
+            <Link href="/calls">{t("noResults.cta")}</Link>
+          </Button>
+        }
+      />
+    ) : (
+      <StateCard
+        bordered
+        icon={<Phone />}
+        title={t("empty.title")}
+        description={t("empty.description")}
+        actions={
+          <Button asChild>
+            <Link href="/settings/telephony">
+              <Phone className="size-4" />
+              {t("empty.cta")}
             </Link>
           </Button>
         }
       />
-      <div className="p-8">
-        {calls.length === 0 ? (
-          <Empty
-            icon={<PhoneCall className="h-5 w-5" />}
-            title={t("empty.title")}
-            description={t("empty.description")}
+    );
+  }
+
+  const rows: CallsTableRow[] = items.map((item) => ({
+    ...item,
+    startedAt: item.startedAt.toISOString(),
+    startedLabel: formatter.dateTime(item.startedAt, {
+      dateStyle: "short",
+      timeStyle: "short",
+    }),
+    directionLabel: tDirection(item.direction),
+  }));
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
+
+  function hrefForPage(target: number): string {
+    const usp = searchParamsToQuery(params);
+    if (target <= 1) usp.delete("page");
+    else usp.set("page", String(target));
+    const query = usp.toString();
+    return query ? `/calls?${query}` : "/calls";
+  }
+
+  return (
+    <>
+      <Card className="hidden overflow-hidden md:block">
+        <CallsTable
+          rows={rows}
+          labels={{
+            status: t("columns.status"),
+            caller: t("columns.caller"),
+            agent: t("columns.agent"),
+            started: t("columns.started"),
+            duration: t("columns.duration"),
+            sentiment: t("columns.sentiment"),
+            outcome: t("columns.outcome"),
+          }}
+        />
+      </Card>
+
+      <div className="flex flex-col gap-2.5 md:hidden">
+        {rows.map((row) => (
+          <CallCard key={row.id} row={row} />
+        ))}
+      </div>
+
+      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <p className="text-muted-foreground text-sm">
+          {t("paginationSummary", { from, to, total })}
+        </p>
+        {totalPages > 1 ? (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            hrefForPage={hrefForPage}
+            previousLabel={t("previous")}
+            nextLabel={t("next")}
           />
-        ) : (
-          <>
-            <Card className="overflow-hidden">
-              <div className="divide-border divide-y">
-                {calls.map((call) => (
-                  <Link
-                    key={call.id}
-                    href={`/calls/${call.id}`}
-                    className="hover:bg-accent/40 flex items-center justify-between px-5 py-3 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <CallStatusBadge status={call.status} />
-                      <div>
-                        <p className="font-medium">
-                          {call.direction === "INBOUND"
-                            ? formatPhone(call.callerE164)
-                            : formatPhone(call.calleeE164)}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {call.agent?.name ?? "-"} , {tDirection(call.direction)} ,{" "}
-                          {formatter.dateTime(call.startedAt, {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {call.durationMs != null ? (
-                        <p className="font-mono text-sm">{formatDuration(call.durationMs)}</p>
-                      ) : null}
-                      {call.outcome ? (
-                        <p className="text-muted-foreground text-xs">
-                          {outcomeLabel(call.outcome, tOutcome)}
-                        </p>
-                      ) : null}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </Card>
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <p className="text-muted-foreground">
-                {t("paginationSummary", { page, totalPages, total })}
-              </p>
-              <div className="flex gap-2">
-                <Button asChild variant="outline" size="sm" disabled={!hasPrev}>
-                  <Link href={`/calls?page=${page - 1}`} aria-disabled={!hasPrev}>
-                    <ChevronLeft className="h-4 w-4" />
-                    {t("previous")}
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="sm" disabled={!hasNext}>
-                  <Link href={`/calls?page=${page + 1}`} aria-disabled={!hasNext}>
-                    {t("next")}
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function CallsSkeleton() {
+  return (
+    <>
+      <Card className="hidden overflow-hidden md:block">
+        <div className="divide-border/60 divide-y">
+          {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-3 py-3.5">
+              <Skeleton className="h-5 w-24 rounded-md" />
+              <Skeleton className="h-8 flex-1" />
+              <Skeleton className="h-5 w-20 rounded-md" />
             </div>
-          </>
-        )}
+          ))}
+        </div>
+      </Card>
+      <div className="flex flex-col gap-2.5 md:hidden">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full rounded-xl" />
+        ))}
       </div>
     </>
   );
