@@ -1,10 +1,12 @@
 "use client";
 
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { useRealtimeList } from "@/hooks/use-realtime";
-import { cn } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 
 interface ToolRow {
   id: string;
@@ -32,7 +34,10 @@ interface ToolTimelineProps {
   }>;
 }
 
+const OUTPUT_SNIPPET_MAX = 120;
+
 export function ToolTimeline({ callId, initial }: ToolTimelineProps) {
+  const t = useTranslations("calls.detail.toolTimeline");
   const initialRows: ToolRow[] = useMemo(
     () =>
       initial.map((r) => ({
@@ -57,7 +62,7 @@ export function ToolTimeline({ callId, initial }: ToolTimelineProps) {
   });
 
   if (rows.length === 0) {
-    return <p className="text-muted-foreground text-sm">Nenhuma ferramenta usada nesta chamada.</p>;
+    return <p className="text-muted-foreground text-sm">{t("empty")}</p>;
   }
 
   return (
@@ -73,32 +78,36 @@ export function ToolTimeline({ callId, initial }: ToolTimelineProps) {
               failed && "border-destructive/40",
             )}
           >
-            <div className="mt-0.5">
+            <div className="mt-0.5 shrink-0">
               {pending ? (
-                <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                <Loader2 className="text-muted-foreground size-4 animate-spin" />
               ) : failed ? (
-                <XCircle className="text-destructive h-4 w-4" />
+                <XCircle className="text-destructive size-4" />
               ) : (
-                <CheckCircle2 className="text-success h-4 w-4" />
+                <CheckCircle2 className="text-success size-4" />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-center gap-2">
                 <code className="text-foreground font-mono text-xs">{tool.name}</code>
+                <Badge
+                  variant={pending ? "secondary" : failed ? "destructive" : "success"}
+                  className="px-1.5 py-0 text-[10px]"
+                >
+                  {pending ? t("pending") : failed ? t("error") : t("success")}
+                </Badge>
+                <span className="flex-1" />
                 {tool.duration_ms != null ? (
-                  <span className="text-muted-foreground text-[10px]">{tool.duration_ms}ms</span>
+                  <span className="text-muted-foreground font-mono text-[10px]">
+                    {formatDuration(tool.duration_ms)}
+                  </span>
                 ) : null}
               </div>
               {failed ? (
-                // `break-all` is required, not `break-words`: Cal.com / SDK
-                // error payloads are long unbroken JSON strings with no
-                // whitespace, so word-boundary wrapping doesn't engage and
-                // the message pushes the parent wider than the card, causing
-                // page-level horizontal scroll.
                 <p className="text-destructive mt-1 text-xs break-all">{tool.error_message}</p>
               ) : tool.output_json ? (
                 <p className="text-muted-foreground mt-1 truncate font-mono text-xs">
-                  {JSON.stringify(tool.output_json).slice(0, 120)}
+                  {JSON.stringify(tool.output_json).slice(0, OUTPUT_SNIPPET_MAX)}
                 </p>
               ) : null}
             </div>
