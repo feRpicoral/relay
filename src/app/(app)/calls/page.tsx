@@ -52,7 +52,7 @@ export default async function CallsPage({
         description={t("description")}
         actions={
           <Button asChild variant="outline">
-            <Link href="/calls/live">
+            <Link href="/live">
               <PhoneCall className="h-4 w-4" />
               {t("liveButton")}
             </Link>

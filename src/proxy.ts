@@ -45,7 +45,7 @@ export async function proxy(request: NextRequest) {
     ) {
       const { response, user } = await updateSession(request);
       if (user) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/overview", request.url));
       }
       setLocaleCookieIfMissing(request, response, resolveLocaleFromRequest(request));
       return response;

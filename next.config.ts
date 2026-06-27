@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/dashboard", destination: "/overview", permanent: false },
+      { source: "/calls/live", destination: "/live", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

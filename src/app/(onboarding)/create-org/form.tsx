@@ -27,10 +27,10 @@ export function CreateOrgForm() {
   useEffect(() => {
     if (state && state.ok) {
       toast.success(t("toastCreated"));
-      // No router.refresh() here: push() alone runs the RSC for /dashboard;
+      // No router.refresh() here: push() alone runs the RSC for /overview;
       // refresh would re-render the current (create-org) page mid-transition
       // and keep the spinner active until that re-fetch finished.
-      router.push("/dashboard");
+      router.push("/overview");
     }
   }, [state, router, t]);
 

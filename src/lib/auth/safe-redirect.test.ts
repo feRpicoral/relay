@@ -4,10 +4,10 @@ import { safeNextPath } from "./safe-redirect";
 
 describe("safeNextPath — accepts", () => {
   it("a same-origin path", () => {
-    const dashboard = safeNextPath("/dashboard");
+    const dashboard = safeNextPath("/overview");
     const nested = safeNextPath("/agents/123/edit");
 
-    expect(dashboard).toBe("/dashboard");
+    expect(dashboard).toBe("/overview");
     expect(nested).toBe("/agents/123/edit");
   });
 

@@ -14,7 +14,7 @@ export default async function CreateOrgPage() {
   if (!user) redirect("/login");
 
   const existing = await getPrisma().membership.findFirst({ where: { userId: user.id } });
-  if (existing) redirect("/dashboard");
+  if (existing) redirect("/overview");
 
   const t = await getTranslations("onboarding.createOrg");
 
