@@ -6,28 +6,49 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 import { hangupAction } from "./actions";
 
-export function HangupButton({ callId }: { callId: string }) {
+interface HangupButtonProps {
+  callId: string;
+  onEnded: () => void;
+}
+
+export function HangupButton({ callId, onEnded }: HangupButtonProps) {
   const t = useTranslations("calls.liveDetail.hangup");
   const [pending, startTransition] = useTransition();
 
-  function onClick() {
-    startTransition(async () => {
-      const result = await hangupAction({ callId });
-      if (result.ok) {
-        toast.success(t("toastEnded"));
-      } else {
-        toast.error(result.error);
-      }
+  function handleConfirm() {
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        const result = await hangupAction({ callId });
+        if (result.ok) {
+          toast.success(t("toastEnded"), { description: t("toastRecording") });
+          onEnded();
+        } else {
+          toast.error(result.error);
+        }
+        resolve();
+      });
     });
   }
 
   return (
-    <Button variant="destructive" size="sm" onClick={onClick} disabled={pending}>
-      <PhoneOff className="h-4 w-4" />
-      {t("button")}
-    </Button>
+    <ConfirmDialog
+      trigger={
+        <Button variant="destructive" size="sm">
+          <PhoneOff className="h-4 w-4" />
+          {t("button")}
+        </Button>
+      }
+      title={t("confirmTitle")}
+      description={t("confirmDescription")}
+      confirmLabel={t("endCall")}
+      cancelLabel={t("keepMonitoring")}
+      variant="destructive"
+      onConfirm={handleConfirm}
+      pending={pending}
+    />
   );
 }
