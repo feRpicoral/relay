@@ -41,6 +41,18 @@ const CAMPAIGN_STATUS: Record<string, StatusVisual> = {
   CANCELED: { tone: "destructive" },
 };
 
+/**
+ * Cal.com booking statuses are lowercase strings on the v2 API. We normalize
+ * to lowercase before lookup so casing drift doesn't fall through to muted.
+ */
+const BOOKING_STATUS: Record<string, StatusVisual> = {
+  accepted: { tone: "success" },
+  confirmed: { tone: "success" },
+  pending: { tone: "warning" },
+  cancelled: { tone: "destructive" },
+  rejected: { tone: "destructive" },
+};
+
 const CAMPAIGN_LEAD_STATUS: Record<string, StatusVisual> = {
   PENDING: MUTED,
   CALLING: { tone: "primary", pulse: true },
@@ -52,6 +64,23 @@ const CAMPAIGN_LEAD_STATUS: Record<string, StatusVisual> = {
   EXCLUDED: MUTED,
 };
 
+export type BookingStatusKey = "confirmed" | "pending" | "cancelled" | "unknown";
+
+const BOOKING_STATUS_KEY: Record<string, BookingStatusKey> = {
+  accepted: "confirmed",
+  confirmed: "confirmed",
+  pending: "pending",
+  cancelled: "cancelled",
+  rejected: "cancelled",
+};
+
+/** Collapses Cal.com's status vocabulary to the three labels the UI shows. */
+export const bookingStatusKey = (status: string): BookingStatusKey =>
+  BOOKING_STATUS_KEY[status.toLowerCase()] ?? "unknown";
+
+/** Maps a Cal.com booking status (any casing) to its badge tone. */
+export const bookingStatusVisual = (status: string): StatusVisual =>
+  BOOKING_STATUS[status.toLowerCase()] ?? MUTED;
 export const callStatusVisual = (status: string): StatusVisual => CALL_STATUS[status] ?? MUTED;
 export const callOutcomeVisual = (outcome: string): StatusVisual => CALL_OUTCOME[outcome] ?? MUTED;
 export const sentimentVisual = (sentiment: string): StatusVisual => SENTIMENT[sentiment] ?? MUTED;

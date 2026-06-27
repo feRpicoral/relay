@@ -181,6 +181,11 @@ export default defineAgent({
           patientName: z.string().min(2).max(120),
           patientPhone: z.string().min(8).max(20),
           reason: z.string().max(MAX_FREEFORM_REASON_LEN).optional(),
+          eventTypeName: z
+            .string()
+            .max(120)
+            .optional()
+            .describe("Title of the chosen appointment type, for display in the calendar."),
         }),
         async execute(input) {
           return runInstrumentedTool({
