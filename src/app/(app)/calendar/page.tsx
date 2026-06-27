@@ -1,102 +1,175 @@
-import { CalendarCheck2, CalendarPlus } from "lucide-react";
+import { CalendarCheck2, CalendarDays, CalendarPlus, ExternalLink, Lock } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
+import { type BookingDay, BookingList, type BookingRow } from "@/components/calendar/booking-list";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Empty } from "@/components/ui/empty";
+import { StateCard } from "@/components/ui/state-card";
 import { requireSession } from "@/lib/auth/session";
+import { formatBookingTime, groupBookingsByDay } from "@/lib/calendar/format";
+import { DEFAULT_TIMEZONE } from "@/lib/constants";
+import { getPrisma } from "@/lib/db/client";
 import { getDb } from "@/lib/db/with-org";
+import { bookingStatusKey, bookingStatusVisual } from "@/lib/status-tone";
+import { formatPhone } from "@/lib/utils";
 import { BookAppointmentInputSchema, BookAppointmentOutputSchema } from "@/lib/voice/tool-schemas";
 
-const RECENT_BOOKINGS_LIMIT = 20;
+const CALCOM_APP_URL = "https://app.cal.com";
+const RECENT_BOOKINGS_LIMIT = 200;
+
+interface ParsedBooking {
+  id: string;
+  callId: string;
+  start: Date;
+  attendeeName: string;
+  eventTypeName: string | null;
+  phone: string | null;
+  status: string;
+}
 
 export default async function CalendarPage() {
   const session = await requireSession();
-  const db = getDb(session.orgId);
   const t = await getTranslations("calendar");
-  const tSettings = await getTranslations("settings.calendar");
+  const tStatus = await getTranslations("enums.bookingStatus");
+  const locale = await getLocale();
 
-  const [connection, recentBookings] = await Promise.all([
+  const db = getDb(session.orgId);
+  const [connection, org, bookingCalls] = await Promise.all([
     db.calcomConnection.findUnique({ where: { orgId: session.orgId } }),
+    getPrisma().organization.findUnique({
+      where: { id: session.orgId },
+      select: { timezone: true },
+    }),
     db.toolCall.findMany({
       where: { name: "book_appointment" },
       orderBy: { startedAt: "desc" },
       take: RECENT_BOOKINGS_LIMIT,
-      include: {
-        call: { select: { id: true, callerE164: true } },
-      },
+      include: { call: { select: { callerE164: true } } },
     }),
   ]);
 
-  return (
-    <>
-      <PageHeader
-        title={t("title")}
-        description={t("description")}
-        actions={
-          <Button asChild variant="outline">
-            <Link href="/settings/calendar">
-              <CalendarCheck2 className="h-4 w-4" />
-              {tSettings("connect.submit")}
-            </Link>
-          </Button>
-        }
-      />
-      <div className="p-8">
-        {!connection ? (
-          <Empty
-            icon={<CalendarPlus className="h-5 w-5" />}
-            title={tSettings("connect.title")}
-            description={tSettings("connect.apiKeyHint")}
-            action={
-              <Button asChild>
-                <Link href="/settings/calendar">{tSettings("connect.submit")}</Link>
-              </Button>
-            }
-          />
-        ) : recentBookings.length === 0 ? (
-          <Empty
-            icon={<CalendarCheck2 className="h-5 w-5" />}
+  const openCalcomLink = (
+    <a
+      href={CALCOM_APP_URL}
+      target="_blank"
+      rel="noreferrer"
+      className="text-primary inline-flex items-center gap-1.5 text-sm font-medium"
+    >
+      {t("openCalcom")}
+      <ExternalLink className="size-3.5" />
+    </a>
+  );
+
+  const isConnected = Boolean(connection?.apiKeyEncrypted);
+
+  if (!isConnected) {
+    return (
+      <>
+        <PageHeader title={t("title")} description={t("description")} actions={openCalcomLink} />
+        <div className="flex flex-1 items-center justify-center p-6">
+          {session.role === "ADMIN" ? (
+            <StateCard
+              icon={<CalendarDays />}
+              iconTone="primary"
+              title={t("connect.title")}
+              description={t("connect.description")}
+              actions={
+                <Button asChild>
+                  <Link href="/settings/calendar">
+                    <CalendarPlus className="size-4" />
+                    {t("connect.cta")}
+                  </Link>
+                </Button>
+              }
+            />
+          ) : (
+            <StateCard
+              icon={<CalendarDays />}
+              title={t("connect.title")}
+              description={t("connect.description")}
+              actions={
+                <span className="border-border bg-secondary text-muted-foreground inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs">
+                  <Lock className="size-3.5" />
+                  {t("connect.memberLocked")}
+                </span>
+              }
+            />
+          )}
+        </div>
+      </>
+    );
+  }
+
+  const timeZone = org?.timezone ?? connection?.timezone ?? DEFAULT_TIMEZONE;
+  const now = new Date();
+
+  const parsed: ParsedBooking[] = [];
+  for (const row of bookingCalls) {
+    const input = BookAppointmentInputSchema.safeParse(row.inputJson);
+    if (!input.success) continue;
+    const start = new Date(input.data.slotIso);
+    if (Number.isNaN(start.getTime()) || start.getTime() < now.getTime()) continue;
+    const output = BookAppointmentOutputSchema.safeParse(row.outputJson);
+    parsed.push({
+      id: row.id,
+      callId: row.callId,
+      start,
+      attendeeName: input.data.patientName,
+      eventTypeName: input.data.eventTypeName ?? null,
+      phone: input.data.patientPhone || row.call.callerE164 || null,
+      status: output.success ? output.data.status : "",
+    });
+  }
+
+  if (parsed.length === 0) {
+    return (
+      <>
+        <PageHeader title={t("title")} description={t("description")} actions={openCalcomLink} />
+        <div className="flex flex-1 items-center justify-center p-6">
+          <StateCard
+            icon={<CalendarCheck2 />}
             title={t("empty.title")}
             description={t("empty.description")}
           />
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("title")}</CardTitle>
-            </CardHeader>
-            <div className="divide-border divide-y">
-              {recentBookings.map((booking) => {
-                // Parse via Zod so a worker-side schema drift surfaces as
-                // "-" instead of crashing the calendar view.
-                const input = BookAppointmentInputSchema.safeParse(booking.inputJson);
-                const output = BookAppointmentOutputSchema.safeParse(booking.outputJson);
-                const patientName = input.success ? input.data.patientName : "—";
-                const slotIso = input.success ? input.data.slotIso : "";
-                const patientPhone = input.success ? input.data.patientPhone : "";
-                const status = output.success ? output.data.status : null;
-                const displayStatus = status ?? "-";
-                return (
-                  <Link
-                    key={booking.id}
-                    href={`/calls/${booking.callId}`}
-                    className="hover:bg-accent/40 flex items-center justify-between px-5 py-3 transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium">{patientName}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {slotIso}, {patientPhone}
-                      </p>
-                    </div>
-                    <p className="text-muted-foreground text-xs">{displayStatus}</p>
-                  </Link>
-                );
-              })}
-            </div>
-          </Card>
-        )}
+        </div>
+      </>
+    );
+  }
+
+  const groups = groupBookingsByDay(
+    parsed.map((booking) => ({ start: booking.start, item: booking })),
+    timeZone,
+    locale,
+    now,
+  );
+
+  const days: BookingDay[] = groups.map((group) => {
+    const relativePrefix =
+      group.relative === "today"
+        ? t("relative.today")
+        : group.relative === "tomorrow"
+          ? t("relative.tomorrow")
+          : null;
+    const header = relativePrefix ? `${relativePrefix} · ${group.label}` : group.label;
+    const rows: BookingRow[] = group.items.map((booking) => ({
+      id: booking.id,
+      callId: booking.callId,
+      time: formatBookingTime(booking.start, timeZone, locale),
+      attendeeName: booking.attendeeName,
+      secondary: booking.eventTypeName,
+      phone: booking.phone ? formatPhone(booking.phone) : null,
+      statusLabel: tStatus(bookingStatusKey(booking.status)),
+      statusTone: bookingStatusVisual(booking.status).tone,
+    }));
+    return { dayKey: group.dayKey, header, rows };
+  });
+
+  return (
+    <>
+      <PageHeader title={t("title")} description={t("description")} actions={openCalcomLink} />
+      <div className="p-4 md:p-6">
+        <BookingList days={days} viewCallLabel={t("viewCall")} />
       </div>
     </>
   );
