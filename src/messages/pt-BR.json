@@ -191,30 +191,56 @@
     "lightTheme": "Tema claro",
     "darkTheme": "Tema escuro"
   },
-  "dashboard": {
-    "greeting": "Olá, {name}",
-    "overview": "Visão geral da {orgName}",
+  "overview": {
+    "greeting": "Boa tarde, {name}",
+    "subtitle": "{orgName} · {date}",
+    "liveCalls": "Chamadas ao vivo",
     "newAgent": "Novo agente",
-    "stats": {
+    "kpi": {
       "callsToday": "Chamadas hoje",
-      "callsTodayHint": "Últimas 24 horas",
+      "noCallsToday": "Nenhuma chamada hoje ainda",
       "activeAgents": "Agentes ativos",
-      "activeAgentsHint": "Persona + voz + KB",
-      "connectedLines": "Linhas conectadas",
-      "connectedLinesHint": "Números Twilio / SIP"
+      "ofEnabled": "de {count} habilitados",
+      "connectedNumbers": "Números conectados",
+      "inboundOutbound": "{inbound} entrada · {outbound} saída",
+      "conversionToday": "Conversão hoje",
+      "awaitingFirstCall": "aguardando a primeira chamada"
     },
-    "onboarding": {
-      "firstStep": "Primeiros passos",
-      "nextStep": "Próximo passo",
-      "setupAgent": {
-        "title": "Configure seu primeiro agente",
-        "description": "Defina persona, voz, base de conhecimento e horários de atendimento.",
+    "live": {
+      "badge": "Ao vivo",
+      "title": "Em andamento agora",
+      "viewAll": "Ver todas",
+      "monitor": "Monitorar",
+      "empty": "Nenhuma chamada em andamento no momento."
+    },
+    "recent": {
+      "title": "Chamadas recentes",
+      "viewAll": "Todas as chamadas",
+      "empty": "Nenhuma chamada hoje ainda — elas aparecem aqui conforme chegam."
+    },
+    "outcomes": {
+      "title": "Resultados de hoje",
+      "converted": "convertidas",
+      "empty": "Nenhuma conversão ainda."
+    },
+    "volume": {
+      "title": "Volume de chamadas",
+      "window": "últimos {days} dias",
+      "empty": "Os gráficos aparecem quando você tiver chamadas."
+    },
+    "newOrg": {
+      "title": "Vamos colocar a Relay pra atender chamadas",
+      "subtitle": "Dois passos rápidos e seu agente começa a atender.",
+      "preview": "Prévia · seu dia vai começar aqui",
+      "agent": {
+        "title": "Crie seu primeiro agente",
+        "description": "Dê a ele uma persona, saudação e uma voz pra atender as chamadas.",
         "cta": "Criar agente"
       },
-      "connectNumber": {
+      "number": {
         "title": "Conecte um número de telefone",
-        "description": "Aponte um número Twilio (ou SIP trunk) pro seu agente atender.",
-        "cta": "Conectar número"
+        "description": "Vincule seu número Twilio e aponte pra um agente.",
+        "cta": "Conectar Twilio"
       }
     }
   },
