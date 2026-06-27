@@ -7,22 +7,37 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { DEFAULT_OPEN_HOURS, DEFAULT_TIMEZONE } from "@/lib/constants";
 import { getDb } from "@/lib/db/with-org";
-import type { Result } from "@/lib/types/result";
 
 const Schema = z.object({
   name: z.string().trim().min(2).max(120),
   language: z.enum(["PT_BR", "EN_US"]),
-  personaPrompt: z.string().max(4000).default(""),
+  personaPrompt: z.string().trim().min(1).max(4000),
   greeting: z.string().max(280).default(""),
 });
 
-export async function createAgentAction(
-  input: z.infer<typeof Schema>,
-): Promise<Result<{ agentId: string }>> {
-  const t = await getTranslations("agents.new.errors");
+export interface CreateAgentFieldErrors {
+  name?: string;
+  personaPrompt?: string;
+}
+
+export type CreateAgentResult =
+  | { ok: true; agentId: string }
+  | { ok: false; fieldErrors: CreateAgentFieldErrors };
+
+export async function createAgentAction(input: z.infer<typeof Schema>): Promise<CreateAgentResult> {
+  const t = await getTranslations("agents.new.fieldErrors");
   const session = await requireAdmin();
   const parsed = Schema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: t("invalidData") };
+  if (!parsed.success) {
+    const flattened = parsed.error.flatten().fieldErrors;
+    return {
+      ok: false,
+      fieldErrors: {
+        ...(flattened.name ? { name: t("nameRequired") } : {}),
+        ...(flattened.personaPrompt ? { personaPrompt: t("personaRequired") } : {}),
+      },
+    };
+  }
 
   const db = getDb(session.orgId);
 
