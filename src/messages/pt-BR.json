@@ -639,25 +639,70 @@
   },
   "analytics": {
     "title": "Analytics",
-    "description": "Volume, conversão, latência e custo, últimos {days} dias.",
+    "subtitle": "Desempenho das chamadas em todos os agentes.",
+    "units": {
+      "ms": "{value} ms",
+      "points": " pts",
+      "seconds": "s"
+    },
     "stats": {
       "totalCalls": "Total de chamadas",
-      "scheduledRate": "Taxa de agendamento",
-      "p95Latency": "Latência p95 (ponta a ponta)",
-      "totalCost": "Custo total"
+      "attendanceRate": "Taxa de atendimento",
+      "conversionRate": "Taxa de conversão",
+      "avgHandleTime": "Tempo médio",
+      "totalCost": "Custo total",
+      "p95Latency": "Latência p95",
+      "p95WithinBudget": "dentro do limite de {budget} ms",
+      "p95OverBudget": "acima do limite de {budget} ms"
     },
     "charts": {
       "volume": "Volume de chamadas",
+      "volumeSubtitle": "total vs. agendadas · {days} dias",
+      "volumeTotal": "Total",
+      "volumeScheduled": "Agendadas",
+      "latencyHistogram": "Latência ponta a ponta",
+      "latencySubtitle": "distribuição · ms",
+      "latencyOk": "OK",
+      "latencyWarn": "≥700",
+      "latencyBad": "≥900",
       "heatmap": "Chamadas por dia e hora",
-      "latencyHistogram": "Distribuição de latência"
+      "heatmapLess": "menos",
+      "heatmapMore": "mais",
+      "agents": "Agentes",
+      "agentsSubtitle": "comparação"
+    },
+    "agentTable": {
+      "agent": "Agente",
+      "calls": "Chamadas",
+      "attendance": "Atendimento",
+      "conversion": "Conversão",
+      "avgHandle": "Tempo médio",
+      "cost": "Custo",
+      "p95": "p95"
+    },
+    "widgets": {
+      "noCallsInRange": "Nenhuma chamada neste intervalo ainda",
+      "notEnoughSamples": "Amostras insuficientes",
+      "notEnoughVolume": "Volume de chamadas insuficiente para o gráfico",
+      "noAgentActivity": "Nenhuma atividade de agente neste intervalo"
+    },
+    "alerts": {
+      "p95OverBudget": {
+        "title": "A latência p95 está acima do limite neste intervalo.",
+        "body": "{p95} ms contra a meta de {budget} ms — verifique a distribuição de latência e o detalhamento por agente abaixo."
+      }
+    },
+    "error": {
+      "title": "Não foi possível carregar o Analytics",
+      "description": "Tente novamente para recarregar as métricas deste intervalo.",
+      "retry": "Tentar novamente"
     },
     "rangePicker": {
       "label": "Intervalo",
       "days7": "7 dias",
       "days30": "30 dias",
       "days90": "90 dias"
-    },
-    "empty": "Ainda sem dados suficientes."
+    }
   },
   "calendar": {
     "title": "Calendário",

@@ -639,25 +639,70 @@
   },
   "analytics": {
     "title": "Analytics",
-    "description": "Volume, conversion, latency, and cost — last {days} days.",
+    "subtitle": "Call performance across all agents.",
+    "units": {
+      "ms": "{value} ms",
+      "points": " pts",
+      "seconds": "s"
+    },
     "stats": {
       "totalCalls": "Total calls",
-      "scheduledRate": "Scheduled rate",
-      "p95Latency": "p95 latency (end-to-end)",
-      "totalCost": "Total cost"
+      "attendanceRate": "Attendance rate",
+      "conversionRate": "Conversion rate",
+      "avgHandleTime": "Avg handle time",
+      "totalCost": "Total cost",
+      "p95Latency": "p95 latency",
+      "p95WithinBudget": "within {budget} ms budget",
+      "p95OverBudget": "over {budget} ms budget"
     },
     "charts": {
       "volume": "Call volume",
+      "volumeSubtitle": "total vs. scheduled · {days} days",
+      "volumeTotal": "Total",
+      "volumeScheduled": "Scheduled",
+      "latencyHistogram": "End-to-end latency",
+      "latencySubtitle": "distribution · ms",
+      "latencyOk": "OK",
+      "latencyWarn": "≥700",
+      "latencyBad": "≥900",
       "heatmap": "Calls by day & hour",
-      "latencyHistogram": "Latency distribution"
+      "heatmapLess": "less",
+      "heatmapMore": "more",
+      "agents": "Agents",
+      "agentsSubtitle": "comparison"
+    },
+    "agentTable": {
+      "agent": "Agent",
+      "calls": "Calls",
+      "attendance": "Attendance",
+      "conversion": "Conversion",
+      "avgHandle": "Avg handle",
+      "cost": "Cost",
+      "p95": "p95"
+    },
+    "widgets": {
+      "noCallsInRange": "No calls in this range yet",
+      "notEnoughSamples": "Not enough samples",
+      "notEnoughVolume": "Not enough call volume to chart yet",
+      "noAgentActivity": "No agent activity in this range"
+    },
+    "alerts": {
+      "p95OverBudget": {
+        "title": "p95 latency is over budget in this range.",
+        "body": "{p95} ms vs a {budget} ms target — check the latency distribution and agent breakdown below."
+      }
+    },
+    "error": {
+      "title": "Couldn't load analytics",
+      "description": "Try again to reload the metrics for this range.",
+      "retry": "Try again"
     },
     "rangePicker": {
       "label": "Range",
       "days7": "7 days",
       "days30": "30 days",
       "days90": "90 days"
-    },
-    "empty": "Not enough data yet."
+    }
   },
   "calendar": {
     "title": "Calendar",
