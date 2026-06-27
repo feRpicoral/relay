@@ -3,13 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 type RangeKey = "7d" | "30d" | "90d";
 
@@ -20,30 +14,18 @@ export function RangePicker({ value }: { value: string }) {
   const router = useRouter();
   const params = useSearchParams();
 
-  function onChange(next: string) {
+  function onChange(next: RangeKey) {
     const usp = new URLSearchParams(params.toString());
     usp.set("range", next);
     router.push(`?${usp.toString()}`);
   }
 
-  const labelFor = (key: RangeKey) => {
-    if (key === "7d") return t("days7");
-    if (key === "30d") return t("days30");
-    return t("days90");
-  };
-
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-44">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {RANGES.map((r) => (
-          <SelectItem key={r} value={r}>
-            {labelFor(r)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <SegmentedControl
+      aria-label={t("label")}
+      value={(value as RangeKey) ?? "7d"}
+      onValueChange={onChange}
+      options={RANGES.map((r) => ({ value: r, label: r }))}
+    />
   );
 }
