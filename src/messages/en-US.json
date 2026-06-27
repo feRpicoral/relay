@@ -1009,12 +1009,23 @@
   },
   "calendar": {
     "title": "Calendar",
-    "description": "Upcoming appointments your agent booked.",
+    "description": "Appointments your agents booked through Cal.com.",
+    "openCalcom": "Open Cal.com",
+    "viewCall": "View call",
+    "relative": {
+      "today": "Today",
+      "tomorrow": "Tomorrow"
+    },
+    "connect": {
+      "title": "Connect Cal.com to see bookings",
+      "description": "Once connected, every appointment the agent books mid-call appears here, linked back to the call.",
+      "cta": "Connect Cal.com",
+      "memberLocked": "Only an admin can connect Cal.com."
+    },
     "empty": {
       "title": "No upcoming appointments",
-      "description": "Once the agent books a slot, it shows here."
-    },
-    "viewInCalcom": "Open in Cal.com"
+      "description": "When an agent books an appointment during a call, it'll show up here automatically."
+    }
   },
   "enums": {
     "callStatus": {
@@ -1090,6 +1101,12 @@
       "TTS_TTFA": "TTS TTFA",
       "TOOL_TOTAL": "Tool total",
       "END_TO_END": "End-to-end"
+    },
+    "bookingStatus": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
     }
   },
   "errors": {
