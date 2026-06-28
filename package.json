@@ -23,7 +23,7 @@
     "db:rls": "tsx scripts/apply-rls.ts",
     "worker:dev": "tsx watch worker/agent.ts dev",
     "worker:start": "tsx worker/agent.ts start",
-    "inngest:dev": "inngest-cli dev",
+    "inngest:dev": "yarn dlx inngest-cli@latest dev",
     "postinstall": "prisma generate",
     "prepare": "husky"
   },
