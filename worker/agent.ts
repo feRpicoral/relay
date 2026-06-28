@@ -8,6 +8,10 @@
  *
  * Run with `yarn worker:start` (production) or `yarn worker:dev` (watch).
  */
+// Load .env.local before anything reads process.env (worker:dev only; prod env
+// comes from the host). Keep this first.
+import "./load-env";
+
 import { installAnthropicToolIdShim } from "@/lib/voice/anthropic-tool-id-shim";
 
 // Install the shim BEFORE the LLM plugin module is loaded so the patched
