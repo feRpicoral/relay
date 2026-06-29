@@ -94,6 +94,9 @@
   --chart-3: oklch(0.78 0.16 75);
   --chart-4: oklch(0.62 0.22 25);
   --chart-5: oklch(0.5 0.18 220);
+
+  --sk1: oklch(0.955 0.003 286);
+  --sk2: oklch(0.985 0.002 286);
 }
 
 .dark {
@@ -136,6 +139,9 @@
   --chart-3: oklch(0.8 0.16 75);
   --chart-4: oklch(0.7 0.2 22);
   --chart-5: oklch(0.62 0.18 220);
+
+  --sk1: oklch(0.2 0.008 286);
+  --sk2: oklch(0.27 0.01 286);
 }
 
 @layer base {
@@ -197,6 +203,11 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  .shimmer {
+    background: linear-gradient(90deg, var(--sk1) 25%, var(--sk2) 37%, var(--sk1) 63%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
   }
 }
 
