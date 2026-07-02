@@ -42,6 +42,7 @@ export function CallsFilterBar() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const paramsString = params.toString();
 
   const [search, setSearch] = useState(params.get("q") ?? "");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -63,7 +64,7 @@ export function CallsFilterBar() {
   };
 
   function pushParams(mutate: (usp: URLSearchParams) => void) {
-    const usp = new URLSearchParams(params.toString());
+    const usp = new URLSearchParams(paramsString);
     mutate(usp);
     usp.delete("page");
     const query = usp.toString();
@@ -74,17 +75,20 @@ export function CallsFilterBar() {
   useEffect(() => {
     if (search === initialQ) return;
     const id = setTimeout(() => {
-      pushParams((usp) => {
-        if (search) usp.set("q", search);
-        else usp.delete("q");
-      });
+      const usp = new URLSearchParams(paramsString);
+      if (search) usp.set("q", search);
+      else usp.delete("q");
+      usp.delete("page");
+      const query = usp.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [initialQ, paramsString, pathname, router, search]);
 
   function setFilter(key: FilterKey, value: string) {
     pushParams((usp) => {
+      if (search) usp.set("q", search);
+      else usp.delete("q");
       if (value === ALL) usp.delete(key === "range" ? "range" : key);
       else usp.set(key === "range" ? "range" : key, value);
     });
