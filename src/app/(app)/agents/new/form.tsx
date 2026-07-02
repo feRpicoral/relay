@@ -1,11 +1,12 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,19 +18,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Result } from "@/lib/types/result";
+import { cn } from "@/lib/utils";
 
-import { createAgentAction } from "./actions";
+import { createAgentAction, type CreateAgentResult } from "./actions";
 
-type State = Result<{ agentId: string }> | null;
+type Language = "PT_BR" | "EN_US";
+type State = CreateAgentResult | null;
 
-export function NewAgentForm() {
+export function NewAgentForm({ defaultLanguage }: { defaultLanguage: Language }) {
   const t = useTranslations("agents.new.form");
   const router = useRouter();
-  const [language, setLanguage] = useState<"PT_BR" | "EN_US">("PT_BR");
-  const [name, setName] = useState(t("defaultName"));
+  const [language, setLanguage] = useState<Language>(defaultLanguage);
+  const [name, setName] = useState("");
   const [persona, setPersona] = useState("");
-  const [greeting, setGreeting] = useState(t("defaultGreeting"));
+  const [greeting, setGreeting] = useState("");
 
   const [state, runSubmit, pending] = useActionState<State>(
     async () => createAgentAction({ name, language, personaPrompt: persona, greeting }),
@@ -37,45 +39,76 @@ export function NewAgentForm() {
   );
 
   useEffect(() => {
-    if (!state) return;
-    if (state.ok) {
+    if (state?.ok) {
       toast.success(t("toastCreated"));
       router.push(`/agents/${state.agentId}`);
-    } else {
-      toast.error(state.error);
     }
   }, [state, router, t]);
 
+  const fieldErrors = state && !state.ok ? state.fieldErrors : undefined;
+
   return (
-    <form action={() => runSubmit()} className="space-y-5">
+    <form action={() => runSubmit()} className={cn("space-y-4", pending && "opacity-70")}>
+      {fieldErrors?.form ? (
+        <Banner tone="destructive" icon={<AlertTriangle />}>
+          {fieldErrors.form}
+        </Banner>
+      ) : null}
+
       <div className="space-y-2">
-        <Label htmlFor="name">{t("nameLabel")}</Label>
+        <Label htmlFor="name">
+          {t("nameLabel")} <span className="text-destructive">*</span>
+        </Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t("namePlaceholder")}
-          required
+          aria-invalid={fieldErrors?.name ? true : undefined}
+          className={cn(fieldErrors?.name && "border-destructive focus-visible:ring-destructive")}
           disabled={pending}
         />
-        <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
+        {fieldErrors?.name ? (
+          <p className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertTriangle className="size-3" />
+            {fieldErrors.name}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-xs">{t("nameHint")}</p>
+        )}
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="language">{t("languageLabel")}</Label>
         <Select
           value={language}
-          onValueChange={(v) => setLanguage(v as "PT_BR" | "EN_US")}
+          onValueChange={(v) => setLanguage(v as Language)}
           disabled={pending}
         >
-          <SelectTrigger id="language">
+          <SelectTrigger
+            id="language"
+            aria-invalid={fieldErrors?.language ? true : undefined}
+            className={cn(
+              fieldErrors?.language && "border-destructive focus-visible:ring-destructive",
+            )}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="PT_BR">Português (Brasil)</SelectItem>
-            <SelectItem value="EN_US">English (US)</SelectItem>
+            <SelectItem value="PT_BR">Português (Brasil) · PT-BR</SelectItem>
+            <SelectItem value="EN_US">English (US) · EN-US</SelectItem>
           </SelectContent>
         </Select>
+        {fieldErrors?.language ? (
+          <p className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertTriangle className="size-3" />
+            {fieldErrors.language}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-xs">{t("languageHint")}</p>
+        )}
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="greeting">{t("greetingLabel")}</Label>
         <Input
@@ -83,24 +116,69 @@ export function NewAgentForm() {
           value={greeting}
           onChange={(e) => setGreeting(e.target.value)}
           placeholder={t("greetingPlaceholder")}
+          aria-invalid={fieldErrors?.greeting ? true : undefined}
+          className={cn(
+            fieldErrors?.greeting && "border-destructive focus-visible:ring-destructive",
+          )}
           disabled={pending}
         />
-        <p className="text-muted-foreground text-xs">{t("greetingHint")}</p>
+        {fieldErrors?.greeting ? (
+          <p className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertTriangle className="size-3" />
+            {fieldErrors.greeting}
+          </p>
+        ) : null}
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="persona">{t("personaLabel")}</Label>
+        <Label htmlFor="persona">
+          {t("personaLabel")} <span className="text-destructive">*</span>
+        </Label>
         <Textarea
           id="persona"
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
           placeholder={t("personaPlaceholder")}
           rows={4}
+          aria-invalid={fieldErrors?.personaPrompt ? true : undefined}
+          className={cn(
+            fieldErrors?.personaPrompt && "border-destructive focus-visible:ring-destructive",
+          )}
           disabled={pending}
         />
+        {fieldErrors?.personaPrompt ? (
+          <p className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertTriangle className="size-3" />
+            {fieldErrors.personaPrompt}
+          </p>
+        ) : null}
       </div>
-      <Button type="submit" disabled={pending}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
-      </Button>
+
+      <div className="text-muted-foreground flex items-center gap-2 text-xs">
+        <Mic className="size-3.5 shrink-0" />
+        {t("pausedHint")}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-1">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => router.push("/agents")}
+          disabled={pending}
+        >
+          {t("cancel")}
+        </Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              {t("creating")}
+            </>
+          ) : (
+            t("submit")
+          )}
+        </Button>
+      </div>
     </form>
   );
 }

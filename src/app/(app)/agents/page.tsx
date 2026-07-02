@@ -1,12 +1,13 @@
-import { Bot, Plus } from "lucide-react";
+import { Bot, Lock } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
+import { AgentCard } from "@/components/agents/agent-card";
+import { NewAgentButton } from "@/components/agents/new-agent-button";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Empty } from "@/components/ui/empty";
+import { StateCard } from "@/components/ui/state-card";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 
@@ -14,7 +15,8 @@ export default async function AgentsPage() {
   const session = await requireSession();
   const db = getDb(session.orgId);
   const t = await getTranslations("agents.list");
-  const tLanguage = await getTranslations("enums.agentLanguageShort");
+
+  const isAdmin = session.role === "ADMIN";
 
   const agents = await db.agent.findMany({
     orderBy: { createdAt: "desc" },
@@ -30,67 +32,58 @@ export default async function AgentsPage() {
         title={t("title")}
         description={t("description")}
         actions={
-          <Button asChild>
-            <Link href="/agents/new">
-              <Plus className="h-4 w-4" />
-              {t("newAgent")}
-            </Link>
-          </Button>
+          <>
+            {!isAdmin ? (
+              <span className="border-border bg-secondary text-muted-foreground inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold">
+                <Lock className="size-3" />
+                {t("member.label")}
+              </span>
+            ) : null}
+            <NewAgentButton canCreate={isAdmin} />
+          </>
         }
       />
-      <div className="p-8">
-        {agents.length === 0 ? (
-          <Empty
-            icon={<Bot className="h-5 w-5" />}
+      {agents.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <StateCard
+            icon={<Bot />}
             title={t("empty.title")}
             description={t("empty.description")}
-            action={
-              <Button asChild>
-                <Link href="/agents/new">{t("empty.cta")}</Link>
-              </Button>
+            actions={
+              isAdmin ? (
+                <Button asChild>
+                  <Link href="/agents/new">{t("empty.cta")}</Link>
+                </Button>
+              ) : undefined
             }
           />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+        </div>
+      ) : (
+        <div className="space-y-4 p-6 md:p-8">
+          {!isAdmin ? (
+            <Banner icon={<Lock />} className="text-muted-foreground">
+              {t("member.banner")}
+            </Banner>
+          ) : null}
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {agents.map((a) => (
-              <Card
+              <AgentCard
                 key={a.id}
-                className="hover:border-primary/30 overflow-hidden transition-colors"
-              >
-                <Link href={`/agents/${a.id}`} className="block p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg">
-                        <Bot className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-semibold">{a.name}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {tLanguage(a.language)},{" "}
-                          {t("summary", {
-                            calls: a._count.calls,
-                            docs: a._count.knowledgeDocs,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant={a.enabled ? "success" : "secondary"} className="gap-1.5">
-                      {a.enabled ? t("active") : t("paused")}
-                    </Badge>
-                  </div>
-                  {a.phoneNumbers.length > 0 ? (
-                    <p className="text-muted-foreground mt-4 font-mono text-xs">
-                      {a.phoneNumbers.map((p) => p.e164).join(", ")}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground mt-4 text-xs">{t("noNumber")}</p>
-                  )}
-                </Link>
-              </Card>
+                agent={{
+                  id: a.id,
+                  name: a.name,
+                  language: a.language,
+                  voiceId: a.voiceId,
+                  enabled: a.enabled,
+                  callCount: a._count.calls,
+                  docCount: a._count.knowledgeDocs,
+                  phoneNumbers: a.phoneNumbers.map((p) => p.e164),
+                }}
+              />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 }
