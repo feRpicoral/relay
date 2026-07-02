@@ -196,16 +196,22 @@ function NumberItem({
   }
 
   function onDetach() {
-    if (!number.phoneNumberId) return;
+    if (!number.phoneNumberId) return Promise.resolve();
     const phoneNumberId = number.phoneNumberId;
-    startTransition(async () => {
-      const result = await detachNumberAction({ phoneNumberId });
-      if (result.ok) {
-        toast.success(t("detachedToast", { number: number.e164 }));
-        router.refresh();
-      } else {
-        toast.error(result.error);
-      }
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        try {
+          const result = await detachNumberAction({ phoneNumberId });
+          if (result.ok) {
+            toast.success(t("detachedToast", { number: number.e164 }));
+            router.refresh();
+          } else {
+            toast.error(result.error);
+          }
+        } finally {
+          resolve();
+        }
+      });
     });
   }
 
@@ -230,10 +236,20 @@ function NumberItem({
             <span className="text-muted-foreground max-w-44 truncate text-xs">
               {attachedAgentName}
             </span>
-            <Button variant="outline" size="sm" onClick={onDetach} disabled={pending}>
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {t("detach")}
-            </Button>
+            <ConfirmDialog
+              trigger={
+                <Button variant="outline" size="sm" disabled={pending}>
+                  {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {t("detach")}
+                </Button>
+              }
+              title={t("confirmDetachTitle")}
+              description={t("confirmDetachDescription", { number: formatPhone(number.e164) })}
+              confirmLabel={t("confirmDetach")}
+              cancelLabel={t("keepAttached")}
+              pending={pending}
+              onConfirm={onDetach}
+            />
           </>
         ) : (
           <>

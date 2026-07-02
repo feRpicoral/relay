@@ -376,6 +376,10 @@
         "selectAgent": "Select an agent first.",
         "attach": "Attach",
         "detach": "Detach",
+        "confirmDetachTitle": "Detach this number?",
+        "confirmDetachDescription": "{number} will stop routing calls to this agent.",
+        "confirmDetach": "Detach number",
+        "keepAttached": "Keep attached",
         "attachedToast": "{number} attached to the agent",
         "detachedToast": "{number} detached"
       }

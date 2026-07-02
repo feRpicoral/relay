@@ -376,6 +376,10 @@
         "selectAgent": "Selecione um agente primeiro.",
         "attach": "Conectar",
         "detach": "Desconectar",
+        "confirmDetachTitle": "Desconectar este número?",
+        "confirmDetachDescription": "{number} deixará de rotear chamadas para este agente.",
+        "confirmDetach": "Desconectar número",
+        "keepAttached": "Manter conectado",
         "attachedToast": "{number} conectado ao agente",
         "detachedToast": "{number} desconectado"
       }
