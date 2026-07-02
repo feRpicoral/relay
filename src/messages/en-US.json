@@ -192,30 +192,56 @@
     "lightTheme": "Light theme",
     "darkTheme": "Dark theme"
   },
-  "dashboard": {
-    "greeting": "Hello, {name}",
-    "overview": "Overview of {orgName}",
+  "overview": {
+    "greeting": "Good afternoon, {name}",
+    "subtitle": "{orgName} · {date}",
+    "liveCalls": "Live calls",
     "newAgent": "New agent",
-    "stats": {
+    "kpi": {
       "callsToday": "Calls today",
-      "callsTodayHint": "Last 24 hours",
+      "noCallsToday": "No calls yet today",
       "activeAgents": "Active agents",
-      "activeAgentsHint": "Persona + voice + KB",
-      "connectedLines": "Connected lines",
-      "connectedLinesHint": "Twilio / SIP numbers"
+      "ofEnabled": "of {count} enabled",
+      "connectedNumbers": "Connected numbers",
+      "inboundOutbound": "{inbound} inbound · {outbound} outbound",
+      "conversionToday": "Conversion today",
+      "awaitingFirstCall": "awaiting first call"
     },
-    "onboarding": {
-      "firstStep": "First steps",
-      "nextStep": "Next step",
-      "setupAgent": {
-        "title": "Set up your first agent",
-        "description": "Define persona, voice, knowledge base, and business hours.",
+    "live": {
+      "badge": "Live",
+      "title": "In progress now",
+      "viewAll": "View all",
+      "monitor": "Monitor",
+      "empty": "No calls in progress right now."
+    },
+    "recent": {
+      "title": "Recent calls",
+      "viewAll": "All calls",
+      "empty": "No calls yet today — they'll appear here as they come in."
+    },
+    "outcomes": {
+      "title": "Today's outcomes",
+      "converted": "converted",
+      "empty": "No conversions yet."
+    },
+    "volume": {
+      "title": "Call volume",
+      "window": "last {days} days",
+      "empty": "Charts appear once you have calls."
+    },
+    "newOrg": {
+      "title": "Let's get Relay answering calls",
+      "subtitle": "Two quick steps and your agent starts picking up.",
+      "preview": "Preview · your day will start here",
+      "agent": {
+        "title": "Create your first agent",
+        "description": "Give it a persona, greeting and a voice so it can handle calls.",
         "cta": "Create agent"
       },
-      "connectNumber": {
+      "number": {
         "title": "Connect a phone number",
-        "description": "Point a Twilio number (or SIP trunk) at your agent.",
-        "cta": "Connect number"
+        "description": "Link your Twilio number and point it at an agent.",
+        "cta": "Connect Twilio"
       }
     }
   },
