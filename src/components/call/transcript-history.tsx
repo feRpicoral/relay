@@ -1,7 +1,10 @@
 "use client";
 
+import { Bot, Play, User } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, formatTimestamp } from "@/lib/utils";
 
@@ -20,6 +23,8 @@ interface TranscriptHistoryProps {
 }
 
 export function TranscriptHistory({ rows, currentMs }: TranscriptHistoryProps) {
+  const t = useTranslations("calls.detail.transcript");
+  const tSentiment = useTranslations("enums.sentiment");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const activeId =
     currentMs == null
@@ -34,9 +39,13 @@ export function TranscriptHistory({ rows, currentMs }: TranscriptHistoryProps) {
     }
   }, [activeId]);
 
+  if (rows.length === 0) {
+    return <p className="text-muted-foreground p-4 text-sm">{t("empty")}</p>;
+  }
+
   return (
     <ScrollArea className="h-full">
-      <div ref={scrollRef} className="space-y-3 p-4">
+      <div ref={scrollRef} className="space-y-2.5 p-4">
         {rows.map((row) => {
           if (row.speaker === "SYSTEM") {
             return (
@@ -47,31 +56,50 @@ export function TranscriptHistory({ rows, currentMs }: TranscriptHistoryProps) {
           }
           const isAgent = row.speaker === "AGENT";
           const isActive = row.id === activeId;
+          const isNegative = row.sentiment === "NEGATIVE";
           return (
             <div
               key={row.id}
               data-turn-id={row.id}
-              className={cn(
-                "max-w-[88%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed transition-all",
-                isAgent
-                  ? "bg-primary/90 text-primary-foreground ml-auto rounded-tr-md"
-                  : "bg-secondary text-secondary-foreground mr-auto rounded-tl-md",
-                isActive && "ring-primary/40 ring-2",
-                row.sentiment === "NEGATIVE" && "border-destructive/30",
-              )}
+              className={cn("flex", isAgent ? "justify-start" : "justify-end")}
             >
-              <p
+              <div
                 className={cn(
-                  "mb-0.5 text-[10px] font-medium tracking-wider uppercase",
-                  isAgent ? "text-primary-foreground/60" : "text-muted-foreground",
+                  "max-w-[88%] rounded-2xl border px-3.5 py-2.5 text-sm leading-relaxed transition-all",
+                  isAgent
+                    ? "bg-secondary text-secondary-foreground border-transparent"
+                    : "bg-card text-card-foreground border-border",
+                  isNegative && "border-destructive/40 bg-destructive/5",
+                  isActive && "ring-primary/40 ring-2",
                 )}
               >
-                {isAgent ? "Agente" : "Cliente"}, {formatTimestamp(row.startMs)}
-                {row.sentiment && row.sentiment !== "NEUTRAL"
-                  ? `, ${row.sentiment.toLowerCase()}`
-                  : null}
-              </p>
-              <p>{row.text}</p>
+                <div className="mb-1 flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 text-[10px] font-semibold tracking-wide uppercase",
+                      isAgent ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    {isAgent ? <Bot className="size-3" /> : <User className="size-3" />}
+                    {isAgent ? t("agent") : t("caller")}
+                  </span>
+                  <span className="text-muted-foreground font-mono text-[10px]">
+                    {formatTimestamp(row.startMs)}
+                  </span>
+                  {isNegative ? (
+                    <Badge variant="destructive" className="px-1.5 py-0 text-[9px] uppercase">
+                      {tSentiment("NEGATIVE")}
+                    </Badge>
+                  ) : null}
+                  {isActive ? (
+                    <span className="text-primary inline-flex items-center gap-0.5 text-[10px] font-medium">
+                      <Play className="size-2.5" />
+                      {t("now")}
+                    </span>
+                  ) : null}
+                </div>
+                <p>{row.text}</p>
+              </div>
             </div>
           );
         })}

@@ -384,29 +384,105 @@
   "calls": {
     "list": {
       "title": "Calls",
-      "description": "History of every call your agents handled.",
+      "description": "Every call your agents have answered or placed. Search and filter to find a conversation.",
       "liveButton": "Live calls",
-      "previous": "Previous",
-      "next": "Next",
-      "paginationSummary": "Page {page} of {totalPages}, {total} calls",
+      "count": "{count, plural, one {# call} other {# calls}}",
+      "export": "Export",
+      "searchPlaceholder": "Search phone or name…",
+      "paginationSummary": "Showing {from}–{to} of {total}",
+      "previous": "Previous page",
+      "next": "Next page",
+      "columns": {
+        "status": "Status",
+        "caller": "Caller",
+        "agent": "Agent",
+        "started": "Started",
+        "duration": "Duration",
+        "sentiment": "Sentiment",
+        "outcome": "Outcome"
+      },
+      "filters": {
+        "status": "Status",
+        "outcome": "Outcome",
+        "sentiment": "Sentiment",
+        "direction": "Direction",
+        "date": "Date",
+        "all": "All",
+        "mobileTrigger": "Filters",
+        "clear": "Clear filters",
+        "remove": "Remove filter"
+      },
+      "dateRange": {
+        "1d": "Last 24h",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "all": "All time"
+      },
       "empty": {
         "title": "No calls yet",
-        "description": "When your agent answers a call, it shows up here in seconds."
+        "description": "Calls answered or placed by your agents will show up here. Connect a phone number to start receiving them.",
+        "cta": "Connect a number"
+      },
+      "noResults": {
+        "title": "No calls match your filters",
+        "description": "Try widening the date range or clearing a filter.",
+        "cta": "Clear filters"
+      },
+      "error": {
+        "title": "Couldn't load calls",
+        "description": "Something went wrong fetching this page. Your filters are preserved — try again.",
+        "retry": "Try again"
       }
     },
     "detail": {
       "agentFallback": "Agent",
+      "back": "Back to calls",
+      "viewAgent": "View agent",
+      "postCall": "post-call",
       "stat": {
         "duration": "Duration",
         "outcome": "Outcome",
-        "sentiment": "Sentiment"
+        "sentiment": "Sentiment",
+        "cost": "Est. cost"
       },
       "aiSummary": "AI summary",
-      "summaryUnavailable": "No summary available.",
-      "summaryProcessing": "Summary is processing, refresh in a few seconds.",
-      "toolsUsed": "Tools used",
-      "transcript": "Transcript",
-      "estimatedCost": "Estimated cost: {amount}"
+      "summaryProcessing": {
+        "title": "Summary is processing",
+        "description": "The post-call job is still running. Refresh in a few seconds to see the summary, topics and outcome.",
+        "refresh": "Refresh"
+      },
+      "summaryUnavailable": {
+        "title": "No summary available",
+        "description": "This call was processed but didn't produce a summary — it may have been too short."
+      },
+      "toolTimeline": {
+        "title": "Tool timeline",
+        "count": "{count, plural, one {# call} other {# calls}}",
+        "empty": "No tools were used on this call.",
+        "success": "success",
+        "error": "error",
+        "pending": "running"
+      },
+      "recording": {
+        "title": "Recording",
+        "meta": "mp3 · {duration}",
+        "play": "Play",
+        "pause": "Pause",
+        "none": "No recording available",
+        "noneDescription": "This call was not recorded.",
+        "autoplayBlocked": "Autoplay was blocked — press play to listen.",
+        "streaming": "Streaming · total length unknown until the call ends.",
+        "unknownDuration": "--:--"
+      },
+      "transcript": {
+        "title": "Transcript",
+        "synced": "synced · {time}",
+        "now": "now",
+        "agent": "Agent",
+        "caller": "Caller",
+        "empty": "No transcript for this call."
+      }
     },
     "live": {
       "title": "Live calls",

@@ -2,33 +2,15 @@
 
 import { useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { callStatusVisual } from "@/lib/status-tone";
 
 type CallStatus = "RINGING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "NO_ANSWER" | "VOICEMAIL";
 
-const variants: Record<
-  CallStatus,
-  "default" | "secondary" | "destructive" | "success" | "warning" | "outline"
-> = {
-  RINGING: "warning",
-  IN_PROGRESS: "default",
-  COMPLETED: "success",
-  FAILED: "destructive",
-  NO_ANSWER: "secondary",
-  VOICEMAIL: "secondary",
-};
-
-export function CallStatusBadge({ status }: { status: CallStatus }) {
+export function CallStatusBadge({ status, className }: { status: CallStatus; className?: string }) {
   const t = useTranslations("enums.callStatus");
+  const visual = callStatusVisual(status);
   return (
-    <Badge variant={variants[status]} className="gap-1.5">
-      {status === "IN_PROGRESS" || status === "RINGING" ? (
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
-        </span>
-      ) : null}
-      {t(status)}
-    </Badge>
+    <StatusBadge label={t(status)} tone={visual.tone} pulse={visual.pulse} className={className} />
   );
 }
