@@ -3,27 +3,25 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
+const ICON_SIZE = 17;
+
 /**
- * Which icon shows is driven purely by the `.dark` class in CSS, so there is
- * no hydration mismatch and the glyph is correct on first paint. The click
- * handler flips the next-themes value.
+ * Both icons are rendered; which one shows is driven by the `.dark` class in
+ * the stylesheet, so server and client markup match and the glyph is correct on
+ * first paint. `resolvedTheme` is only read in the click handler.
  */
-export function ThemeToggle({ label }: { label: string }) {
+export function ThemeToggle({ className, label }: { className?: string; label: string }) {
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
     <button
       type="button"
-      className="icon-toggle theme-btn"
+      className={className}
       aria-label={label}
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
     >
-      <span className="s">
-        <Sun size={17} strokeWidth={2} />
-      </span>
-      <span className="m">
-        <Moon size={17} strokeWidth={2} />
-      </span>
+      <Sun size={ICON_SIZE} strokeWidth={2} data-theme-icon="light" />
+      <Moon size={ICON_SIZE} strokeWidth={2} data-theme-icon="dark" />
     </button>
   );
 }

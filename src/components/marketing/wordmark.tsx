@@ -13,10 +13,18 @@ export function BarsGlyph({ size = 18 }: { size?: number }) {
   );
 }
 
-export function MarketingWordmark({ href = "#top" }: { href?: string }) {
+export function MarketingWordmark({
+  href = "#top",
+  className,
+  badgeClassName,
+}: {
+  href?: string;
+  className?: string;
+  badgeClassName?: string;
+}) {
   return (
-    <Link className="wordmark" href={href}>
-      <span className="wm-badge">
+    <Link className={className} href={href}>
+      <span className={badgeClassName}>
         <BarsGlyph />
       </span>
       Relay
