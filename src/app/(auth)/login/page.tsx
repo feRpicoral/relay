@@ -28,8 +28,6 @@ export default async function LoginPage({
   const next = safeNextPath(params.next) ?? undefined;
   const t = await getTranslations("login");
   const tErrors = await getTranslations("login.errors");
-  // Only surface error codes we recognize; never render attacker-controlled
-  // strings from the query param.
   const linkError =
     params.error && isKnownErrorCode(params.error) ? tErrors(params.error) : undefined;
 

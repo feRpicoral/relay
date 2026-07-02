@@ -2,6 +2,7 @@ import { Building2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getPrisma } from "@/lib/db/client";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -28,6 +29,11 @@ export default async function CreateOrgPage() {
       <h1 className="text-xl font-semibold tracking-tight">{t("title")}</h1>
       <p className="text-muted-foreground mt-1.5 mb-5 text-sm">{t("description")}</p>
       <CreateOrgForm />
+      <form action="/auth/signout" method="post" className="mt-3">
+        <Button type="submit" variant="ghost" className="w-full">
+          {t("signOut")}
+        </Button>
+      </form>
     </Card>
   );
 }

@@ -8,10 +8,10 @@
     "badge": "Voice AI receptionist",
     "hero": {
       "title": "The receptionist that answers every call.",
-      "description": "Relay is a bilingual voice agent that picks up 24/7, qualifies callers, and books appointments mid-call — while you watch every conversation live.",
+      "description": "Relay is a bilingual voice agent that picks up 24/7, qualifies callers, and books appointments mid-call while you watch every conversation live.",
       "ctaPrimary": "Get started",
       "ctaSecondary": "I already have an account",
-      "note": "pt-BR & en-US · books into Cal.com · no setup fee"
+      "note": "pt-BR & en-US. Books into Cal.com. No setup fee"
     },
     "features": {
       "alwaysOn": {
@@ -28,7 +28,7 @@
       },
       "analytics": {
         "title": "Analytics that matter",
-        "body": "Conversion, attendance, cost per call and p95 latency — not vanity metrics."
+        "body": "Conversion, attendance, cost per call and p95 latency, not vanity metrics."
       }
     },
     "liveCall": {
@@ -38,21 +38,21 @@
       "agent": "Agent",
       "caller": "Caller",
       "turns": {
-        "greeting": "Clínica Lumen, good afternoon — how can I help?",
+        "greeting": "Clínica Lumen, good afternoon. How can I help?",
         "request": "I'd like to book with Dr. Martins this week.",
         "offer": "I have Tuesday at 2:30. Shall I book it?"
       },
       "metrics": {
         "e2e": "e2e 812ms",
         "tts": "tts 121ms",
-        "tool": "book_appointment ✓"
+        "tool": "book_appointment ok"
       }
     },
     "quote": {
       "text": "It answers every call, even at 3 a.m., and books straight into our calendar. Our front desk finally gets to breathe."
     },
     "footer": {
-      "copyright": "© {year} Relay · Privacy · Terms"
+      "copyright": "© {year} Relay. Privacy. Terms"
     }
   },
   "auth": {
@@ -60,13 +60,13 @@
       "testimonialQuote": "It answers every call, even at 3 a.m., and books straight into our calendar.",
       "testimonialName": "Dr. Renata Martins",
       "testimonialOrg": "Clínica Lumen",
-      "tagline": "Bilingual voice AI · pt-BR & en-US"
+      "tagline": "Bilingual voice AI. pt-BR & en-US"
     }
   },
   "login": {
     "metadataTitle": "Sign in",
     "title": "Sign in to Relay",
-    "description": "We'll email you a magic link — no password needed.",
+    "description": "We'll email you a magic link. No password needed.",
     "noAccountPrompt": "No account?",
     "createAccount": "Sign up",
     "errors": {
@@ -116,6 +116,7 @@
     "createOrg": {
       "title": "Create your organization",
       "description": "This is your workspace. You'll be its first admin.",
+      "signOut": "Sign out",
       "form": {
         "nameLabel": "Organization name",
         "namePlaceholder": "Clínica Lumen",

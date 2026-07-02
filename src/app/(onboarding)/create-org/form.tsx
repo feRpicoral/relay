@@ -28,8 +28,6 @@ export function CreateOrgForm() {
   useEffect(() => {
     if (state?.ok) {
       toast.success(t("toastCreated"));
-      // push() alone runs the RSC for /overview; refresh would re-render this
-      // page mid-transition and keep the spinner active until the re-fetch ends.
       router.push("/overview");
     }
   }, [state, router, t]);

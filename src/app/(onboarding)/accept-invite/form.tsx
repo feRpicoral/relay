@@ -34,8 +34,6 @@ export function AcceptInviteForm({ token }: { token: string }) {
     <div className="mt-5 space-y-3">
       <form
         action={() => {
-          // useActionState's bound action runs as part of a transition without
-          // FormData; the <form action> wrapper lets React thread pending state.
           runAccept();
         }}
       >

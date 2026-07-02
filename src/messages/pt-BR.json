@@ -8,10 +8,10 @@
     "badge": "Recepcionista de voz com IA",
     "hero": {
       "title": "A recepcionista que atende todas as ligações.",
-      "description": "A Relay é um agente de voz bilíngue que atende 24/7, qualifica quem liga e agenda consultas durante a chamada — enquanto você acompanha cada conversa ao vivo.",
+      "description": "A Relay é um agente de voz bilíngue que atende 24/7, qualifica quem liga e agenda consultas durante a chamada enquanto você acompanha cada conversa ao vivo.",
       "ctaPrimary": "Começar",
       "ctaSecondary": "Já tenho conta",
-      "note": "pt-BR & en-US · agenda no Cal.com · sem taxa de setup"
+      "note": "pt-BR & en-US. Agenda no Cal.com. Sem taxa de setup"
     },
     "features": {
       "alwaysOn": {
@@ -28,7 +28,7 @@
       },
       "analytics": {
         "title": "Analytics que importam",
-        "body": "Conversão, comparecimento, custo por chamada e latência p95 — nada de métrica de vaidade."
+        "body": "Conversão, comparecimento, custo por chamada e latência p95, nada de métrica de vaidade."
       }
     },
     "liveCall": {
@@ -38,21 +38,21 @@
       "agent": "Agente",
       "caller": "Cliente",
       "turns": {
-        "greeting": "Clínica Lumen, boa tarde — como posso ajudar?",
+        "greeting": "Clínica Lumen, boa tarde. Como posso ajudar?",
         "request": "Queria marcar com a Dra. Martins esta semana.",
         "offer": "Tenho terça às 14:30. Posso reservar?"
       },
       "metrics": {
         "e2e": "e2e 812ms",
         "tts": "tts 121ms",
-        "tool": "book_appointment ✓"
+        "tool": "book_appointment ok"
       }
     },
     "quote": {
       "text": "Atende todas as ligações, mesmo às 3h da manhã, e agenda direto no nosso calendário. Nossa recepção finalmente respira."
     },
     "footer": {
-      "copyright": "© {year} Relay · Privacidade · Termos"
+      "copyright": "© {year} Relay. Privacidade. Termos"
     }
   },
   "auth": {
@@ -60,13 +60,13 @@
       "testimonialQuote": "Atende todas as ligações, mesmo às 3h da manhã, e agenda direto no nosso calendário.",
       "testimonialName": "Dra. Renata Martins",
       "testimonialOrg": "Clínica Lumen",
-      "tagline": "Voice AI bilíngue · pt-BR & en-US"
+      "tagline": "Voice AI bilíngue. pt-BR & en-US"
     }
   },
   "login": {
     "metadataTitle": "Entrar",
     "title": "Entrar na Relay",
-    "description": "Vamos te enviar um magic link por email — sem senha.",
+    "description": "Vamos te enviar um magic link por email. Sem senha.",
     "noAccountPrompt": "Não tem conta?",
     "createAccount": "Criar conta",
     "errors": {
@@ -116,6 +116,7 @@
     "createOrg": {
       "title": "Crie sua organização",
       "description": "Este é seu workspace. Você será o primeiro admin.",
+      "signOut": "Sair",
       "form": {
         "nameLabel": "Nome da organização",
         "namePlaceholder": "Clínica Lumen",
