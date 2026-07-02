@@ -1,58 +1,121 @@
 {
   "landing": {
+    "meta": {
+      "title": "Relay — A recepção que nunca perde uma ligação",
+      "description": "IA de voz bilíngue que atende 24/7, agenda consultas durante a ligação e deixa você acompanhar cada conversa ao vivo."
+    },
     "nav": {
+      "live": "Monitoramento ao vivo",
       "features": "Recursos",
+      "how": "Como funciona",
+      "customers": "Clientes",
+      "toggleTheme": "Alternar tema",
       "signIn": "Entrar",
       "getStarted": "Começar"
     },
-    "badge": "Recepcionista de voz com IA",
     "hero": {
-      "title": "A recepcionista que atende todas as ligações.",
-      "description": "A Relay é um agente de voz bilíngue que atende 24/7, qualifica quem liga e agenda consultas durante a chamada enquanto você acompanha cada conversa ao vivo.",
-      "ctaPrimary": "Começar",
-      "ctaSecondary": "Já tenho conta",
-      "note": "pt-BR & en-US. Agenda no Cal.com. Sem taxa de setup"
+      "eyebrow": "Recepcionista de voz com IA · pt-BR e en-US",
+      "title": "A recepção que nunca perde uma ligação.",
+      "lead": "A Relay é um agente de voz bilíngue que atende 24/7, qualifica os pacientes e agenda consultas durante a ligação — enquanto você acompanha cada conversa ao vivo.",
+      "ctaPrimary": "Começar agora",
+      "ctaSecondary": "Ver uma chamada ao vivo",
+      "note1": "Agenda no Cal.com",
+      "note2": "Conecta seu número Twilio",
+      "note3": "Sem taxa de setup"
+    },
+    "logos": {
+      "trusted": "Usado por clínicas e consultórios em todo o Brasil"
+    },
+    "live": {
+      "eyebrow": "A experiência ao vivo",
+      "title": "Acompanhe cada ligação em tempo real.",
+      "lead": "Nada de caixa-preta. Transcrição ao vivo, as ferramentas que o agente está usando e a latência por etapa — tudo transmitido durante a ligação. Escute ou assuma com um toque.",
+      "point1": "<b>Transcrição em streaming</b> com sentimento, falas parciais e identificação de quem fala.",
+      "point2": "<b>Latência em seis etapas</b> — STT, LLM, TTS, ferramentas — sinaliza o que passa do limite.",
+      "point3": "<b>Escute ou assuma</b> na hora e devolva a ligação depois."
     },
     "features": {
+      "eyebrow": "Tudo o que a recepção faz",
+      "title": "Uma recepção completa, em todas as linhas.",
       "alwaysOn": {
         "title": "Atende 24/7",
-        "body": "As ligações são atendidas na hora, de dia ou de noite, em português ou inglês."
+        "body": "Ligações são atendidas na hora, de dia ou de noite, em português ou inglês."
       },
-      "scheduling": {
-        "title": "Agenda durante a chamada",
-        "body": "O agente consulta sua agenda e confirma a consulta antes de desligar."
+      "books": {
+        "title": "Agenda na ligação",
+        "body": "O agente consulta a agenda e confirma a consulta antes de desligar."
       },
       "transcripts": {
         "title": "Transcrição ao vivo",
-        "body": "Acompanhe a transcrição, as chamadas de ferramentas e a latência por etapa enquanto a ligação rola."
+        "body": "Veja a transcrição, as ferramentas e a latência transmitidas durante a ligação."
       },
       "analytics": {
-        "title": "Analytics que importam",
-        "body": "Conversão, comparecimento, custo por chamada e latência p95, nada de métrica de vaidade."
+        "title": "Métricas que importam",
+        "body": "Conversão, atendimento, custo por ligação e latência p95 — sem métricas de vaidade."
       }
     },
-    "liveCall": {
-      "phone": "+55 11 98472-1130",
-      "elapsed": "00:41",
-      "live": "Ao vivo",
-      "agent": "Agente",
-      "caller": "Cliente",
-      "turns": {
-        "greeting": "Clínica Lumen, boa tarde. Como posso ajudar?",
-        "request": "Queria marcar com a Dra. Martins esta semana.",
-        "offer": "Tenho terça às 14:30. Posso reservar?"
+    "summary": {
+      "eyebrow": "Revise e melhore",
+      "title": "Cada ligação, resumida e pesquisável.",
+      "lead": "Após desligar, a Relay gera resumo, resultado e sentimento, marca os tópicos e sincroniza a transcrição com a gravação — para você ir direto ao momento que importa."
+    },
+    "metrics": {
+      "eyebrow": "Conheça seus números",
+      "title": "As métricas que uma clínica realmente usa.",
+      "lead": "Volume de ligações, atendimento e conversão, tempo médio, custo por ligação e latência p95 — com mapa de calor por dia e hora e comparação entre agentes."
+    },
+    "gallery": {
+      "eyebrow": "Um só lugar",
+      "title": "Do primeiro toque à consulta agendada.",
+      "dashboard": "Painel",
+      "calls": "Chamadas",
+      "campaigns": "Campanhas",
+      "agents": "Agentes"
+    },
+    "how": {
+      "eyebrow": "No ar em uma tarde",
+      "title": "Quatro passos até a primeira ligação atendida.",
+      "connect": {
+        "title": "Conecte um número",
+        "body": "Aponte seu número Twilio para a Relay em poucos cliques."
       },
-      "metrics": {
-        "e2e": "e2e 812ms",
-        "tts": "tts 121ms",
-        "tool": "book_appointment ok"
+      "configure": {
+        "title": "Configure o agente",
+        "body": "Defina persona, saudação e voz, e adicione seus documentos."
+      },
+      "answer": {
+        "title": "Ele atende e agenda",
+        "body": "O agente qualifica e agenda direto na sua agenda."
+      },
+      "watch": {
+        "title": "Você acompanha ao vivo",
+        "body": "Monitore em tempo real, revise os resumos e leia as métricas."
       }
     },
-    "quote": {
-      "text": "Atende todas as ligações, mesmo às 3h da manhã, e agenda direto no nosso calendário. Nossa recepção finalmente respira."
+    "stats": {
+      "latency": "meta de latência p95 ponta a ponta",
+      "answered": "ligações atendidas, dia e noite",
+      "transcribed": "das ligações transcritas ao vivo",
+      "languages": "idiomas — pt-BR e en-US"
+    },
+    "testimonial": {
+      "quote": "“Atende todas as ligações, até às 3 da manhã, e agenda direto na nossa agenda. A recepção finalmente pode respirar.”",
+      "name": "Dra. Renata Martins",
+      "org": "Clínica Lumen"
+    },
+    "cta": {
+      "title": "Comece a atender todas as ligações.",
+      "lead": "Configure sua recepção bilíngue em uma tarde — e veja a primeira ligação chegar ao vivo.",
+      "primary": "Começar agora",
+      "secondary": "Entrar"
     },
     "footer": {
-      "copyright": "© {year} Relay. Privacidade. Termos"
+      "tagline": "A recepção de voz bilíngue para clínicas e consultórios — atende, agenda e transcreve, ao vivo.",
+      "product": "Produto",
+      "screens": "Telas",
+      "privacy": "Privacidade",
+      "terms": "Termos",
+      "copyright": "© {year} Relay"
     }
   },
   "auth": {

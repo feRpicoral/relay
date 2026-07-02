@@ -14,6 +14,9 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/auth",
   "/accept-invite",
+  // Static screen mockups embedded by the landing page. Public so signed-out
+  // visitors aren't bounced to /login when the iframes load.
+  "/marketing-screens",
   // Marketing tree, locale-prefixed. Listed explicitly so the auth check
   // below short-circuits and we don't redirect signed-out visitors to /login.
   "/en",

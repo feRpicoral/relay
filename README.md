@@ -105,6 +105,7 @@ Relay reads env vars via Next.js (`.env.local` for development, the platform's s
 | Variable                                | Production                                                                  | Local (`.env.local`)            | Sensitive |
 | --------------------------------------- | --------------------------------------------------------------------------- | ------------------------------- | --------- |
 | `NEXT_PUBLIC_APP_URL`                   | the public origin of your deployment                                        | `http://localhost:3000`         | no        |
+| `NEXT_PUBLIC_APP_DOMAIN`                | host shown in the landing page screenshot chrome                            | `app.relay.so` or unset         | no        |
 | `NEXT_PUBLIC_SUPABASE_URL`              | `https://<project>.supabase.co`                                             | same                            | no        |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`         | publishable key, `sb_publishable_xxx`                                       | same                            | no        |
 | `SUPABASE_SERVICE_ROLE_KEY`             | secret key, `sb_secret_xxx`                                                 | same                            | yes       |
