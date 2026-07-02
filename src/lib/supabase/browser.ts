@@ -6,7 +6,6 @@ let cached: ReturnType<typeof createBrowserClient> | null = null;
 
 export function getBrowserSupabase() {
   if (cached) return cached;
-  // NEXT_PUBLIC_* vars are inlined at build time.
   const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
