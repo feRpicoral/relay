@@ -6,9 +6,10 @@ import { z } from "zod";
 
 import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth/session";
-import { E164, parseLeads } from "@/lib/campaigns/parse-leads";
+import { parseLeads } from "@/lib/campaigns/parse-leads";
 import { getDb } from "@/lib/db/with-org";
 import type { Result } from "@/lib/types/result";
+import { E164_REGEX } from "@/lib/validation/phone";
 
 const MAX_CSV_BYTES = 2 * 1024 * 1024; // 2 MiB
 const MAX_LEADS_PER_UPLOAD = 10_000;
@@ -16,7 +17,7 @@ const MAX_LEADS_PER_UPLOAD = 10_000;
 const Schema = z.object({
   name: z.string().trim().min(2).max(120),
   agentId: z.string().uuid(),
-  fromPhoneNumberE164: z.string().regex(E164, "INVALID_PHONE"),
+  fromPhoneNumberE164: z.string().regex(E164_REGEX, "INVALID_PHONE"),
   scriptPrompt: z.string().max(2000).default(""),
   csv: z.string().min(1).max(MAX_CSV_BYTES),
   maxAttempts: z.number().int().min(1).max(10).default(3),

@@ -30,6 +30,15 @@ describe("parseLeads", () => {
     expect(result.valid).toEqual([{ phone: "+5521996553082", name: "Rafael Costa" }]);
   });
 
+  it("rejects phone numbers whose country code starts with zero", () => {
+    const csv = ["phone,name", "+0511987654321,Bad Country Code"].join("\n");
+
+    const result = parseLeads(csv);
+
+    expect(result.valid).toEqual([]);
+    expect(result.invalid).toEqual([{ row: 2, phone: "+0511987654321", error: "INVALID_E164" }]);
+  });
+
   it("treats a name column as optional", () => {
     const csv = ["phone", "+5511984721130", "+5521996553082"].join("\n");
 

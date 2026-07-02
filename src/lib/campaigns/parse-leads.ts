@@ -1,6 +1,5 @@
 import { parseCsvRows } from "@/lib/csv";
-
-export const E164 = /^\+\d{6,18}$/;
+import { isE164 } from "@/lib/validation/phone";
 
 export interface ParsedLead {
   phone: string;
@@ -23,13 +22,6 @@ export interface ParsedLeads {
   missingHeader: boolean;
 }
 
-/**
- * Pulls `phone` (required) and optional `name` out of an RFC 4180-ish CSV,
- * partitioning rows into valid leads and per-row validation failures so the
- * UI can render a preview. Quoted fields, CRLF, BOM, and doubled quotes are
- * handled by `parseCsvRows`. Unlike a silent-skip parse, invalid rows are
- * surfaced rather than dropped.
- */
 export function parseLeads(csv: string): ParsedLeads {
   const rows = parseCsvRows(csv).filter((r) => r.some((c) => c.trim().length > 0));
   if (rows.length === 0) return { valid: [], invalid: [], missingHeader: true };
@@ -54,7 +46,7 @@ export function parseLeads(csv: string): ParsedLeads {
       invalid.push({ row: rowNumber, phone, error: "MISSING_PHONE" });
       return;
     }
-    if (!E164.test(phone)) {
+    if (!isE164(phone)) {
       invalid.push({ row: rowNumber, phone, error: "INVALID_E164" });
       return;
     }
