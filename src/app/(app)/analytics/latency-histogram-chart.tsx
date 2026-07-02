@@ -11,6 +11,10 @@ import {
   YAxis,
 } from "recharts";
 
+import { LEG_BUDGET_MS } from "@/lib/constants";
+
+const WARNING_THRESHOLD_MS = 700;
+
 interface Bucket {
   label: string;
   lo: number;
@@ -50,9 +54,9 @@ export function LatencyHistogramChart({ data }: { data: Bucket[] }) {
               <Cell
                 key={d.label}
                 fill={
-                  d.lo >= 1000
+                  d.lo >= LEG_BUDGET_MS.END_TO_END
                     ? "var(--color-destructive)"
-                    : d.lo >= 800
+                    : d.lo >= WARNING_THRESHOLD_MS
                       ? "var(--color-warning)"
                       : "var(--color-primary)"
                 }

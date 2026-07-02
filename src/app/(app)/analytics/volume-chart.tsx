@@ -22,7 +22,7 @@ interface VolumeData {
 export function VolumeChart({ data }: { data: VolumeData[] }) {
   const t = useTranslations("analytics");
   if (data.length === 0) {
-    return <Empty title={t("empty")} description={t("empty")} />;
+    return <Empty title={t("widgets.noCallsInRange")} />;
   }
   return (
     <div className="h-64">
@@ -65,7 +65,7 @@ export function VolumeChart({ data }: { data: VolumeData[] }) {
           <Area
             type="monotone"
             dataKey="total"
-            name={t("stats.totalCalls")}
+            name={t("charts.volumeTotal")}
             stroke="var(--color-primary)"
             strokeWidth={2}
             fill="url(#vTotal)"
@@ -73,7 +73,7 @@ export function VolumeChart({ data }: { data: VolumeData[] }) {
           <Area
             type="monotone"
             dataKey="scheduled"
-            name={t("stats.scheduledRate")}
+            name={t("charts.volumeScheduled")}
             stroke="var(--color-success)"
             strokeWidth={2}
             fill="url(#vSched)"

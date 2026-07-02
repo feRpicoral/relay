@@ -21,15 +21,14 @@ export async function LatencyHistogram({
   });
 
   if (metrics.length === 0) {
-    return <Empty title={t("empty")} description={t("empty")} />;
+    return <Empty title={t("widgets.notEnoughSamples")} />;
   }
 
-  const buckets = [0, 200, 400, 600, 800, 1000, 1200, 1500, 2000, 3000];
-  const counts = buckets.map((_, i) => {
-    const lo = buckets[i] ?? 0;
-    const hi = buckets[i + 1] ?? Infinity;
+  const edges = [0, 150, 300, 500, 700, 900, 1100];
+  const counts = edges.map((lo, i) => {
+    const hi = edges[i + 1] ?? Infinity;
     return {
-      label: `${lo}-${hi === Infinity ? "+" : hi}ms`,
+      label: hi === Infinity ? `>${lo}` : `${lo}–${hi}`,
       lo,
       count: metrics.filter((m) => m.valueMs >= lo && m.valueMs < hi).length,
     };
