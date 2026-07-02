@@ -12,6 +12,7 @@ const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const HOUR_LABEL_STEP = 3;
 const REFERENCE_SUNDAY = Date.UTC(2024, 0, 7);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const WEEKDAY_LABEL_TIME_ZONE = "UTC";
 
 export function Heatmap({ cells, timezone }: { cells: Cell[]; timezone: string }) {
   const t = useTranslations("analytics");
@@ -23,7 +24,10 @@ export function Heatmap({ cells, timezone }: { cells: Cell[]; timezone: string }
     cells.find((c) => c.weekday === weekday && c.hour === hour) ?? { weekday, hour, count: 0 };
 
   const weekdayLabel = (weekday: number) =>
-    format.dateTime(new Date(REFERENCE_SUNDAY + weekday * MS_PER_DAY), { weekday: "short" });
+    format.dateTime(new Date(REFERENCE_SUNDAY + weekday * MS_PER_DAY), {
+      weekday: "short",
+      timeZone: WEEKDAY_LABEL_TIME_ZONE,
+    });
 
   return (
     <div className="space-y-3">
