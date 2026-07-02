@@ -30,12 +30,10 @@ interface CallRow {
 
 const GRID_COLS = "md:grid-cols-[130px_minmax(0,1.6fr)_minmax(0,1fr)_130px_120px_auto]";
 
-/** Surfaced in the channel-error diagnostic line, matching the design copy. */
 const CHANNEL_LABEL = "livekit_room";
 
 export function LiveCallsList({ orgId, initial }: { orgId: string; initial: CallRow[] }) {
   const [channelError, setChannelError] = useState(false);
-  // Remounting the subscriber re-runs the realtime effect — the retry path.
   const [attempt, setAttempt] = useState(0);
 
   return (
@@ -81,6 +79,7 @@ function LiveCallsListInner({
   );
   const inProgressCount = active.filter((c) => c.status === "IN_PROGRESS").length;
   const ringingCount = active.filter((c) => c.status === "RINGING").length;
+  const now = useNow();
 
   return (
     <div className="space-y-4">
@@ -150,7 +149,7 @@ function LiveCallsListInner({
           </div>
           <ul className="divide-border divide-y">
             {active.map((c) => (
-              <LiveRow key={c.id} row={c} />
+              <LiveRow key={c.id} row={c} now={now} />
             ))}
           </ul>
         </Card>
@@ -163,14 +162,13 @@ function countChunk(chunks: ReactNode) {
   return <b className="font-mono font-semibold">{chunks}</b>;
 }
 
-function LiveRow({ row }: { row: CallRow }) {
+function LiveRow({ row, now }: { row: CallRow; now: number }) {
   const t = useTranslations("calls.live");
   const tStatus = useTranslations("enums.callStatus");
   const tDirection = useTranslations("enums.callDirection");
   const visual = callStatusVisual(row.status);
   const isRinging = row.status === "RINGING";
   const phone = formatPhone(row.direction === "INBOUND" ? row.caller_e164 : row.callee_e164);
-  const now = useNow();
   const elapsedMs = now - new Date(row.started_at).getTime();
 
   return (
@@ -237,7 +235,6 @@ function formatClock(ms: number): string {
 
 const CLOCK_TICK_MS = 1000;
 
-/** Ticking wall clock so live durations stay current without per-row timers. */
 function useNow(): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
