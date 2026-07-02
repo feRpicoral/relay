@@ -674,7 +674,7 @@
     },
     "segmentBoundary": {
       "title": "Couldn't load this section",
-      "description": "Your session is fine — give it another try.",
+      "description": "Your session is fine. Give it another try.",
       "retry": "Try again",
       "errorId": "id: {digest}"
     },

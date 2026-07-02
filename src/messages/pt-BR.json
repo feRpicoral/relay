@@ -674,7 +674,7 @@
     },
     "segmentBoundary": {
       "title": "Não foi possível carregar esta seção",
-      "description": "Sua sessão está ativa — tente novamente.",
+      "description": "Sua sessão está ativa. Tente novamente.",
       "retry": "Tentar de novo",
       "errorId": "id: {digest}"
     },

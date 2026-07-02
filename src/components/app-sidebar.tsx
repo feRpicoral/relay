@@ -44,7 +44,6 @@ interface SidebarProps {
   user: { email: string; name: string | null };
   org: { name: string; slug: string };
   role: "ADMIN" | "MEMBER";
-  /** Drives the green dot on the "Live" nav item when calls are in flight. */
   hasActiveCalls?: boolean;
 }
 
@@ -81,9 +80,6 @@ function serverCollapsed(): boolean {
   return false;
 }
 
-// Renders inside a <Link>. useLinkStatus reads the parent Link's pending
-// transition, so the icon swaps to a spinner the instant the user clicks —
-// before the new page's server data resolves.
 function NavIcon({ Icon }: { Icon: typeof LayoutDashboard }) {
   const { pending } = useLinkStatus();
   return pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />;
@@ -229,17 +225,12 @@ export function AppSidebar({ user, org, role, hasActiveCalls }: SidebarProps) {
   function toggle() {
     const next = !collapsed;
     window.localStorage.setItem(COLLAPSED_STORAGE_KEY, next ? "1" : "0");
-    // localStorage.setItem in the same tab does not fire the "storage" event,
-    // so we manually dispatch one to wake every useSyncExternalStore subscriber.
     window.dispatchEvent(new StorageEvent("storage", { key: COLLAPSED_STORAGE_KEY }));
   }
 
   return (
     <aside
       className={cn(
-        // self-start stops the flex parent from stretching the aside to match
-        // <main>'s height; without it, sticky+h-screen still renders a tall
-        // background and the user-card footer floats mid-page on scrolled views.
         "border-border bg-card/40 sticky top-0 hidden h-screen flex-col self-start border-r transition-[width] duration-200 md:flex",
         collapsed ? "w-16" : "w-60",
       )}

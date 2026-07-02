@@ -8,11 +8,6 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { StateCard } from "@/components/ui/state-card";
 
-/**
- * Segment-level error boundary inside the app shell. The (app) layout already
- * rendered the sidebar, so this fills the main area — the user keeps their
- * navigation and can retry just this section.
- */
 export default function SegmentError({
   error,
   reset,
