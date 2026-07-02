@@ -23,14 +23,20 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
+    const baseSecurityHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    ];
     return [
       {
-        source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        ],
+        // The static marketing mockups are framed same-origin by the landing
+        // page, so they opt into SAMEORIGIN. The app itself stays DENY below.
+        source: "/marketing-screens/:path*",
+        headers: [...baseSecurityHeaders, { key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      {
+        source: "/((?!marketing-screens).*)",
+        headers: [...baseSecurityHeaders, { key: "X-Frame-Options", value: "DENY" }],
       },
     ];
   },
