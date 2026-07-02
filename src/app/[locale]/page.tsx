@@ -8,6 +8,7 @@ import { MarketingEffects } from "@/components/marketing/marketing-effects";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
 import { BarsGlyph, MarketingWordmark } from "@/components/marketing/wordmark";
 import { defaultLocale, type Locale, localeUrlSlug, slugToLocale } from "@/i18n/config";
+import { envOr } from "@/lib/env";
 
 import styles from "./page.module.css";
 
@@ -41,30 +42,10 @@ const FEATURE_CARDS = [
 const STEPS = ["connect", "configure", "answer", "watch"] as const;
 
 const GALLERY_CARDS = [
-  {
-    key: "dashboard",
-    url: "app.relay.so/dashboard",
-    src: `${SCREENS}/overview/operations-light-desktop.html`,
-    height: 860,
-  },
-  {
-    key: "calls",
-    url: "app.relay.so/calls",
-    src: `${SCREENS}/calls/table-light-desktop.html`,
-    height: 760,
-  },
-  {
-    key: "campaigns",
-    url: "app.relay.so/campaigns",
-    src: `${SCREENS}/campaigns/running-light-desktop.html`,
-    height: 860,
-  },
-  {
-    key: "agents",
-    url: "app.relay.so/agents",
-    src: `${SCREENS}/agents/roster-light-desktop.html`,
-    height: 720,
-  },
+  { key: "dashboard", src: `${SCREENS}/overview/operations-light-desktop.html`, height: 860 },
+  { key: "calls", src: `${SCREENS}/calls/table-light-desktop.html`, height: 760 },
+  { key: "campaigns", src: `${SCREENS}/campaigns/running-light-desktop.html`, height: 860 },
+  { key: "agents", src: `${SCREENS}/agents/roster-light-desktop.html`, height: 720 },
 ] as const;
 
 export async function generateMetadata({ params }: LandingPageProps): Promise<Metadata> {
@@ -81,6 +62,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
 
   const t = await getTranslations("landing");
   const bold = { b: (chunks: ReactNode) => <b>{chunks}</b> };
+  const appDomain = envOr("NEXT_PUBLIC_APP_DOMAIN", "app.relay.so");
 
   return (
     <main className={styles.page}>
@@ -175,14 +157,19 @@ export default async function LandingPage({ params }: LandingPageProps) {
                   </span>
                   <span className={styles.url}>
                     <Lock size={11} strokeWidth={2} />
-                    app.relay.so/calls/live
+                    {appDomain}/calls/live
                   </span>
                 </div>
-                <div className={styles.shot} data-marketing-shot="1280">
+                <div
+                  className={styles.shot}
+                  data-marketing-shot="1280"
+                  style={{ aspectRatio: "1280 / 820" }}
+                >
                   <iframe
                     src={`${SCREENS}/live-calls/listening-dark-desktop.html`}
                     title="Live call monitor"
                     tabIndex={-1}
+                    height={820}
                   />
                 </div>
               </div>
@@ -264,6 +251,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
                       title="Live monitor on mobile"
                       loading="lazy"
                       tabIndex={-1}
+                      height={844}
                     />
                   </div>
                 </div>
@@ -319,14 +307,19 @@ export default async function LandingPage({ params }: LandingPageProps) {
                     <i />
                     <i />
                   </span>
-                  <span className={styles.url}>app.relay.so/calls/8842</span>
+                  <span className={styles.url}>{appDomain}/calls/8842</span>
                 </div>
-                <div className={styles.shot} data-marketing-shot="1280">
+                <div
+                  className={styles.shot}
+                  data-marketing-shot="1280"
+                  style={{ aspectRatio: "1280 / 810" }}
+                >
                   <iframe
                     src={`${SCREENS}/calls/success-light-desktop.html`}
                     title="Call detail"
                     loading="lazy"
                     tabIndex={-1}
+                    height={820}
                   />
                 </div>
               </div>
@@ -355,7 +348,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
                     <i />
                     <i />
                   </span>
-                  <span className={styles.url}>app.relay.so/analytics</span>
+                  <span className={styles.url}>{appDomain}/analytics</span>
                 </div>
                 <div className={styles.shot} data-marketing-shot="1280">
                   <iframe
@@ -363,6 +356,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
                     title="Analytics"
                     loading="lazy"
                     tabIndex={-1}
+                    height={1180}
                   />
                 </div>
               </div>
@@ -383,7 +377,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
             </h2>
           </div>
           <div className={styles.track} data-marketing-gallery>
-            {GALLERY_CARDS.map(({ key, url, src, height }) => (
+            {GALLERY_CARDS.map(({ key, src, height }) => (
               <div className={styles.trackCard} key={key}>
                 <div className={styles.trackCap}>
                   <span className={styles.badgeSm}>{t(`gallery.${key}`)}</span>
@@ -398,7 +392,9 @@ export default async function LandingPage({ params }: LandingPageProps) {
                       <i />
                       <i />
                     </span>
-                    <span className={styles.url}>{url}</span>
+                    <span className={styles.url}>
+                      {appDomain}/{key}
+                    </span>
                   </div>
                   <div className={styles.shot} data-marketing-shot="1280">
                     <iframe

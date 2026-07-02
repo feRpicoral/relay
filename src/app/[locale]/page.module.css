@@ -37,7 +37,10 @@
   --shadow-lg: 0 50px 110px -30px rgba(0, 0, 0, 0.7);
 }
 
-.page a {
+/* :where() keeps this reset at .btnPrimary/.btnGhost specificity so the
+   component color rules later in the file win — anchors styled as buttons
+   would otherwise inherit body text color. */
+.page :where(a) {
   color: inherit;
   text-decoration: none;
 }
@@ -419,6 +422,7 @@
   font-size: 11.5px;
   font-weight: 500;
   color: var(--ink-3);
+  user-select: none;
 }
 .shot {
   position: relative;
