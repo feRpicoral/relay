@@ -756,7 +756,11 @@
       "statusLabel": "Status",
       "agentLabel": "Agent",
       "fromLabel": "From",
-      "createdAt": "Created {date}"
+      "createdAt": "Created {date}",
+      "viewCampaign": "View campaign",
+      "notStarted": "Not started yet.",
+      "progressCalled": "{called} of {total} called",
+      "loadError": "Couldn't load campaigns."
     },
     "new": {
       "title": "New campaign",
@@ -774,7 +778,36 @@
         "leadsLabel": "Leads CSV",
         "leadsHint": "Columns: phone_e164 (required), name, any custom fields.",
         "submit": "Create campaign",
-        "toastCreated": "Campaign created"
+        "toastCreated": "Campaign created",
+        "nameRequired": "*",
+        "scriptPromptLabel": "Script prompt",
+        "scriptPromptPlaceholder": "What should the agent say and try to accomplish on each call…",
+        "leadsDropTitle": "Drop a CSV, or paste rows",
+        "leadsDropHint": "Format: phone,name — one per line. Max 5,000 rows.",
+        "chooseFile": "Choose file",
+        "cancel": "Cancel",
+        "callingRules": "Calling rules",
+        "maxAttemptsLabel": "Max attempts",
+        "maxAttemptsHint": "1–10 retries per lead",
+        "cooldownLabel": "Cooldown (min)",
+        "cooldownHint": "5–1440 between tries",
+        "concurrencyLabel": "Concurrency",
+        "concurrencyHint": "1–10 simultaneous",
+        "preview": {
+          "title": "Parsed preview",
+          "colPhone": "Phone",
+          "colName": "Name",
+          "colStatus": "Status",
+          "valid": "{count} valid",
+          "invalid": "{count} invalid",
+          "invalidE164": "Invalid E.164",
+          "missingPhone": "Missing phone",
+          "unnamed": "—",
+          "summary": "{invalid, plural, one {# row will be skipped} other {# rows will be skipped}} — fix the numbers or remove them. Valid rows: <b>{valid}</b>.",
+          "allValid": "All {valid} rows look good.",
+          "empty": "No rows yet. Drop a CSV to see a preview.",
+          "missingHeader": "Add a header row with a phone column."
+        }
       },
       "errors": {
         "invalidData": "Invalid data.",
@@ -782,6 +815,19 @@
         "noNumbers": "Connect a phone number first.",
         "invalidCsv": "Invalid CSV. Check formatting.",
         "tooManyLeads": "Too many leads. Split into smaller batches."
+      },
+      "backToCampaigns": "Campaigns",
+      "subtitle": "Call a list of leads with an agent",
+      "adminOnly": {
+        "title": "Admins only",
+        "description": "Only admins can create campaigns. Ask an admin to set this up.",
+        "back": "Back to campaigns"
+      },
+      "setupRequired": {
+        "title": "Create an agent first",
+        "description": "Campaigns place calls through an agent, and that agent needs an outbound-capable number. You don't have one set up yet.",
+        "createAgent": "Create agent",
+        "connectNumber": "Connect a number"
       }
     },
     "detail": {
@@ -810,7 +856,8 @@
       "confirmCancel": {
         "title": "Cancel campaign?",
         "description": "Pending leads stop being called. Past attempts stay in history.",
-        "confirm": "Cancel campaign"
+        "confirm": "Cancel campaign",
+        "keepRunning": "Keep running"
       },
       "errors": {
         "invalidInput": "Invalid input.",
@@ -818,6 +865,35 @@
         "alreadyRunning": "Already running.",
         "notRunning": "Not running.",
         "alreadyCanceled": "Already canceled."
+      },
+      "back": "Campaigns",
+      "progressLabel": "Progress",
+      "progressValue": "{called} / {total} · {percent}%",
+      "progressEmpty": "{called} / {total}",
+      "futureBadge": "Future",
+      "futureNote": "Attempts log · Settings · Resume · Duplicate — planned, not yet shipped.",
+      "kpis": {
+        "total": "Total",
+        "calling": "Calling",
+        "reached": "Reached",
+        "pending": "Pending"
+      },
+      "leadsTable": {
+        "phone": "Phone",
+        "name": "Name",
+        "status": "Status",
+        "attempts": "Attempts",
+        "lastCall": "Last call",
+        "never": "—",
+        "unnamed": "—",
+        "paginationSummary": "Showing {from}–{to} of {total}",
+        "previous": "Previous page",
+        "next": "Next page"
+      },
+      "zeroLeads": {
+        "title": "No leads in this campaign",
+        "description": "This campaign was created without any leads. Add a lead list to start calling.",
+        "cta": "Add leads"
       }
     }
   },

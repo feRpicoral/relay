@@ -15,8 +15,9 @@ const Schema = z.object({ campaignId: z.string().uuid() });
  * Allowed transitions for `Campaign.status`. Centralized here so we don't
  * leave a CAMPAIGN in a weird state by, say, "starting" a COMPLETED one.
  */
-const ALLOWED_TRANSITIONS: Record<"start" | "pause" | "cancel", CampaignStatus[]> = {
+const ALLOWED_TRANSITIONS: Record<"start" | "resume" | "pause" | "cancel", CampaignStatus[]> = {
   start: ["DRAFT", "PAUSED"],
+  resume: ["PAUSED"],
   pause: ["RUNNING"],
   cancel: ["DRAFT", "RUNNING", "PAUSED"],
 };
@@ -52,6 +53,17 @@ export async function startCampaignAction(input: z.infer<typeof Schema>): Promis
     campaignId: parsed.data.campaignId,
     kind: "start",
     data: { status: "RUNNING", startedAt: new Date() },
+  });
+}
+
+export async function resumeCampaignAction(input: z.infer<typeof Schema>): Promise<Result> {
+  const t = await getTranslations("campaigns.detail.errors");
+  const parsed = Schema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: t("invalidInput") };
+  return transitionCampaign({
+    campaignId: parsed.data.campaignId,
+    kind: "resume",
+    data: { status: "RUNNING" },
   });
 }
 

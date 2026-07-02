@@ -1,11 +1,12 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { CsvPreview } from "@/components/campaigns/csv-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,9 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Stepper } from "@/components/ui/stepper";
 import { Textarea } from "@/components/ui/textarea";
+import { parseLeads } from "@/lib/campaigns/parse-leads";
+import { cn } from "@/lib/utils";
 
 import { createCampaignAction } from "./actions";
+
+const MAX_ATTEMPTS = { min: 1, max: 10 };
+const COOLDOWN = { min: 5, max: 1440, step: 5 };
+const CONCURRENCY = { min: 1, max: 10 };
 
 export function NewCampaignForm({
   agents,
@@ -30,14 +38,26 @@ export function NewCampaignForm({
   const t = useTranslations("campaigns.new.form");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState("");
   const [agentId, setAgentId] = useState(agents[0]?.id ?? "");
   const [fromE164, setFromE164] = useState(phones[0]?.e164 ?? "");
   const [scriptPrompt, setScriptPrompt] = useState("");
   const [csv, setCsv] = useState("");
+  const [dragging, setDragging] = useState(false);
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [cooldownMinutes, setCooldownMinutes] = useState(60);
   const [concurrencyLimit, setConcurrencyLimit] = useState(2);
+
+  const parsed = useMemo(() => (csv.trim() ? parseLeads(csv) : null), [csv]);
+
+  function readFile(file: File | undefined) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCsv(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsText(file);
+  }
 
   function onSubmit() {
     startTransition(async () => {
@@ -60,16 +80,20 @@ export function NewCampaignForm({
     });
   }
 
+  const canSubmit = !pending && name.trim().length >= 2 && (parsed?.valid.length ?? 0) > 0;
+
   return (
     <form
-      className="space-y-5"
+      className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="name">{t("nameLabel")}</Label>
+        <Label htmlFor="name">
+          {t("nameLabel")} <span className="text-destructive">{t("nameRequired")}</span>
+        </Label>
         <Input
           id="name"
           value={name}
@@ -79,6 +103,7 @@ export function NewCampaignForm({
           placeholder={t("namePlaceholder")}
         />
       </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="agent">{t("agentLabel")}</Label>
@@ -104,79 +129,148 @@ export function NewCampaignForm({
             <SelectContent>
               {phones.map((p) => (
                 <SelectItem key={p.id} value={p.e164}>
-                  {p.e164}
+                  <span className="font-mono">{p.e164}</span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="script">{t("scriptLabel")}</Label>
+        <Label htmlFor="script">{t("scriptPromptLabel")}</Label>
         <Textarea
           id="script"
           value={scriptPrompt}
           onChange={(e) => setScriptPrompt(e.target.value)}
           rows={3}
-          placeholder={t("scriptPlaceholder")}
+          placeholder={t("scriptPromptPlaceholder")}
           disabled={pending}
         />
-        <p className="text-muted-foreground text-xs">{t("scriptHint")}</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="max-attempts">{t("scriptLabel")}</Label>
-          <Input
-            id="max-attempts"
-            type="number"
-            min={1}
-            max={10}
-            value={maxAttempts}
-            onChange={(e) => setMaxAttempts(parseInt(e.target.value, 10) || 1)}
+
+      <div className="space-y-2.5">
+        <Label>{t("leadsLabel")}</Label>
+        <div
+          className={cn(
+            "bg-secondary flex items-center gap-3 rounded-lg border border-dashed p-4 transition-colors",
+            dragging ? "border-primary" : "border-border",
+          )}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            readFile(e.dataTransfer.files[0]);
+          }}
+          onPaste={(e) => {
+            const text = e.clipboardData.getData("text");
+            if (text) setCsv(text);
+          }}
+        >
+          <Upload className="text-muted-foreground size-5 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-foreground text-sm font-medium">{t("leadsDropTitle")}</p>
+            <p className="text-muted-foreground text-xs">{t("leadsDropHint")}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             disabled={pending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {t("chooseFile")}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => readFile(e.target.files?.[0])}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="cooldown">{t("scriptLabel")}</Label>
-          <Input
-            id="cooldown"
-            type="number"
-            min={5}
-            max={1440}
-            value={cooldownMinutes}
-            onChange={(e) => setCooldownMinutes(parseInt(e.target.value, 10) || 30)}
+
+        {csv.trim() ? (
+          <Textarea
+            value={csv}
+            onChange={(e) => setCsv(e.target.value)}
+            rows={4}
+            className="font-mono text-xs"
             disabled={pending}
+            aria-label={t("leadsLabel")}
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="concurrency">{t("scriptLabel")}</Label>
-          <Input
-            id="concurrency"
-            type="number"
-            min={1}
-            max={10}
-            value={concurrencyLimit}
-            onChange={(e) => setConcurrencyLimit(parseInt(e.target.value, 10) || 1)}
-            disabled={pending}
-          />
-        </div>
+        ) : null}
+
+        {parsed ? <CsvPreview parsed={parsed} /> : null}
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="csv">{t("leadsLabel")}</Label>
-        <Textarea
-          id="csv"
-          value={csv}
-          onChange={(e) => setCsv(e.target.value)}
-          rows={6}
-          placeholder="phone,name&#10;+5511999998888,João Silva"
-          className="font-mono text-xs"
-          disabled={pending}
-        />
-        <p className="text-muted-foreground text-xs">{t("leadsHint")}</p>
+        <Label>{t("callingRules")}</Label>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="max-attempts" className="text-muted-foreground text-xs font-normal">
+              {t("maxAttemptsLabel")}
+            </Label>
+            <Stepper
+              id="max-attempts"
+              value={maxAttempts}
+              onChange={setMaxAttempts}
+              min={MAX_ATTEMPTS.min}
+              max={MAX_ATTEMPTS.max}
+              aria-label={t("maxAttemptsLabel")}
+            />
+            <p className="text-muted-foreground text-xs">{t("maxAttemptsHint")}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cooldown" className="text-muted-foreground text-xs font-normal">
+              {t("cooldownLabel")}
+            </Label>
+            <Stepper
+              id="cooldown"
+              value={cooldownMinutes}
+              onChange={setCooldownMinutes}
+              min={COOLDOWN.min}
+              max={COOLDOWN.max}
+              step={COOLDOWN.step}
+              aria-label={t("cooldownLabel")}
+            />
+            <p className="text-muted-foreground text-xs">{t("cooldownHint")}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="concurrency" className="text-muted-foreground text-xs font-normal">
+              {t("concurrencyLabel")}
+            </Label>
+            <Stepper
+              id="concurrency"
+              value={concurrencyLimit}
+              onChange={setConcurrencyLimit}
+              min={CONCURRENCY.min}
+              max={CONCURRENCY.max}
+              aria-label={t("concurrencyLabel")}
+            />
+            <p className="text-muted-foreground text-xs">{t("concurrencyHint")}</p>
+          </div>
+        </div>
       </div>
-      <Button type="submit" disabled={pending || !name || !csv}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("submit")}
-      </Button>
+
+      <div className="flex justify-end gap-2.5">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={pending}
+          onClick={() => router.push("/campaigns")}
+        >
+          {t("cancel")}
+        </Button>
+        <Button type="submit" disabled={!canSubmit}>
+          {pending ? <Loader2 className="size-4 animate-spin" /> : null}
+          {t("submit")}
+        </Button>
+      </div>
     </form>
   );
 }

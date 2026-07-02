@@ -1,23 +1,20 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Bot, ChevronLeft, Inbox, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
-import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
+import { CampaignKpiMetrics } from "@/components/campaigns/kpi-metrics";
+import { CampaignLeadsTable, type LeadRow } from "@/components/campaigns/leads-table";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
 import { Progress } from "@/components/ui/progress";
+import { StateCard } from "@/components/ui/state-card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { requireSession } from "@/lib/auth/session";
-import {
-  CAMPAIGN_STATUS_VARIANT,
-  campaignStatusLabel,
-  LEAD_STATUS_VARIANT,
-  leadStatusLabel,
-  TERMINAL_LEAD_STATUSES,
-} from "@/lib/campaigns/labels";
+import { calledCount, campaignStatusLabel } from "@/lib/campaigns/labels";
 import { getDb } from "@/lib/db/with-org";
-import { formatPhone } from "@/lib/utils";
+import { campaignStatusVisual } from "@/lib/status-tone";
+import { formatRelativeTime } from "@/lib/utils";
 
 import { CampaignActions } from "./actions-bar";
 
@@ -36,11 +33,10 @@ export default async function CampaignPage({
 
   const session = await requireSession();
   const db = getDb(session.orgId);
+  const locale = await getLocale();
   const t = await getTranslations("campaigns.detail");
-  const tCallsList = await getTranslations("calls.list");
-  const tCampaignsList = await getTranslations("campaigns.list");
+  const tList = await getTranslations("campaigns.list");
   const tStatus = await getTranslations("enums.campaignStatus");
-  const tLead = await getTranslations("enums.campaignLeadStatus");
 
   const campaign = await db.campaign.findUnique({
     where: { id },
@@ -48,8 +44,6 @@ export default async function CampaignPage({
   });
   if (!campaign) notFound();
 
-  // Counts come from groupBy over ALL leads (not the paginated slice) so the
-  // progress bar reflects the full campaign instead of one page.
   const [statusCounts, leads, totalLeads] = await Promise.all([
     db.campaignLead.groupBy({
       by: ["status"],
@@ -65,95 +59,120 @@ export default async function CampaignPage({
     db.campaignLead.count({ where: { campaignId: id } }),
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(totalLeads / LEADS_PAGE_SIZE));
   const counts = Object.fromEntries(statusCounts.map((s) => [s.status, s._count._all]));
+  const called = calledCount(counts);
+  const calling = counts["CALLING"] ?? 0;
   const reached = counts["REACHED"] ?? 0;
-  const callsInFlight = counts["CALLING"] ?? 0;
-  const completed = TERMINAL_LEAD_STATUSES.reduce((acc, s) => acc + (counts[s] ?? 0), 0);
-  const progress = totalLeads === 0 ? 0 : Math.round((completed / totalLeads) * 100);
+  const percent = totalLeads === 0 ? 0 : Math.round((called / totalLeads) * 100);
+
+  const totalPages = Math.max(1, Math.ceil(totalLeads / LEADS_PAGE_SIZE));
+  const now = new Date();
+  const leadRows: LeadRow[] = leads.map((lead) => ({
+    id: lead.id,
+    phoneE164: lead.phoneE164,
+    name: lead.name,
+    status: lead.status,
+    attempts: lead.attempts,
+    lastCall: lead.lastAttemptAt ? formatRelativeTime(lead.lastAttemptAt, locale, now) : null,
+  }));
+
+  const visual = campaignStatusVisual(campaign.status);
+  const from = totalLeads === 0 ? 0 : (page - 1) * LEADS_PAGE_SIZE + 1;
+  const to = Math.min(page * LEADS_PAGE_SIZE, totalLeads);
 
   return (
     <>
-      <PageHeader
-        title={campaign.name}
-        description={`${tCampaignsList("agentLabel")} ${campaign.agent.name}, ${tCampaignsList("fromLabel")} ${campaign.fromPhoneNumberE164}`}
-        actions={
-          <div className="flex items-center gap-2">
-            <Badge variant={CAMPAIGN_STATUS_VARIANT[campaign.status] ?? "secondary"}>
-              {campaignStatusLabel(campaign.status, tStatus)}
-            </Badge>
-            <CampaignActions campaignId={campaign.id} status={campaign.status} />
-          </div>
-        }
-      />
-      <div className="space-y-6 p-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm font-medium">
-              {t("stats.total")}
-            </CardTitle>
-          </CardHeader>
-          <div className="space-y-3 px-6 pb-6">
-            <Progress value={progress} />
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <Stat label={t("stats.total")} value={totalLeads} />
-              <Stat label={tLead("CALLING")} value={callsInFlight} />
-              <Stat label={t("stats.reached")} value={reached} />
-              <Stat label={t("stats.pending")} value={totalLeads - completed - callsInFlight} />
+      <div className="border-border flex items-start justify-between gap-4 border-b px-6 py-5 md:px-8">
+        <div className="flex min-w-0 items-start gap-3">
+          <Button asChild variant="outline" size="icon-sm" className="mt-0.5 shrink-0">
+            <Link href="/campaigns" aria-label={t("back")}>
+              <ChevronLeft className="size-4" />
+            </Link>
+          </Button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-foreground text-lg font-semibold">{campaign.name}</span>
+              <StatusBadge
+                label={campaignStatusLabel(campaign.status, tStatus)}
+                tone={visual.tone}
+                pulse={visual.pulse}
+              />
+            </div>
+            <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+              <Bot className="size-3" />
+              <span>{campaign.agent.name}</span>
+              <span aria-hidden>·</span>
+              <span>{tList("leadsCount", { count: totalLeads })}</span>
             </div>
           </div>
-        </Card>
+        </div>
+        <CampaignActions campaignId={campaign.id} status={campaign.status} />
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("leadsTab")}</CardTitle>
-          </CardHeader>
-          <div className="divide-border divide-y">
-            {leads.map((lead) => (
-              <div key={lead.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="font-medium">{lead.name ?? formatPhone(lead.phoneE164)}</p>
-                  <p className="text-muted-foreground text-xs">{formatPhone(lead.phoneE164)}</p>
-                </div>
-                <Badge variant={LEAD_STATUS_VARIANT[lead.status] ?? "secondary"}>
-                  {leadStatusLabel(lead.status, tLead)}
-                </Badge>
-              </div>
-            ))}
+      <div className="flex flex-col gap-4 p-6 md:p-8">
+        <div>
+          <div className="mb-1.5 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">{t("progressLabel")}</span>
+            <span className="text-foreground font-mono">
+              {totalLeads === 0
+                ? t("progressEmpty", { called, total: totalLeads })
+                : t("progressValue", { called, total: totalLeads, percent })}
+            </span>
           </div>
-        </Card>
+          <Progress value={percent} className="h-2.5" />
+        </div>
 
-        {totalPages > 1 ? (
-          <div className="flex items-center justify-between text-sm">
-            <p className="text-muted-foreground">
-              {tCallsList("paginationSummary", { page, totalPages, total: totalLeads })}
-            </p>
-            <div className="flex gap-2">
-              <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-                <Link href={`/campaigns/${id}?page=${page - 1}`} aria-disabled={page <= 1}>
-                  <ChevronLeft className="h-4 w-4" />
-                  {tCallsList("previous")}
+        <CampaignKpiMetrics
+          metrics={{
+            total: totalLeads,
+            calling,
+            reached,
+            pending: totalLeads - called - calling,
+          }}
+        />
+
+        <p className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span className="border-border bg-secondary text-muted-foreground inline-flex items-center rounded-sm border px-1.5 py-0.5 font-semibold">
+            {t("futureBadge")}
+          </span>
+          {t("futureNote")}
+        </p>
+
+        {totalLeads === 0 ? (
+          <StateCard
+            bordered
+            icon={<Inbox />}
+            title={t("zeroLeads.title")}
+            description={t("zeroLeads.description")}
+            actions={
+              <Button asChild>
+                <Link href="/campaigns/new">
+                  <Plus className="size-4" />
+                  {t("zeroLeads.cta")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm" disabled={page >= totalPages}>
-                <Link href={`/campaigns/${id}?page=${page + 1}`} aria-disabled={page >= totalPages}>
-                  {tCallsList("next")}
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
+            }
+          />
+        ) : (
+          <>
+            <CampaignLeadsTable leads={leadRows} />
+            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+              <p className="text-muted-foreground text-sm">
+                {t("leadsTable.paginationSummary", { from, to, total: totalLeads })}
+              </p>
+              {totalPages > 1 ? (
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  hrefForPage={(p) => `/campaigns/${id}?page=${p}`}
+                  previousLabel={t("leadsTable.previous")}
+                  nextLabel={t("leadsTable.next")}
+                />
+              ) : null}
             </div>
-          </div>
-        ) : null}
+          </>
+        )}
       </div>
     </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
   );
 }
