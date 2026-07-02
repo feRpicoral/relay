@@ -1,58 +1,121 @@
 {
   "landing": {
+    "meta": {
+      "title": "Relay — The receptionist that never misses a call",
+      "description": "Bilingual voice AI that answers 24/7, books appointments mid-call, and lets you watch every conversation live."
+    },
     "nav": {
+      "live": "Live monitoring",
       "features": "Features",
+      "how": "How it works",
+      "customers": "Customers",
+      "toggleTheme": "Toggle theme",
       "signIn": "Sign in",
       "getStarted": "Get started"
     },
-    "badge": "Voice AI receptionist",
     "hero": {
-      "title": "The receptionist that answers every call.",
-      "description": "Relay is a bilingual voice agent that picks up 24/7, qualifies callers, and books appointments mid-call while you watch every conversation live.",
+      "eyebrow": "Voice AI receptionist · pt-BR & en-US",
+      "title": "The receptionist that never misses a call.",
+      "lead": "Relay is a bilingual voice agent that answers 24/7, qualifies callers and books appointments mid-call — while you watch every conversation live.",
       "ctaPrimary": "Get started",
-      "ctaSecondary": "I already have an account",
-      "note": "pt-BR & en-US. Books into Cal.com. No setup fee"
+      "ctaSecondary": "Watch a live call",
+      "note1": "Books into Cal.com",
+      "note2": "Connects your Twilio number",
+      "note3": "No setup fee"
+    },
+    "logos": {
+      "trusted": "Trusted by clinics and practices across Brazil"
+    },
+    "live": {
+      "eyebrow": "The live experience",
+      "title": "Watch every call as it happens.",
+      "lead": "Not a black box. A live transcript, the tools the agent is calling, and a per-leg latency meter — all streaming while the call is in progress. Listen in, or take over with one tap.",
+      "point1": "<b>Streaming transcript</b> with sentiment, interim turns and speaker labels.",
+      "point2": "<b>Six-leg latency meter</b> — STT, LLM, TTS, tools — flags anything over budget.",
+      "point3": "<b>Listen in or take over</b> instantly, then hand the call back."
     },
     "features": {
+      "eyebrow": "Everything the front desk does",
+      "title": "A complete receptionist, on every line.",
       "alwaysOn": {
         "title": "Answers 24/7",
         "body": "Inbound calls are picked up instantly, day or night, in Portuguese or English."
       },
-      "scheduling": {
+      "books": {
         "title": "Books during the call",
         "body": "The agent checks your calendar and confirms the appointment before hanging up."
       },
       "transcripts": {
         "title": "Live transcripts",
-        "body": "Watch the transcript, tool calls and per-leg latency stream while a call is in progress."
+        "body": "Watch the transcript, tool calls and per-leg latency stream while a call runs."
       },
       "analytics": {
         "title": "Analytics that matter",
-        "body": "Conversion, attendance, cost per call and p95 latency, not vanity metrics."
+        "body": "Conversion, attendance, cost per call and p95 latency — not vanity metrics."
       }
     },
-    "liveCall": {
-      "phone": "+55 11 98472-1130",
-      "elapsed": "00:41",
-      "live": "Live",
-      "agent": "Agent",
-      "caller": "Caller",
-      "turns": {
-        "greeting": "Clínica Lumen, good afternoon. How can I help?",
-        "request": "I'd like to book with Dr. Martins this week.",
-        "offer": "I have Tuesday at 2:30. Shall I book it?"
+    "summary": {
+      "eyebrow": "Review & coach",
+      "title": "Every call, summarized and searchable.",
+      "lead": "After hangup, Relay writes a summary, outcome and sentiment, tags topics, and syncs the transcript to the recording — so you can scrub straight to the moment that matters."
+    },
+    "metrics": {
+      "eyebrow": "Know your numbers",
+      "title": "The metrics a clinic actually runs on.",
+      "lead": "Call volume, attendance and conversion, average handle time, cost per call and p95 latency — with a day-and-hour heatmap and an agent-by-agent breakdown."
+    },
+    "gallery": {
+      "eyebrow": "One workspace",
+      "title": "From the first ring to the booked appointment.",
+      "dashboard": "Dashboard",
+      "calls": "Calls",
+      "campaigns": "Campaigns",
+      "agents": "Agents"
+    },
+    "how": {
+      "eyebrow": "Live in an afternoon",
+      "title": "Four steps to your first answered call.",
+      "connect": {
+        "title": "Connect a number",
+        "body": "Point your Twilio number at Relay in a couple of clicks."
       },
-      "metrics": {
-        "e2e": "e2e 812ms",
-        "tts": "tts 121ms",
-        "tool": "book_appointment ok"
+      "configure": {
+        "title": "Configure the agent",
+        "body": "Set a persona, greeting and voice, and add your knowledge docs."
+      },
+      "answer": {
+        "title": "It answers & books",
+        "body": "The agent qualifies callers and books straight into your calendar."
+      },
+      "watch": {
+        "title": "You watch live",
+        "body": "Monitor calls in real time, review summaries, and read the analytics."
       }
     },
-    "quote": {
-      "text": "It answers every call, even at 3 a.m., and books straight into our calendar. Our front desk finally gets to breathe."
+    "stats": {
+      "latency": "p95 end-to-end latency target",
+      "answered": "calls answered, day & night",
+      "transcribed": "of calls transcribed live",
+      "languages": "languages — pt-BR & en-US"
+    },
+    "testimonial": {
+      "quote": "“It answers every call, even at 3 a.m., and books straight into our calendar. Our front desk finally gets to breathe.”",
+      "name": "Dr. Renata Martins",
+      "org": "Clínica Lumen"
+    },
+    "cta": {
+      "title": "Start answering every call.",
+      "lead": "Set up your bilingual receptionist in an afternoon — and watch the first call come in live.",
+      "primary": "Get started",
+      "secondary": "Sign in"
     },
     "footer": {
-      "copyright": "© {year} Relay. Privacy. Terms"
+      "tagline": "The bilingual voice receptionist for clinics and practices — answering, booking and transcribing, live.",
+      "product": "Product",
+      "screens": "Screens",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "copyright": "© {year} Relay"
     }
   },
   "auth": {

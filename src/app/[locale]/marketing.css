@@ -1,0 +1,926 @@
+/* =====================================================================
+   Relay — marketing landing styles.
+   Scoped under `.mkt` so the bespoke token set and generic class names
+   (.card-m, .hero, .step…) never leak into the app or the embedded
+   screen iframes. Dark theme keys off the next-themes `.dark` class on
+   <html>; the marketing surface keeps its own tokens, distinct from the
+   Tailwind app tokens in globals.css.
+   ===================================================================== */
+.mkt {
+  --bg: #ffffff;
+  --bg2: oklch(0.975 0.004 286);
+  --ink: oklch(0.19 0.02 286);
+  --ink2: oklch(0.46 0.012 286);
+  --ink3: oklch(0.6 0.012 286);
+  --line: oklch(0.915 0.004 286);
+  --brand: oklch(0.54 0.18 288);
+  --brand2: oklch(0.62 0.17 268);
+  --brand-soft: oklch(0.95 0.03 288);
+  --card: #ffffff;
+  --shadow: 0 1px 2px rgba(20, 18, 40, 0.04), 0 12px 32px -12px rgba(20, 18, 40, 0.12);
+  --shadow-lg: 0 40px 90px -30px rgba(30, 22, 70, 0.3);
+  --r: 18px;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    var(--font-geist-sans),
+    "Geist",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  overflow-x: clip;
+}
+.dark .mkt {
+  --bg: oklch(0.145 0.006 286);
+  --bg2: oklch(0.18 0.008 286);
+  --ink: oklch(0.97 0.005 286);
+  --ink2: oklch(0.68 0.012 286);
+  --ink3: oklch(0.55 0.012 286);
+  --line: oklch(0.27 0.01 286);
+  --brand: oklch(0.72 0.17 288);
+  --brand-soft: oklch(0.28 0.05 288);
+  --card: oklch(0.18 0.008 286);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px -16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 50px 110px -30px rgba(0, 0, 0, 0.7);
+}
+.mkt,
+.mkt * {
+  box-sizing: border-box;
+}
+.mkt .mono {
+  font-family: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
+}
+.mkt a {
+  color: inherit;
+  text-decoration: none;
+}
+.mkt svg {
+  display: block;
+}
+.mkt ::selection {
+  background: color-mix(in oklch, var(--brand) 26%, transparent);
+}
+
+.mkt .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.mkt .section {
+  padding: clamp(72px, 11vw, 140px) 0;
+  position: relative;
+}
+.mkt .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+.mkt .eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1.5px;
+  background: var(--brand);
+}
+.mkt .display {
+  font-size: clamp(42px, 6.4vw, 80px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+.mkt .h2 {
+  font-size: clamp(30px, 4.3vw, 50px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+.mkt .h3 {
+  font-size: clamp(19px, 2vw, 23px);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 0;
+}
+.mkt .lead {
+  font-size: clamp(16.5px, 1.5vw, 20px);
+  line-height: 1.6;
+  color: var(--ink2);
+  margin: 0;
+}
+.mkt .tcenter {
+  text-align: center;
+}
+.mkt .measure {
+  max-width: 620px;
+}
+.mkt .measure.tcenter {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mkt .grad {
+  background: linear-gradient(100deg, var(--brand), var(--brand2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* buttons */
+.mkt .mbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 99px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  white-space: nowrap;
+}
+.mkt .mbtn:hover {
+  transform: translateY(-2px);
+}
+.mkt .mbtn--primary {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 8px 22px -8px color-mix(in oklch, var(--brand) 70%, transparent);
+}
+.mkt .mbtn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.mkt .mbtn--ghost:hover {
+  border-color: color-mix(in oklch, var(--brand) 50%, transparent);
+}
+.mkt .mbtn--sm {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+.mkt .btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* nav */
+.mkt .nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    backdrop-filter 0.3s;
+}
+.mkt .nav-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: 68px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.mkt .nav.scrolled {
+  background: color-mix(in oklch, var(--bg) 78%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.mkt .wordmark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.mkt .wm-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.mkt .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.mkt .nav-links a {
+  font-size: 14px;
+  color: var(--ink2);
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.mkt .nav-links a:hover {
+  color: var(--ink);
+}
+.mkt .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+@media (max-width: 860px) {
+  .mkt .nav-links {
+    display: none;
+  }
+}
+
+/* toggles */
+.mkt .seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+}
+.mkt .seg a,
+.mkt .seg button {
+  border: 0;
+  background: transparent;
+  color: var(--ink3);
+  font:
+    600 12.5px var(--font-geist-sans),
+    "Geist",
+    sans-serif;
+  padding: 5px 11px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.mkt .seg a.on,
+.mkt .seg button.on {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.mkt .icon-toggle {
+  width: 38px;
+  height: 38px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  color: var(--ink2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.mkt .icon-toggle:hover {
+  color: var(--ink);
+  border-color: color-mix(in oklch, var(--brand) 40%, transparent);
+}
+.mkt .theme-btn .s {
+  display: block;
+}
+.mkt .theme-btn .m {
+  display: none;
+}
+.dark .mkt .theme-btn .s {
+  display: none;
+}
+.dark .mkt .theme-btn .m {
+  display: block;
+}
+
+/* hero */
+.mkt .hero {
+  position: relative;
+  padding-top: 152px;
+  padding-bottom: 60px;
+  overflow: hidden;
+}
+.mkt .hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.mkt .hero-glow {
+  position: absolute;
+  top: -180px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1100px;
+  height: 760px;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklch, var(--brand) 26%, transparent),
+    transparent 62%
+  );
+  filter: blur(18px);
+  opacity: 0.7;
+}
+.mkt .hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 54px 54px;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000, transparent 75%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000, transparent 75%);
+}
+.mkt .hero h1 {
+  margin: 18px 0 0;
+}
+.mkt .hero .lead {
+  margin-top: 22px;
+}
+.mkt .hero-cta {
+  margin-top: 30px;
+  display: flex;
+  gap: 13px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.mkt .hero-note {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--ink3);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.mkt .hero-note span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mkt .tick {
+  width: 15px;
+  height: 15px;
+  border-radius: 99px;
+  background: color-mix(in oklch, var(--brand) 16%, transparent);
+  color: var(--brand);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+/* device frames */
+.mkt .browser {
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.mkt .browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklch, var(--bg2) 60%, var(--card));
+}
+.mkt .dots {
+  display: flex;
+  gap: 6px;
+}
+.mkt .dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 99px;
+  background: var(--line);
+  display: block;
+}
+.mkt .url {
+  flex: 1;
+  max-width: 360px;
+  margin: 0 auto;
+  height: 24px;
+  border-radius: 99px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font:
+    500 11.5px var(--font-geist-mono),
+    "Geist Mono",
+    monospace;
+  color: var(--ink3);
+}
+.mkt .vp {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1280/800;
+  overflow: hidden;
+  background: var(--bg2);
+}
+.mkt .vp iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1280px;
+  border: 0;
+  transform-origin: top left;
+  pointer-events: none;
+}
+.mkt .phone {
+  position: relative;
+  border-radius: 42px;
+  background: #0c0c10;
+  padding: 11px;
+  box-shadow: var(--shadow-lg);
+  width: 300px;
+  flex: 0 0 auto;
+}
+.mkt .phone .notch {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 26px;
+  background: #0c0c10;
+  border-radius: 0 0 16px 16px;
+  z-index: 3;
+}
+.mkt .phone-vp {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 390/844;
+  overflow: hidden;
+  border-radius: 32px;
+  background: #000;
+}
+.mkt .phone-vp iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 390px;
+  border: 0;
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+/* floating annotation chips */
+.mkt .float-wrap {
+  position: relative;
+}
+.mkt .fchip {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: 13px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.mkt .fchip .fdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  flex: 0 0 auto;
+}
+.mkt .fchip small {
+  font-weight: 500;
+  color: var(--ink3);
+  font-size: 11.5px;
+}
+
+/* logos / marquee */
+.mkt .marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.mkt .marquee-track {
+  display: flex;
+  gap: 56px;
+  width: max-content;
+  animation: mkt-marq 32s linear infinite;
+}
+.mkt .marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+.mkt .logo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink3);
+  white-space: nowrap;
+}
+@keyframes mkt-marq {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* feature rows */
+.mkt .frow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(36px, 6vw, 90px);
+  align-items: center;
+}
+.mkt .frow.rev .ftext {
+  order: 2;
+}
+.mkt .flist {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mkt .flist li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 15.5px;
+  color: var(--ink2);
+}
+.mkt .flist b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.mkt .fcheck {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: color-mix(in oklch, var(--brand) 14%, transparent);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+@media (max-width: 880px) {
+  .mkt .frow {
+    grid-template-columns: 1fr;
+  }
+  .mkt .frow.rev .ftext {
+    order: 0;
+  }
+}
+
+/* dark immersive section */
+.mkt .invert {
+  background: oklch(0.145 0.006 286);
+  color: oklch(0.97 0.005 286);
+  border-radius: clamp(20px, 3vw, 34px);
+  overflow: hidden;
+  position: relative;
+}
+.mkt .invert .h2,
+.mkt .invert .display {
+  color: #fff;
+}
+.mkt .invert .lead {
+  color: oklch(0.72 0.012 286);
+}
+.mkt .invert .eyebrow {
+  color: oklch(0.78 0.16 288);
+}
+.mkt .invert .flist li {
+  color: oklch(0.74 0.012 286);
+}
+.mkt .invert .flist b {
+  color: #fff;
+}
+.mkt .invert-glow {
+  position: absolute;
+  top: -120px;
+  right: -60px;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, oklch(0.7 0.18 288) 40%, transparent),
+    transparent 65%
+  );
+  filter: blur(20px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* feature cards grid */
+.mkt .cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+@media (max-width: 980px) {
+  .mkt .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .mkt .cards {
+    grid-template-columns: 1fr;
+  }
+}
+.mkt .card-m {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--card);
+  padding: 24px;
+  transition:
+    border-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.mkt .card-m:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: color-mix(in oklch, var(--brand) 40%, transparent);
+}
+.mkt .card-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--brand) 13%, transparent);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.mkt .card-m p {
+  margin: 7px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+
+/* steps */
+.mkt .steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  counter-reset: s;
+}
+@media (max-width: 880px) {
+  .mkt .steps {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .mkt .steps {
+    grid-template-columns: 1fr;
+  }
+}
+.mkt .step {
+  position: relative;
+  padding-top: 26px;
+  border-top: 2px solid var(--line);
+}
+.mkt .step::before {
+  counter-increment: s;
+  content: "0" counter(s);
+  position: absolute;
+  top: -15px;
+  left: 0;
+  font:
+    600 13px var(--font-geist-mono),
+    "Geist Mono",
+    monospace;
+  color: #fff;
+  background: var(--brand);
+  width: 30px;
+  height: 30px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mkt .step h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.mkt .step p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink2);
+  line-height: 1.55;
+}
+
+/* horizontal pinned gallery */
+.mkt .pin {
+  position: relative;
+  height: 340vh;
+}
+.mkt .pin-stick {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.mkt .pin-head {
+  max-width: 1200px;
+  margin: 0 auto 28px;
+  padding: 0 24px;
+  width: 100%;
+}
+.mkt .track {
+  display: flex;
+  gap: 28px;
+  padding: 0 24px;
+  will-change: transform;
+}
+.mkt .track-card {
+  flex: 0 0 auto;
+  width: min(78vw, 900px);
+}
+.mkt .track-cap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 13px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.mkt .track-cap .badge-sm {
+  font:
+    600 11px var(--font-geist-sans),
+    "Geist",
+    sans-serif;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: color-mix(in oklch, var(--brand) 13%, transparent);
+  color: var(--brand);
+}
+
+/* stats */
+.mkt .stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+@media (max-width: 760px) {
+  .mkt .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.mkt .stat .n {
+  font-size: clamp(38px, 5vw, 60px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.mkt .stat .l {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+/* testimonial */
+.mkt .quote-big {
+  font-size: clamp(24px, 3.4vw, 40px);
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+/* cta band */
+.mkt .cta-band {
+  border-radius: clamp(20px, 3vw, 34px);
+  background: linear-gradient(120deg, var(--brand), var(--brand2));
+  color: #fff;
+  padding: clamp(44px, 7vw, 86px);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.mkt .cta-band .h2 {
+  color: #fff;
+}
+.mkt .cta-band .mbtn--primary {
+  background: #fff;
+  color: var(--brand);
+}
+.mkt .cta-band .mbtn--ghost {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+
+/* footer */
+.mkt .foot {
+  border-top: 1px solid var(--line);
+  padding: 56px 0 40px;
+}
+.mkt .foot-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.mkt .foot-col h5 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.mkt .foot-col a {
+  display: block;
+  font-size: 14px;
+  color: var(--ink2);
+  padding: 5px 0;
+  transition: color 0.15s;
+}
+.mkt .foot-col a:hover {
+  color: var(--ink);
+}
+.mkt .foot-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+/* reveal — opt-in: only hidden once the client enhancer marks the tree
+   ready, so the page is fully visible when JS is unavailable. */
+.mkt.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.mkt.reveal-ready .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.mkt.reveal-ready .stagger > .reveal:nth-child(1) {
+  transition-delay: 0s;
+}
+.mkt.reveal-ready .stagger > .reveal:nth-child(2) {
+  transition-delay: 0.08s;
+}
+.mkt.reveal-ready .stagger > .reveal:nth-child(3) {
+  transition-delay: 0.16s;
+}
+.mkt.reveal-ready .stagger > .reveal:nth-child(4) {
+  transition-delay: 0.24s;
+}
+.mkt.reveal-ready .stagger > .reveal:nth-child(5) {
+  transition-delay: 0.32s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt.reveal-ready .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none;
+  }
+  .mkt .marquee-track {
+    animation: none;
+  }
+}
