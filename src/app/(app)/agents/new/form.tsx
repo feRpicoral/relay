@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,12 @@ export function NewAgentForm({ defaultLanguage }: { defaultLanguage: Language })
 
   return (
     <form action={() => runSubmit()} className={cn("space-y-4", pending && "opacity-70")}>
+      {fieldErrors?.form ? (
+        <Banner tone="destructive" icon={<AlertTriangle />}>
+          {fieldErrors.form}
+        </Banner>
+      ) : null}
+
       <div className="space-y-2">
         <Label htmlFor="name">
           {t("nameLabel")} <span className="text-destructive">*</span>
@@ -78,7 +85,13 @@ export function NewAgentForm({ defaultLanguage }: { defaultLanguage: Language })
           onValueChange={(v) => setLanguage(v as Language)}
           disabled={pending}
         >
-          <SelectTrigger id="language">
+          <SelectTrigger
+            id="language"
+            aria-invalid={fieldErrors?.language ? true : undefined}
+            className={cn(
+              fieldErrors?.language && "border-destructive focus-visible:ring-destructive",
+            )}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -86,7 +99,14 @@ export function NewAgentForm({ defaultLanguage }: { defaultLanguage: Language })
             <SelectItem value="EN_US">English (US) · EN-US</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-muted-foreground text-xs">{t("languageHint")}</p>
+        {fieldErrors?.language ? (
+          <p className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertTriangle className="size-3" />
+            {fieldErrors.language}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-xs">{t("languageHint")}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -96,8 +116,18 @@ export function NewAgentForm({ defaultLanguage }: { defaultLanguage: Language })
           value={greeting}
           onChange={(e) => setGreeting(e.target.value)}
           placeholder={t("greetingPlaceholder")}
+          aria-invalid={fieldErrors?.greeting ? true : undefined}
+          className={cn(
+            fieldErrors?.greeting && "border-destructive focus-visible:ring-destructive",
+          )}
           disabled={pending}
         />
+        {fieldErrors?.greeting ? (
+          <p className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertTriangle className="size-3" />
+            {fieldErrors.greeting}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">

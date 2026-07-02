@@ -17,7 +17,10 @@ const Schema = z.object({
 
 export interface CreateAgentFieldErrors {
   name?: string;
+  language?: string;
   personaPrompt?: string;
+  greeting?: string;
+  form?: string;
 }
 
 export type CreateAgentResult =
@@ -29,12 +32,16 @@ export async function createAgentAction(input: z.infer<typeof Schema>): Promise<
   const session = await requireAdmin();
   const parsed = Schema.safeParse(input);
   if (!parsed.success) {
-    const flattened = parsed.error.flatten().fieldErrors;
+    const flattened = parsed.error.flatten();
+    const fieldErrors = flattened.fieldErrors;
     return {
       ok: false,
       fieldErrors: {
-        ...(flattened.name ? { name: t("nameRequired") } : {}),
-        ...(flattened.personaPrompt ? { personaPrompt: t("personaRequired") } : {}),
+        ...(fieldErrors.name ? { name: t("nameRequired") } : {}),
+        ...(fieldErrors.language ? { language: t("languageInvalid") } : {}),
+        ...(fieldErrors.personaPrompt ? { personaPrompt: t("personaRequired") } : {}),
+        ...(fieldErrors.greeting ? { greeting: t("greetingTooLong") } : {}),
+        ...(flattened.formErrors.length > 0 ? { form: t("invalidData") } : {}),
       },
     };
   }

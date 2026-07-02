@@ -646,7 +646,10 @@
       },
       "fieldErrors": {
         "nameRequired": "Name is required.",
-        "personaRequired": "Add a persona so the agent knows how to behave."
+        "languageInvalid": "Choose a supported language.",
+        "personaRequired": "Add a persona so the agent knows how to behave.",
+        "greetingTooLong": "Greeting must be 280 characters or fewer.",
+        "invalidData": "Check the form and try again."
       },
       "adminOnly": {
         "title": "Admins only",

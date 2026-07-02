@@ -646,7 +646,10 @@
       },
       "fieldErrors": {
         "nameRequired": "O nome é obrigatório.",
-        "personaRequired": "Adicione uma persona pra que o agente saiba como se comportar."
+        "languageInvalid": "Escolha um idioma compatível.",
+        "personaRequired": "Adicione uma persona pra que o agente saiba como se comportar.",
+        "greetingTooLong": "A saudação deve ter no máximo 280 caracteres.",
+        "invalidData": "Revise o formulário e tente novamente."
       },
       "adminOnly": {
         "title": "Apenas admins",
