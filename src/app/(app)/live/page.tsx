@@ -1,9 +1,8 @@
-import { PhoneCall } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { PageHeader } from "@/components/page-header";
-import { Empty } from "@/components/ui/empty";
+import { Dot } from "@/components/ui/dot";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
 
@@ -23,15 +22,17 @@ export default async function LiveCallsPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <span className="border-success/30 bg-success/10 text-success inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold tracking-wide uppercase">
+            <Dot tone="success" pulse />
+            {t("liveBadge")}
+          </span>
+        }
+      />
       <div className="p-8">
-        {initial.length === 0 ? (
-          <Empty
-            icon={<PhoneCall className="h-5 w-5" />}
-            title={t("empty.title")}
-            description={t("empty.description")}
-          />
-        ) : null}
         <LiveCallsList
           orgId={session.orgId}
           initial={initial.map((c) => ({

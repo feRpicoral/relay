@@ -1,3 +1,4 @@
+import { Wrench } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -9,6 +10,7 @@ import { TranscriptStream } from "@/components/call/transcript-stream";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dot } from "@/components/ui/dot";
 import { Separator } from "@/components/ui/separator";
 import { requireSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/with-org";
@@ -17,6 +19,9 @@ import { formatPhone } from "@/lib/utils";
 import { issueParticipantToken } from "@/lib/voice/livekit";
 
 import { LiveStatusActions } from "./live-status-actions";
+
+const TEST_CALLER_E164 = "+0000000TEST";
+const PARTICIPANT_TOKEN_TTL_SECONDS = 3600;
 
 export default async function LiveCallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,8 +43,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
   const livekitUrl = optionalEnv("LIVEKIT_URL") ?? null;
   // Test calls (no real PSTN caller) need the operator's browser to publish
   // mic audio into the room — otherwise the worker has nothing to react to.
-  // We detect by the placeholder callerE164 set in lib/voice/test-call.ts.
-  const isTestCall = call.callerE164 === "+0000000TEST";
+  const isTestCall = call.callerE164 === TEST_CALLER_E164;
 
   let lkToken: string | null = null;
   if (livekitUrl && call.livekitRoomName) {
@@ -49,7 +53,7 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
         identity: isTestCall ? `tester-${session.userId}` : `monitor-${session.userId}`,
         canPublish: isTestCall,
         canSubscribe: true,
-        ttlSeconds: 3600,
+        ttlSeconds: PARTICIPANT_TOKEN_TTL_SECONDS,
       });
     } catch {
       lkToken = null;
@@ -57,6 +61,8 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
   }
 
   const active = call.status === "RINGING" || call.status === "IN_PROGRESS";
+  const transcriptPhase =
+    call.status === "RINGING" ? "connecting" : active ? "awaiting" : "streaming";
   const agentName = call.agent?.name ?? t("agentFallback");
   const peerNumber = formatPhone(call.direction === "INBOUND" ? call.callerE164 : call.calleeE164);
 
@@ -67,62 +73,90 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
         description={`${peerNumber}, ${agentName}`}
         actions={<LiveStatusActions callId={call.id} initialStatus={call.status} />}
       />
-      {/* `minmax(0,1fr)` instead of `1fr`: see /calls/[id]/page.tsx for the
-          long-form reasoning. Short version — `1fr` is `minmax(auto, 1fr)`
-          and `auto` honors intrinsic content width, so a long unbroken JSON
-          string in a tool output makes the column blow past the viewport. */}
-      <div className="grid gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_440px]">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-muted-foreground text-sm font-medium">
-                  {t("waveform")}
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">
-                  {call.livekitRoomName ?? t("noRoom")}
-                </Badge>
-              </div>
-            </CardHeader>
-            <div className="px-6 pb-6">
-              {isTestCall ? (
+      {/* `minmax(0,1fr)` instead of `1fr`: a long unbroken JSON string in a tool
+          output would otherwise make the column blow past the viewport. */}
+      <div className="grid gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_432px]">
+        <div className="flex min-h-0 flex-col gap-6">
+          {isTestCall ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-muted-foreground text-sm font-medium">
+                    {t("listen.listeningIn")}
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[10px]">
+                    {call.livekitRoomName ?? t("noRoom")}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <div className="px-6 pb-6">
                 <TestCallSession
                   livekitUrl={livekitUrl}
                   roomName={call.livekitRoomName}
                   token={lkToken}
                   active={active}
                 />
-              ) : (
-                <LiveCallListener
-                  livekitUrl={livekitUrl}
-                  roomName={call.livekitRoomName}
-                  token={lkToken}
-                  active={active}
-                />
-              )}
-            </div>
-          </Card>
-          <Card>
+              </div>
+            </Card>
+          ) : (
+            <LiveCallListener
+              livekitUrl={livekitUrl}
+              roomName={call.livekitRoomName}
+              token={lkToken}
+              active={active}
+            />
+          )}
+
+          <Card className="flex min-h-[420px] flex-1 flex-col">
             <CardHeader>
-              <CardTitle className="text-muted-foreground text-sm font-medium">
-                {t("latencyPerLeg")}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-muted-foreground text-sm font-medium">
+                  {t("liveTranscript")}
+                </CardTitle>
+                {active ? (
+                  <span className="border-success/30 bg-success/10 text-success inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                    <Dot tone="success" pulse className="size-1.5" />
+                    {t("streaming")}
+                  </span>
+                ) : null}
+              </div>
             </CardHeader>
-            <div className="px-6 pb-6">
-              <LatencyMeter
+            <Separator />
+            {/* `min-h-0` lets the transcript list scroll inside the card instead
+                of pushing the page when messages pile up. */}
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <TranscriptStream
                 callId={call.id}
-                initial={call.metrics.map((m) => ({
-                  id: m.id,
-                  leg: m.leg,
-                  valueMs: m.valueMs,
-                  occurredAt: m.occurredAt.toISOString(),
+                phase={transcriptPhase}
+                initial={call.transcripts.map((tr) => ({
+                  id: tr.id,
+                  speaker: tr.speaker,
+                  text: tr.text,
+                  startMs: tr.startMs,
+                  endMs: tr.endMs,
+                  isFinal: tr.isFinal,
+                  sentiment: tr.sentiment,
+                  createdAt: tr.createdAt.toISOString(),
                 }))}
               />
             </div>
           </Card>
+        </div>
+
+        <div className="space-y-6">
+          <LatencyMeter
+            callId={call.id}
+            initial={call.metrics.map((m) => ({
+              id: m.id,
+              leg: m.leg,
+              valueMs: m.valueMs,
+              occurredAt: m.occurredAt.toISOString(),
+            }))}
+          />
           <Card>
             <CardHeader>
-              <CardTitle className="text-muted-foreground text-sm font-medium">
+              <CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+                <Wrench className="size-4" />
                 {t("toolsUsed")}
               </CardTitle>
             </CardHeader>
@@ -143,33 +177,6 @@ export default async function LiveCallPage({ params }: { params: Promise<{ id: s
             </div>
           </Card>
         </div>
-
-        <Card className="flex h-[640px] flex-col">
-          <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm font-medium">
-              {t("liveTranscript")}
-            </CardTitle>
-          </CardHeader>
-          <Separator />
-          {/* `min-h-0` is required, not optional: flex children default to
-              min-height:auto and refuse to shrink below content, which defeats
-              `overflow-hidden` and lets the transcript list push the card past
-              640px → page-level vertical scroll once messages pile up. */}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <TranscriptStream
-              callId={call.id}
-              initial={call.transcripts.map((tr) => ({
-                id: tr.id,
-                speaker: tr.speaker,
-                text: tr.text,
-                startMs: tr.startMs,
-                endMs: tr.endMs,
-                isFinal: tr.isFinal,
-                createdAt: tr.createdAt.toISOString(),
-              }))}
-            />
-          </div>
-        </Card>
       </div>
     </>
   );

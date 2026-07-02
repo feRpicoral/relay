@@ -486,10 +486,32 @@
     },
     "live": {
       "title": "Chamadas ao vivo",
-      "description": "Acompanhe as ligações que estão acontecendo agora, clique numa pra ver a transcrição em tempo real.",
+      "description": "Ligações tocando ou em andamento em todos os agentes. A lista atualiza em tempo real — as linhas aparecem quando as chamadas conectam e somem assim que terminam.",
+      "liveBadge": "Ao vivo",
+      "autoRefresh": "Atualização automática",
+      "inProgress": "<b>{count}</b> em andamento",
+      "ringing": "<b>{count}</b> tocando",
+      "columns": {
+        "status": "Status",
+        "caller": "Chamador",
+        "agent": "Agente",
+        "live": "Ao vivo",
+        "metrics": "Duração · Latência"
+      },
+      "ringingLabel": "tocando",
+      "e2e": "e2e {ms}ms",
+      "monitor": "Monitorar",
+      "newCaller": "Novo chamador · ainda não identificado",
       "empty": {
         "title": "Nada acontecendo agora",
-        "description": "Quando uma chamada começar, ela aparece aqui em tempo real."
+        "description": "Quando uma chamada começar, ela aparece aqui em tempo real. Você não precisa atualizar.",
+        "watching": "Aguardando chamadas"
+      },
+      "channelError": {
+        "title": "Não foi possível carregar as chamadas ao vivo",
+        "description": "O canal em tempo real caiu. Isso costuma se resolver sozinho — tente novamente para reconectar.",
+        "retry": "Tentar de novo",
+        "stream": "stream: {channel} · código RT_DISCONNECTED"
       },
       "viewHistory": "Ver histórico de chamadas",
       "viewLive": "Ver ao vivo"
@@ -498,19 +520,76 @@
       "agentFallback": "Agente",
       "titleInbound": "Chamada recebida",
       "titleOutbound": "Chamada de saída",
-      "waveform": "Waveform ao vivo",
       "noRoom": "sem sala",
-      "latencyPerLeg": "Latência por leg",
-      "toolsUsed": "Ferramentas usadas",
+      "listen": {
+        "connecting": "Conectando áudio ao vivo",
+        "negotiating": "negociando…",
+        "connectingTranscript": "Conectando ao áudio ao vivo…",
+        "establishing": "Estabelecendo o caminho de mídia…",
+        "listeningIn": "Ouvindo — áudio do chamador ao vivo",
+        "codec": "opus · 48 kHz",
+        "youAreListening": "Você está ouvindo",
+        "failedTitle": "Áudio ao vivo indisponível",
+        "failedMeta": "sem mídia · SIP",
+        "failedHint": "Sem áudio ao vivo — não foi possível conectar para ouvir",
+        "failedTranscriptNote": "A transcrição abaixo continua pelo canal de dados.",
+        "retry": "Tentar de novo",
+        "ended": "Chamada encerrada",
+        "endedRecording": "A gravação estará disponível no resumo da chamada."
+      },
+      "transcriptConnecting": "A chamada está conectando. A transcrição começa assim que o chamador estiver na linha.",
+      "awaitingUtterance": "Aguardando a primeira fala…",
+      "streaming": "TRANSMITINDO",
+      "autoScroll": "rolagem automática ligada",
+      "idle": "ocioso",
+      "latency": {
+        "title": "Latência",
+        "legCount": "{count, plural, one {# leg} other {# legs}}",
+        "healthy": "Saudável",
+        "degraded": "Degradada",
+        "noData": "Sem dados ainda",
+        "noDataValue": "sem dados",
+        "budget": "≤ {ms}",
+        "p95": "p95 {ms}",
+        "legendWithin": "dentro do orçamento",
+        "legendOver": "acima do orçamento",
+        "legendNoData": "sem dados",
+        "overBudgetBanner": "Latência ponta a ponta acima do orçamento. Última {last}ms · p95 {p95}ms contra um alvo de {budget}ms.",
+        "legs": {
+          "END_TO_END": "Ponta a ponta",
+          "LLM_TTFT": "LLM primeiro token",
+          "TTS_TTFA": "TTS primeiro áudio",
+          "LLM_TOTAL": "LLM total",
+          "TOOL_TOTAL": "Ferramenta total",
+          "STT_FINALIZE": "STT finalização"
+        }
+      },
       "liveTranscript": "Transcrição ao vivo",
+      "agent": "Agente",
+      "caller": "Chamador",
+      "interim": "Parcial",
+      "toolsUsed": "Linha do tempo de ferramentas",
       "hangup": {
         "button": "Encerrar",
-        "toastEnded": "Chamada encerrada"
+        "confirmTitle": "Encerrar esta chamada?",
+        "confirmDescription": "O chamador será desconectado imediatamente. Um resumo, desfecho e sentimento são gerados após o encerramento. Isso não pode ser desfeito.",
+        "keepMonitoring": "Continuar monitorando",
+        "endCall": "Encerrar chamada",
+        "toastEnded": "Chamada encerrada",
+        "toastRecording": "A gravação está sendo processada",
+        "endedTitle": "Chamada encerrada",
+        "endedDescription": "Gerando resumo, desfecho e sentimento — levando você ao detalhe da chamada…",
+        "redirecting": "Redirecionando"
       },
       "errors": {
         "invalidInput": "Entrada inválida.",
         "callNotFound": "Chamada não encontrada.",
         "alreadyEnded": "Chamada já encerrada."
+      },
+      "testCall": {
+        "micLive": "Microfone ao vivo — fale com o agente",
+        "micBlocked": "Permissão de microfone negada — recarregue e permita",
+        "connecting": "Conectando…"
       }
     }
   },

@@ -486,10 +486,32 @@
     },
     "live": {
       "title": "Live calls",
-      "description": "Watch the calls happening right now — click one to see the transcript in real time.",
+      "description": "Calls ringing or in progress across all agents. The list updates in real time — rows appear as calls connect and drop out the moment they complete.",
+      "liveBadge": "Live",
+      "autoRefresh": "Auto-refresh",
+      "inProgress": "<b>{count}</b> in progress",
+      "ringing": "<b>{count}</b> ringing",
+      "columns": {
+        "status": "Status",
+        "caller": "Caller",
+        "agent": "Agent",
+        "live": "Live",
+        "metrics": "Duration · Latency"
+      },
+      "ringingLabel": "ringing",
+      "e2e": "e2e {ms}ms",
+      "monitor": "Monitor",
+      "newCaller": "New caller · not yet identified",
       "empty": {
         "title": "Nothing happening now",
-        "description": "When a call starts, it appears here in real time."
+        "description": "When a call starts, it appears here in real time. You don't need to refresh.",
+        "watching": "Watching for calls"
+      },
+      "channelError": {
+        "title": "Couldn't load live calls",
+        "description": "The realtime channel dropped. This usually resolves on its own — retry to reconnect.",
+        "retry": "Try again",
+        "stream": "stream: {channel} · code RT_DISCONNECTED"
       },
       "viewHistory": "View call history",
       "viewLive": "View live"
@@ -498,19 +520,76 @@
       "agentFallback": "Agent",
       "titleInbound": "Inbound call",
       "titleOutbound": "Outbound call",
-      "waveform": "Live waveform",
       "noRoom": "no room",
-      "latencyPerLeg": "Latency per leg",
-      "toolsUsed": "Tools used",
+      "listen": {
+        "connecting": "Connecting live audio",
+        "negotiating": "negotiating…",
+        "connectingTranscript": "Connecting to live audio…",
+        "establishing": "Establishing media path…",
+        "listeningIn": "Listening in — live caller audio",
+        "codec": "opus · 48 kHz",
+        "youAreListening": "You are listening in",
+        "failedTitle": "Live audio unavailable",
+        "failedMeta": "no media · SIP",
+        "failedHint": "No live audio — listen-in could not connect",
+        "failedTranscriptNote": "Transcript below continues from the data channel.",
+        "retry": "Retry",
+        "ended": "Call ended",
+        "endedRecording": "Recording will be available in the call summary."
+      },
+      "transcriptConnecting": "Call is connecting. The transcript streams once the caller is on the line.",
+      "awaitingUtterance": "Waiting for the first utterance…",
+      "streaming": "STREAMING",
+      "autoScroll": "auto-scroll on",
+      "idle": "idle",
+      "latency": {
+        "title": "Latency",
+        "legCount": "{count, plural, one {# leg} other {# legs}}",
+        "healthy": "Healthy",
+        "degraded": "Degraded",
+        "noData": "No data yet",
+        "noDataValue": "no data",
+        "budget": "≤ {ms}",
+        "p95": "p95 {ms}",
+        "legendWithin": "within budget",
+        "legendOver": "over budget",
+        "legendNoData": "no data",
+        "overBudgetBanner": "End-to-end latency over budget. Last {last}ms · p95 {p95}ms against a {budget}ms target.",
+        "legs": {
+          "END_TO_END": "End-to-end",
+          "LLM_TTFT": "LLM first token",
+          "TTS_TTFA": "TTS first audio",
+          "LLM_TOTAL": "LLM total",
+          "TOOL_TOTAL": "Tool total",
+          "STT_FINALIZE": "STT finalize"
+        }
+      },
       "liveTranscript": "Live transcript",
+      "agent": "Agent",
+      "caller": "Caller",
+      "interim": "Interim",
+      "toolsUsed": "Tool timeline",
       "hangup": {
         "button": "End",
-        "toastEnded": "Call ended"
+        "confirmTitle": "End this call?",
+        "confirmDescription": "The caller will be disconnected immediately. A summary, outcome and sentiment are generated after hangup. This can't be undone.",
+        "keepMonitoring": "Keep monitoring",
+        "endCall": "End call",
+        "toastEnded": "Call ended",
+        "toastRecording": "Recording is being processed",
+        "endedTitle": "Call ended",
+        "endedDescription": "Generating summary, outcome & sentiment — taking you to the call detail…",
+        "redirecting": "Redirecting"
       },
       "errors": {
         "invalidInput": "Invalid input.",
         "callNotFound": "Call not found.",
         "alreadyEnded": "Call already ended."
+      },
+      "testCall": {
+        "micLive": "Microphone live — talk to the agent",
+        "micBlocked": "Microphone permission denied — reload and allow",
+        "connecting": "Connecting…"
       }
     }
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import { Mic, MicOff } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Waveform } from "@/components/call/waveform";
@@ -20,6 +21,7 @@ interface AttachableTrack {
 }
 
 export function TestCallSession({ livekitUrl, roomName, token, active }: TestCallSessionProps) {
+  const t = useTranslations("calls.liveDetail.testCall");
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [micState, setMicState] = useState<"idle" | "live" | "blocked">("idle");
 
@@ -157,16 +159,16 @@ export function TestCallSession({ livekitUrl, roomName, token, active }: TestCal
         {micState === "live" ? (
           <Badge variant="success" className="gap-1 text-[10px]">
             <Mic className="h-3 w-3" />
-            Microfone ao vivo, fale com o agente
+            {t("micLive")}
           </Badge>
         ) : micState === "blocked" ? (
           <Badge variant="destructive" className="gap-1 text-[10px]">
             <MicOff className="h-3 w-3" />
-            Permissão de microfone negada, recarregue e permita
+            {t("micBlocked")}
           </Badge>
         ) : (
           <Badge variant="outline" className="text-[10px]">
-            Conectando...
+            {t("connecting")}
           </Badge>
         )}
       </div>

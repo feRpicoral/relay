@@ -17,6 +17,12 @@ interface UseRealtimeListOptions<T> {
    */
   channelKey: string;
   initial: RowFor<T>[];
+  /**
+   * Reports channel lifecycle so callers can render a reconnect affordance.
+   * `true` once the channel drops (CHANNEL_ERROR/TIMED_OUT), back to `false`
+   * once it (re)subscribes.
+   */
+  onChannelError?: (errored: boolean) => void;
 }
 
 /**
@@ -37,9 +43,15 @@ export function useRealtimeList<T>({
   filter,
   channelKey,
   initial,
+  onChannelError,
 }: UseRealtimeListOptions<T>): RowFor<T>[] {
   const [rows, setRows] = useState<RowFor<T>[]>(initial);
   const seen = useRef(new Set<string>(initial.map((r) => r.id)));
+  const onChannelErrorRef = useRef(onChannelError);
+
+  useEffect(() => {
+    onChannelErrorRef.current = onChannelError;
+  }, [onChannelError]);
 
   useEffect(() => {
     const supabase = getBrowserSupabase();
@@ -80,8 +92,11 @@ export function useRealtimeList<T>({
         // Realtime errors (RLS reject, missing publication) are otherwise
         // silent. Surface them so misconfiguration is visible.
         if (err) console.warn("[use-realtime] subscribe error", { table, filter, err });
-        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           console.warn("[use-realtime] channel status", { table, filter, status });
+          onChannelErrorRef.current?.(true);
+        } else if (status === "SUBSCRIBED") {
+          onChannelErrorRef.current?.(false);
         }
       });
 
