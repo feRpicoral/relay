@@ -7,10 +7,12 @@ const STRINGS = {
   "en-US": {
     title: "Something went wrong",
     description: "We've already logged the error. Refresh the page to try again.",
+    reload: "Reload Relay",
   },
   "pt-BR": {
     title: "Algo deu errado",
     description: "Já registramos o erro. Recarregue a página para tentar de novo.",
+    reload: "Recarregar o Relay",
   },
 } as const;
 
@@ -38,7 +40,13 @@ function serverLocale(): Locale {
  * `useSyncExternalStore` (the React 19 alternative to `useState +
  * useEffect(setState)`, which the lint rule forbids).
  */
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   const locale = useSyncExternalStore(subscribeToCookie, readLocaleFromCookie, serverLocale);
 
   useEffect(() => {
@@ -70,6 +78,23 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
               id: {error.digest}
             </p>
           ) : null}
+          <button
+            type="button"
+            onClick={() => reset()}
+            style={{
+              marginTop: 20,
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: 0,
+              background: "#fafafa",
+              color: "#0a0a0a",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {t.reload}
+          </button>
         </div>
       </body>
     </html>

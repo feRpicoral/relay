@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import { useEffect, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
+import { StateCard } from "@/components/ui/state-card";
 
 /**
  * Segment-level error boundary. Lives ABOVE the route-group layouts that
@@ -66,17 +67,20 @@ export default function SegmentError({
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="max-w-md space-y-4 text-center">
-        <div className="bg-destructive/10 text-destructive mx-auto flex h-12 w-12 items-center justify-center rounded-full">
-          <AlertTriangle className="h-5 w-5" />
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
-        <p className="text-muted-foreground text-sm">{t.description}</p>
-        {error.digest ? (
-          <p className="text-muted-foreground font-mono text-xs">{t.errorId(error.digest)}</p>
-        ) : null}
-        <Button onClick={reset}>{t.retry}</Button>
-      </div>
+      <StateCard
+        icon={<AlertTriangle />}
+        iconTone="destructive"
+        title={t.title}
+        description={
+          <>
+            {t.description}
+            {error.digest ? (
+              <span className="mt-2 block font-mono text-xs">{t.errorId(error.digest)}</span>
+            ) : null}
+          </>
+        }
+        actions={<Button onClick={reset}>{t.retry}</Button>}
+      />
     </main>
   );
 }

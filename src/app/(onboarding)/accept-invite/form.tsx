@@ -23,7 +23,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
   useEffect(() => {
     if (state && state.ok) {
       toast.success(t("toastWelcome"));
-      router.push("/dashboard");
+      router.push("/overview");
       router.refresh();
     }
   }, [state, router, t]);

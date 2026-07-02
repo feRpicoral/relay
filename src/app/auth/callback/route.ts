@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   const target = next
     ? new URL(next, request.url)
     : membership
-      ? new URL("/dashboard", request.url)
+      ? new URL("/overview", request.url)
       : new URL("/create-org", request.url);
 
   const response = NextResponse.redirect(target);

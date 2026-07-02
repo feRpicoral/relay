@@ -138,8 +138,12 @@
   "sidebar": {
     "expand": "Expand menu",
     "collapse": "Collapse menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "navLabel": "Main navigation",
     "nav": {
-      "dashboard": "Overview",
+      "overview": "Overview",
+      "live": "Live",
       "calls": "Calls",
       "agents": "Agents",
       "campaigns": "Campaigns",
@@ -666,6 +670,12 @@
       "title": "Something went wrong",
       "description": "We've logged the error. Try refreshing the page.",
       "retry": "Retry",
+      "errorId": "id: {digest}"
+    },
+    "segmentBoundary": {
+      "title": "Couldn't load this section",
+      "description": "Your session is fine. Give it another try.",
+      "retry": "Try again",
       "errorId": "id: {digest}"
     },
     "notFound": {

@@ -138,8 +138,12 @@
   "sidebar": {
     "expand": "Expandir menu",
     "collapse": "Recolher menu",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "navLabel": "Navegação principal",
     "nav": {
-      "dashboard": "Visão geral",
+      "overview": "Visão geral",
+      "live": "Ao vivo",
       "calls": "Chamadas",
       "agents": "Agentes",
       "campaigns": "Campanhas",
@@ -665,6 +669,12 @@
     "appBoundary": {
       "title": "Algo deu errado",
       "description": "Já registramos o erro. Recarregue a página para tentar de novo.",
+      "retry": "Tentar de novo",
+      "errorId": "id: {digest}"
+    },
+    "segmentBoundary": {
+      "title": "Não foi possível carregar esta seção",
+      "description": "Sua sessão está ativa. Tente novamente.",
       "retry": "Tentar de novo",
       "errorId": "id: {digest}"
     },

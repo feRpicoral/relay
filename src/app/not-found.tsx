@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { StateCard } from "@/components/ui/state-card";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { parseAcceptLanguage } from "@/i18n/parse-accept-language";
 
@@ -10,12 +11,12 @@ const STRINGS = {
   "en-US": {
     title: "Page not found",
     description: "This path doesn't exist or has moved. Nothing to do with you.",
-    backHome: "Back to dashboard",
+    backHome: "Back to overview",
   },
   "pt-BR": {
     title: "Página não encontrada",
     description: "Esse caminho não existe ou foi movido. Não é nada com você.",
-    backHome: "Voltar pro painel",
+    backHome: "Voltar para a visão geral",
   },
 } as const;
 
@@ -36,16 +37,17 @@ export default async function NotFound() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="max-w-md space-y-4 text-center">
-        <div className="bg-primary/10 text-primary mx-auto flex h-12 w-12 items-center justify-center rounded-full">
-          <Compass className="h-5 w-5" />
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
-        <p className="text-muted-foreground text-sm">{t.description}</p>
-        <Button asChild>
-          <Link href="/dashboard">{t.backHome}</Link>
-        </Button>
-      </div>
+      <StateCard
+        icon={<Compass />}
+        iconTone="primary"
+        title={t.title}
+        description={t.description}
+        actions={
+          <Button asChild>
+            <Link href="/overview">{t.backHome}</Link>
+          </Button>
+        }
+      />
     </main>
   );
 }
