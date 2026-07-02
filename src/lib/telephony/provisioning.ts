@@ -24,6 +24,8 @@ export interface AvailableNumber {
   twilioSid: string;
   e164: string;
   friendlyName: string;
+  inbound: boolean;
+  outbound: boolean;
   assignedAgentId: AgentId | null;
   phoneNumberId: string | null;
 }
@@ -51,7 +53,7 @@ export async function listAvailableNumbers(orgId: OrgId): Promise<AvailableNumbe
     client.incomingPhoneNumbers.list({ limit: 200 }),
     getPrisma().phoneNumber.findMany({
       where: { orgId, twilioSid: { not: null } },
-      select: { id: true, agentId: true, twilioSid: true },
+      select: { id: true, agentId: true, twilioSid: true, inbound: true, outbound: true },
     }),
   ]);
   const attachedBySid = new Map(attached.map((p) => [p.twilioSid!, p]));
@@ -61,6 +63,10 @@ export async function listAvailableNumbers(orgId: OrgId): Promise<AvailableNumbe
       twilioSid: n.sid,
       e164: n.phoneNumber,
       friendlyName: n.friendlyName ?? n.phoneNumber,
+      // Direction is a Relay designation stored on attached rows; an unattached
+      // Twilio number has no row yet, so default to inbound-only.
+      inbound: match?.inbound ?? true,
+      outbound: match?.outbound ?? false,
       assignedAgentId: match?.agentId ? asAgentId(match.agentId) : null,
       phoneNumberId: match?.id ?? null,
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
@@ -32,27 +32,25 @@ export function LocaleSelect({ initialLocale }: { initialLocale: Locale }) {
     null,
   );
 
-  // Track which `state` we've already reacted to. Without this, `router.refresh()`
-  // rebuilds `messages` server-side, giving `useTranslations` a new `t` reference
-  // on every refresh — which re-fires this effect (state still `{ok: true}`) and
-  // loops the toast.
+  // Dedupe so `router.refresh()` (which rebuilds server messages and re-fires
+  // this effect with the same `state`) doesn't loop the refresh/toast.
   const handledStateRef = useRef<Result | null>(null);
 
   useEffect(() => {
     if (!state || handledStateRef.current === state) return;
     handledStateRef.current = state;
     if (state.ok) {
-      toast.success(t("saved"));
       router.refresh();
     } else {
       toast.error(state.error);
     }
-  }, [state, router, t]);
+  }, [state, router]);
 
   const dirty = locale !== initialLocale;
+  const saved = Boolean(state?.ok) && !dirty;
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form action={formAction} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="locale-select">{t("languageLabel")}</Label>
         <Select value={locale} onValueChange={(v) => setLocale(v as Locale)} disabled={pending}>
@@ -69,9 +67,18 @@ export function LocaleSelect({ initialLocale }: { initialLocale: Locale }) {
         </Select>
         <p className="text-muted-foreground text-xs">{t("languageHint")}</p>
       </div>
-      <Button type="submit" disabled={pending || !dirty}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button type="submit" disabled={pending || !dirty}>
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {t("save")}
+        </Button>
+        {saved ? (
+          <span className="text-success inline-flex items-center gap-1.5 text-sm">
+            <CheckCircle2 className="size-3.5" aria-hidden />
+            {t("saved")}
+          </span>
+        ) : null}
+      </div>
     </form>
   );
 }

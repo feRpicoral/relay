@@ -15,6 +15,7 @@ export interface TwilioCredentials {
 export interface ConnectionStatus {
   connected: boolean;
   accountSid: string | null;
+  accountName: string | null;
   twilioTrunkSid: string | null;
   livekitOutboundTrunkId: string | null;
 }
@@ -25,6 +26,7 @@ export async function getConnectionStatus(orgId: OrgId): Promise<ConnectionStatu
     return {
       connected: false,
       accountSid: null,
+      accountName: null,
       twilioTrunkSid: null,
       livekitOutboundTrunkId: null,
     };
@@ -32,6 +34,7 @@ export async function getConnectionStatus(orgId: OrgId): Promise<ConnectionStatu
   return {
     connected: true,
     accountSid: conn.accountSid,
+    accountName: conn.accountName,
     twilioTrunkSid: conn.twilioTrunkSid,
     livekitOutboundTrunkId: conn.livekitOutboundTrunkId,
   };
@@ -51,17 +54,21 @@ export async function connect(orgId: OrgId, creds: TwilioCredentials): Promise<v
   const client = buildTwilioClient(creds);
   await client.incomingPhoneNumbers.list({ limit: 1 });
 
+  const accountName = await fetchAccountFriendlyName(client, creds.accountSid);
+
   const authTokenEncrypted = encryptSecret(creds.apiKeySecret);
   await getPrisma().twilioConnection.upsert({
     where: { orgId },
     create: {
       orgId,
       accountSid: creds.accountSid,
+      accountName,
       apiKeySid: creds.apiKeySid,
       authTokenEncrypted,
     },
     update: {
       accountSid: creds.accountSid,
+      accountName,
       apiKeySid: creds.apiKeySid,
       authTokenEncrypted,
       // Wipe provisioning state so the next attach starts clean against the
@@ -70,6 +77,25 @@ export async function connect(orgId: OrgId, creds: TwilioCredentials): Promise<v
       livekitOutboundTrunkId: null,
     },
   });
+}
+
+/**
+ * Best-effort fetch of the account's friendly name, cached so Settings can show
+ * it without a Twilio round-trip per page load. A Standard API key (the kind the
+ * connect form asks for) is rejected against the Accounts resource with code
+ * 20003, so failure is expected and non-fatal — we fall back to null and the UI
+ * shows the Account SID instead.
+ */
+async function fetchAccountFriendlyName(
+  client: ReturnType<typeof buildTwilioClient>,
+  accountSid: string,
+): Promise<string | null> {
+  try {
+    const account = await client.api.v2010.accounts(accountSid).fetch();
+    return account.friendlyName ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**

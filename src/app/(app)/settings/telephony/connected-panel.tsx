@@ -1,15 +1,17 @@
 "use client";
 
-import { CheckCircle2, Link2Off, Loader2, Plus, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Unplug } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { CopyButton } from "@/components/settings/copy-button";
+import { KvRow } from "@/components/settings/kv-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Dot } from "@/components/ui/dot";
 import {
   Select,
   SelectContent,
@@ -21,16 +23,21 @@ import { formatPhone } from "@/lib/utils";
 
 import { attachNumberAction, detachNumberAction, disconnectTwilioAction } from "./actions";
 
+const TWILIO_BUY_NUMBER_URL = "https://console.twilio.com/us1/develop/phone-numbers/manage/search";
+
 interface NumberRow {
   twilioSid: string;
   e164: string;
   friendlyName: string;
+  inbound: boolean;
+  outbound: boolean;
   assignedAgentId: string | null;
   phoneNumberId: string | null;
 }
 
 interface ConnectedPanelProps {
   accountSid: string;
+  accountName: string | null;
   twilioTrunkSid: string | null;
   livekitOutboundTrunkId: string | null;
   numbers: NumberRow[];
@@ -40,6 +47,7 @@ interface ConnectedPanelProps {
 
 export function ConnectedPanel({
   accountSid,
+  accountName,
   twilioTrunkSid,
   livekitOutboundTrunkId,
   numbers,
@@ -49,6 +57,8 @@ export function ConnectedPanel({
   const t = useTranslations("settings.telephony");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  const healthy = Boolean(twilioTrunkSid) && Boolean(livekitOutboundTrunkId);
 
   async function onDisconnect() {
     return new Promise<void>((resolve) => {
@@ -66,61 +76,83 @@ export function ConnectedPanel({
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-success/10 text-success flex h-10 w-10 items-center justify-center rounded-lg">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle>{t("connect.toastConnected")}</CardTitle>
-              <p className="text-muted-foreground font-mono text-xs">{accountSid}</p>
-            </div>
+    <div className="max-w-3xl space-y-4">
+      <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
+        <div className="border-border/60 flex items-center justify-between border-b px-5 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm font-semibold">{t("connected.title")}</span>
+            <span className="text-success inline-flex items-center gap-1.5 text-xs font-medium">
+              <Dot tone="success" />
+              {t("connected.status")}
+            </span>
           </div>
           <ConfirmDialog
             trigger={
-              <Button variant="ghost" size="sm" disabled={pending} className="text-destructive">
-                <Link2Off className="h-4 w-4" />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                className="text-destructive border-destructive/35 hover:text-destructive"
+              >
+                <Unplug className="h-4 w-4" />
                 {t("connected.disconnect")}
               </Button>
             }
             title={t("connected.confirmDisconnectTitle")}
             description={t("connected.confirmDisconnectDescription")}
             confirmLabel={t("connected.confirmDisconnect")}
+            cancelLabel={t("connected.keepConnected")}
             pending={pending}
             onConfirm={onDisconnect}
           />
-        </CardHeader>
-        <div className="text-muted-foreground grid gap-1 px-6 pb-6 font-mono text-xs">
-          <div>Twilio Elastic SIP Trunk: {twilioTrunkSid ?? "—"}</div>
-          <div>LiveKit outbound trunk: {livekitOutboundTrunkId ?? "—"}</div>
         </div>
-      </Card>
+        <div className="px-5 pb-2">
+          <KvRow label={t("connected.accountNameLabel")}>{accountName ?? "—"}</KvRow>
+          <KvRow label={t("connected.accountSidLabel")} valueClassName="font-mono text-xs">
+            {accountSid}
+            <CopyButton value={accountSid} />
+          </KvRow>
+          <KvRow label={t("connected.trunkSidLabel")} valueClassName="font-mono text-xs">
+            {twilioTrunkSid ?? "—"}
+            {twilioTrunkSid ? <CopyButton value={twilioTrunkSid} /> : null}
+          </KvRow>
+          <KvRow label={t("connected.livekitTrunkLabel")} valueClassName="font-mono text-xs">
+            {livekitOutboundTrunkId ?? "—"}
+            {livekitOutboundTrunkId ? <CopyButton value={livekitOutboundTrunkId} /> : null}
+          </KvRow>
+          <KvRow label={t("connected.diagnosticsLabel")}>
+            {healthy ? (
+              <span className="text-success inline-flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5" aria-hidden />
+                {t("connected.healthy")}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">{t("connected.pendingSetup")}</span>
+            )}
+          </KvRow>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Twilio</CardTitle>
-        </CardHeader>
-        <div className="space-y-3 px-6 pb-6">
+      <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
+        <div className="border-border/60 flex items-center justify-between border-b px-5 py-3">
+          <span className="text-sm font-semibold">{t("numbers.title")}</span>
+          <Button asChild variant="ghost" size="sm" className="text-primary">
+            <a href={TWILIO_BUY_NUMBER_URL} target="_blank" rel="noreferrer">
+              {t("numbers.buyNumber")}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </div>
+        <div className="px-5 pb-2">
           {listError ? (
-            <p className="text-destructive text-sm">{listError}</p>
+            <p className="text-destructive py-3 text-sm">{listError}</p>
           ) : numbers.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              <a
-                className="underline"
-                href="https://console.twilio.com/us1/develop/phone-numbers/manage/search"
-                target="_blank"
-                rel="noreferrer"
-              >
-                console.twilio.com
-              </a>
-            </p>
+            <p className="text-muted-foreground py-3 text-sm">{t("numbers.empty")}</p>
           ) : (
             numbers.map((n) => <NumberItem key={n.twilioSid} number={n} agents={agents} />)
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -132,16 +164,21 @@ function NumberItem({
   number: NumberRow;
   agents: Array<{ id: string; name: string }>;
 }) {
-  const t = useTranslations("settings.telephony.connected");
+  const t = useTranslations("settings.telephony.numbers");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [selectedAgentId, setSelectedAgentId] = useState<string>(agents[0]?.id ?? "");
+  const [selectedAgentId, setSelectedAgentId] = useState<string>(
+    number.assignedAgentId ?? agents[0]?.id ?? "",
+  );
 
   const attached = number.phoneNumberId !== null;
+  const attachedAgentName = attached
+    ? (agents.find((a) => a.id === number.assignedAgentId)?.name ?? t("unassigned"))
+    : null;
 
   function onAttach() {
     if (!selectedAgentId) {
-      toast.error(t("attachAgent"));
+      toast.error(t("selectAgent"));
       return;
     }
     startTransition(async () => {
@@ -158,57 +195,66 @@ function NumberItem({
     });
   }
 
-  async function onDetach() {
-    if (!number.phoneNumberId) return;
+  function onDetach() {
+    if (!number.phoneNumberId) return Promise.resolve();
     const phoneNumberId = number.phoneNumberId;
     return new Promise<void>((resolve) => {
       startTransition(async () => {
-        const result = await detachNumberAction({ phoneNumberId });
-        if (result.ok) {
-          toast.success(t("detachedToast", { number: number.e164 }));
-          router.refresh();
-        } else {
-          toast.error(result.error);
+        try {
+          const result = await detachNumberAction({ phoneNumberId });
+          if (result.ok) {
+            toast.success(t("detachedToast", { number: number.e164 }));
+            router.refresh();
+          } else {
+            toast.error(result.error);
+          }
+        } finally {
+          resolve();
         }
-        resolve();
       });
     });
   }
 
-  const attachedAgent = attached ? agents.find((a) => a.id === number.assignedAgentId)?.name : null;
-
   return (
-    <div className="border-border flex items-center justify-between rounded-md border p-3">
-      <div>
-        <div className="flex items-center gap-2 text-sm font-medium">
-          {formatPhone(number.e164)}
-          {attached ? (
-            <Badge variant="success" className="text-[10px]">
-              {attachedAgent ?? "—"}
-            </Badge>
-          ) : null}
-        </div>
-        <div className="text-muted-foreground text-xs">{number.friendlyName}</div>
+    <div className="border-border/60 flex flex-wrap items-center justify-between gap-3 border-b py-3 last:border-b-0">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        {formatPhone(number.e164)}
+        {number.inbound ? (
+          <Badge variant="outline" className="text-[10px] tracking-wide">
+            {t("inbound")}
+          </Badge>
+        ) : null}
+        {number.outbound ? (
+          <Badge variant="outline" className="text-[10px] tracking-wide">
+            {t("outbound")}
+          </Badge>
+        ) : null}
       </div>
       <div className="flex items-center gap-2">
         {attached ? (
-          <ConfirmDialog
-            trigger={
-              <Button variant="ghost" size="sm" disabled={pending}>
-                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                {t("disconnect")}
-              </Button>
-            }
-            title={t("confirmDisconnectTitle")}
-            description={t("confirmDisconnectDescription")}
-            confirmLabel={t("confirmDisconnect")}
-            pending={pending}
-            onConfirm={onDetach}
-          />
+          <>
+            <span className="text-muted-foreground max-w-44 truncate text-xs">
+              {attachedAgentName}
+            </span>
+            <ConfirmDialog
+              trigger={
+                <Button variant="outline" size="sm" disabled={pending}>
+                  {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {t("detach")}
+                </Button>
+              }
+              title={t("confirmDetachTitle")}
+              description={t("confirmDetachDescription", { number: formatPhone(number.e164) })}
+              confirmLabel={t("confirmDetach")}
+              cancelLabel={t("keepAttached")}
+              pending={pending}
+              onConfirm={onDetach}
+            />
+          </>
         ) : (
           <>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId} disabled={pending}>
-              <SelectTrigger className="h-9 w-48">
+              <SelectTrigger className="h-8 w-44 text-xs" aria-label={t("agentLabel")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -219,12 +265,13 @@ function NumberItem({
                 ))}
               </SelectContent>
             </Select>
-            <Button size="sm" onClick={onAttach} disabled={pending || !selectedAgentId}>
-              {pending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAttach}
+              disabled={pending || !selectedAgentId}
+            >
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {t("attach")}
             </Button>
           </>

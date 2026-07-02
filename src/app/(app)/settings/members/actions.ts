@@ -14,6 +14,9 @@ import type { Result } from "@/lib/types/result";
 
 const tokenGen = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 32);
 
+/** Surfaced to the members UI so a last-admin demotion renders a page banner. */
+const LAST_ADMIN_CODE = "last_admin";
+
 /** How long an invite link stays valid. */
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -121,7 +124,9 @@ export async function changeRoleAction(input: z.infer<typeof ChangeRoleSchema>):
   } catch (err) {
     if (err instanceof MemberNotFoundError) return { ok: false, error: t("memberNotFound") };
     if (err instanceof CannotChangeSelfError) return { ok: false, error: t("cannotChangeOwnRole") };
-    if (err instanceof LastAdminError) return { ok: false, error: t("lastAdmin") };
+    if (err instanceof LastAdminError) {
+      return { ok: false, error: t("lastAdmin"), code: LAST_ADMIN_CODE };
+    }
     throw err;
   }
 
@@ -158,7 +163,9 @@ export async function removeMemberAction(input: z.infer<typeof RemoveSchema>): P
   } catch (err) {
     if (err instanceof MemberNotFoundError) return { ok: false, error: t("memberNotFound") };
     if (err instanceof CannotChangeSelfError) return { ok: false, error: t("cannotRemoveSelf") };
-    if (err instanceof LastAdminError) return { ok: false, error: t("lastAdmin") };
+    if (err instanceof LastAdminError) {
+      return { ok: false, error: t("lastAdmin"), code: LAST_ADMIN_CODE };
+    }
     throw err;
   }
 
