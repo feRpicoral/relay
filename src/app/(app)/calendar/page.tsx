@@ -106,11 +106,13 @@ export default async function CalendarPage() {
 
   const parsed: ParsedBooking[] = [];
   for (const row of bookingCalls) {
+    if (row.errorMessage) continue;
     const input = BookAppointmentInputSchema.safeParse(row.inputJson);
     if (!input.success) continue;
     const start = new Date(input.data.slotIso);
     if (Number.isNaN(start.getTime()) || start.getTime() < now.getTime()) continue;
     const output = BookAppointmentOutputSchema.safeParse(row.outputJson);
+    if (!output.success) continue;
     parsed.push({
       id: row.id,
       callId: row.callId,
@@ -118,7 +120,7 @@ export default async function CalendarPage() {
       attendeeName: input.data.patientName,
       eventTypeName: input.data.eventTypeName ?? null,
       phone: input.data.patientPhone || row.call.callerE164 || null,
-      status: output.success ? output.data.status : "",
+      status: output.data.status,
     });
   }
 
@@ -151,7 +153,7 @@ export default async function CalendarPage() {
         : group.relative === "tomorrow"
           ? t("relative.tomorrow")
           : null;
-    const header = relativePrefix ? `${relativePrefix} · ${group.label}` : group.label;
+    const header = relativePrefix ? `${relativePrefix}: ${group.label}` : group.label;
     const rows: BookingRow[] = group.items.map((booking) => ({
       id: booking.id,
       callId: booking.callId,
