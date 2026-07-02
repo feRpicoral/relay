@@ -1017,12 +1017,23 @@
   },
   "calendar": {
     "title": "Calendário",
-    "description": "Próximas consultas que seu agente marcou.",
+    "description": "Consultas que seus agentes marcaram pelo Cal.com.",
+    "openCalcom": "Abrir o Cal.com",
+    "viewCall": "Ver ligação",
+    "relative": {
+      "today": "Hoje",
+      "tomorrow": "Amanhã"
+    },
+    "connect": {
+      "title": "Conecte o Cal.com para ver as consultas",
+      "description": "Depois de conectar, toda consulta que o agente marca durante a ligação aparece aqui, com link para a ligação.",
+      "cta": "Conectar o Cal.com",
+      "memberLocked": "Só um administrador pode conectar o Cal.com."
+    },
     "empty": {
       "title": "Nenhuma consulta agendada",
-      "description": "Quando o agente marcar uma consulta, ela aparece aqui."
-    },
-    "viewInCalcom": "Abrir no Cal.com"
+      "description": "Quando um agente marcar uma consulta durante uma ligação, ela aparece aqui automaticamente."
+    }
   },
   "enums": {
     "callStatus": {
@@ -1098,6 +1109,12 @@
       "TTS_TTFA": "TTS TTFA",
       "TOOL_TOTAL": "Tool total",
       "END_TO_END": "End-to-end"
+    },
+    "bookingStatus": {
+      "confirmed": "Confirmada",
+      "pending": "Pendente",
+      "cancelled": "Cancelada",
+      "unknown": "Desconhecida"
     }
   },
   "errors": {

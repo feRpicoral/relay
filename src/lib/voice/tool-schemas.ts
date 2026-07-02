@@ -19,6 +19,8 @@ export const BookAppointmentInputSchema = z.object({
   patientName: z.string(),
   patientPhone: z.string(),
   reason: z.string().optional(),
+  /** Cal.com event-type title shown on the calendar; the worker may omit it. */
+  eventTypeName: z.string().optional(),
 });
 export type BookAppointmentInput = z.infer<typeof BookAppointmentInputSchema>;
 
