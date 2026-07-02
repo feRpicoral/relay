@@ -272,12 +272,6 @@ export async function loadTodayOutcomes(orgId: OrgId): Promise<OutcomeBreakdown>
   return breakdown;
 }
 
-export async function loadConversionToday(orgId: OrgId): Promise<number> {
-  const breakdown = await loadTodayOutcomes(orgId);
-  if (breakdown.total === 0) return 0;
-  return (breakdown.scheduled + breakdown.qualified) / breakdown.total;
-}
-
 export interface ActiveAgents {
   enabled: number;
   withCallsToday: number;

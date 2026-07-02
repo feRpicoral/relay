@@ -11,7 +11,6 @@ import { KpiTile } from "@/components/ui/kpi-tile";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
   loadActiveAgents,
-  loadConversionToday,
   loadInProgressCalls,
   loadRecentCalls,
   loadTodayOutcomes,
@@ -43,7 +42,6 @@ export default async function OverviewPage() {
     inProgress,
     recentCalls,
     outcomes,
-    conversionToday,
     volume,
   ] = await Promise.all([
     db.call.count({ where: { startedAt: { gte: daysAgo(1) } } }),
@@ -54,12 +52,13 @@ export default async function OverviewPage() {
     loadInProgressCalls(session.orgId),
     loadRecentCalls(session.orgId, RECENT_CALLS_LIMIT),
     loadTodayOutcomes(session.orgId),
-    loadConversionToday(session.orgId),
     loadVolumeByDay(session.orgId, daysAgo(VOLUME_WINDOW_DAYS)),
   ]);
 
   const userName = session.userName ?? session.email.split("@")[0] ?? session.email;
   const today = new Date();
+  const conversionToday =
+    outcomes.total === 0 ? 0 : (outcomes.scheduled + outcomes.qualified) / outcomes.total;
 
   const header = (
     <PageHeader
