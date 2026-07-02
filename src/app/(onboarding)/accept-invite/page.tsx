@@ -1,6 +1,12 @@
+import { AlertTriangle, Mail, User } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { StateCard } from "@/components/ui/state-card";
 import { getPrisma } from "@/lib/db/client";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -21,81 +27,101 @@ export default async function AcceptInvitePage({
 
   const invite = await getPrisma().invite.findUnique({
     where: { token },
-    include: { organization: { select: { name: true } } },
+    include: {
+      organization: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
   });
 
   const t = await getTranslations("onboarding.acceptInvite");
+  const tRole = await getTranslations("enums.membershipRole");
 
   if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
+    const orgName = invite?.organization.name;
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("invalid.title")}</h1>
-        <p className="text-muted-foreground text-sm">{t("invalid.description")}</p>
-      </div>
+      <StateCard
+        icon={<AlertTriangle />}
+        iconTone="destructive"
+        title={t("expired.title")}
+        description={
+          orgName ? t("expired.descriptionWithOrg", { orgName }) : t("expired.description")
+        }
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/login">{t("expired.backToLogin")}</Link>
+          </Button>
+        }
+      />
     );
   }
 
   if (!user) {
+    const loginHref = `/login?next=${encodeURIComponent(`/accept-invite?token=${token}`)}`;
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {t("anonymous.title", { orgName: invite.organization.name })}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t.rich("anonymous.description", {
-              email: invite.email,
-              strong: (chunks) => <strong>{chunks}</strong>,
-            })}
-          </p>
-        </div>
-        <a
-          href={`/login?next=${encodeURIComponent(`/accept-invite?token=${token}`)}`}
-          className="bg-primary text-primary-foreground inline-flex items-center rounded-md px-4 py-2 text-sm font-medium"
-        >
-          {t("anonymous.signInWith", { email: invite.email })}
-        </a>
-      </div>
+      <StateCard
+        icon={<Mail />}
+        iconTone="primary"
+        title={t("anonymous.title")}
+        description={t.rich("anonymous.description", {
+          email: invite.email,
+          orgName: invite.organization.name,
+          strong: (chunks) => <strong className="text-foreground font-semibold">{chunks}</strong>,
+        })}
+        actions={
+          <Button asChild className="gap-2">
+            <Link href={loginHref}>
+              <Mail className="size-4" />
+              {t("anonymous.signIn")}
+            </Link>
+          </Button>
+        }
+      />
     );
   }
 
   if (user.email?.toLowerCase() !== invite.email.toLowerCase()) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("emailMismatch.title")}</h1>
-        <p className="text-muted-foreground text-sm">
-          {t.rich("emailMismatch.description", {
-            inviteEmail: invite.email,
-            currentEmail: user.email ?? "",
-            strong: (chunks) => <strong>{chunks}</strong>,
-          })}
-        </p>
-        <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            className="border-border hover:bg-accent rounded-md border px-4 py-2 text-sm"
-          >
-            {t("emailMismatch.signOutAndRetry")}
-          </button>
-        </form>
-      </div>
+      <StateCard
+        icon={<User />}
+        iconTone="warning"
+        title={t("emailMismatch.title")}
+        description={t.rich("emailMismatch.description", {
+          inviteEmail: invite.email,
+          currentEmail: user.email ?? "",
+          strong: (chunks) => <strong className="text-foreground font-semibold">{chunks}</strong>,
+        })}
+        actions={
+          <form action="/auth/signout" method="post">
+            <Button type="submit" variant="outline">
+              {t("emailMismatch.signOutAndSwitch")}
+            </Button>
+          </form>
+        }
+      />
     );
   }
 
+  const orgName = invite.organization.name;
+  const inviterName = invite.createdBy.name ?? "";
+  const roleLabel = tRole(invite.role);
+  const initials = orgName.slice(0, 2).toUpperCase();
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t("valid.title", { orgName: invite.organization.name })}
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          {t.rich("valid.description", {
-            role: invite.role.toLowerCase(),
-            strong: (chunks) => <strong>{chunks}</strong>,
-          })}
-        </p>
-      </div>
+    <Card className="w-full max-w-[420px] p-7 text-center">
+      <Avatar className="bg-primary/15 mx-auto mb-4 size-12">
+        <AvatarFallback className="text-primary bg-transparent text-base font-semibold">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+      <h1 className="text-xl font-semibold tracking-tight">{t("valid.title", { orgName })}</h1>
+      <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+        {t.rich("valid.description", {
+          inviter: inviterName,
+          role: roleLabel,
+          strong: (chunks) => <strong className="text-foreground font-semibold">{chunks}</strong>,
+        })}
+      </p>
       <AcceptInviteForm token={token} />
-    </div>
+    </Card>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Result } from "@/lib/types/result";
+import { cn } from "@/lib/utils";
 
 import { signupAction } from "./actions";
 
@@ -25,7 +26,7 @@ export function SignupForm() {
   );
 
   useEffect(() => {
-    if (state && state.ok) {
+    if (state?.ok) {
       toast.success(t("toastTitle"));
       router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
     }
@@ -47,6 +48,8 @@ export function SignupForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={pending}
+          aria-invalid={error ? true : undefined}
+          className={cn(error && "border-destructive focus-visible:ring-destructive")}
         />
       </div>
       <div className="space-y-2">
@@ -61,17 +64,22 @@ export function SignupForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={pending}
+          aria-invalid={error ? true : undefined}
+          className={cn(error && "border-destructive focus-visible:ring-destructive")}
         />
       </div>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full gap-2" disabled={pending}>
         {pending ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            <Loader2 className="size-4 animate-spin" aria-hidden />
             <span className="sr-only">{t("submitting")}</span>
           </>
         ) : (
-          t("submit")
+          <>
+            <Mail className="size-4" />
+            {t("submit")}
+          </>
         )}
       </Button>
       <p className="text-muted-foreground text-xs">{t("tos")}</p>

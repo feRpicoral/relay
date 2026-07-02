@@ -12,15 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SignupPage() {
   const t = await getTranslations("signup");
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
-      </div>
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+      <p className="text-muted-foreground mt-1.5 mb-6 text-sm">{t("description")}</p>
       <SignupForm />
-      <p className="text-muted-foreground text-center text-sm">
+      <p className="text-muted-foreground mt-[18px] text-center text-[12.5px]">
         {t("haveAccount")}{" "}
-        <Link href="/login" className="text-foreground underline-offset-4 hover:underline">
+        <Link href="/login" className="text-primary font-medium hover:underline">
           {t("signIn")}
         </Link>
       </p>

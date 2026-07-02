@@ -50,6 +50,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --animate-wave: wave var(--wave-duration, 700ms) ease-in-out var(--wave-delay, 0ms) infinite
+    alternate;
 }
 
 :root {
@@ -228,5 +231,14 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+@keyframes wave {
+  from {
+    transform: scaleY(0.45);
+  }
+  to {
+    transform: scaleY(1);
   }
 }

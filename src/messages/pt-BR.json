@@ -1,70 +1,93 @@
 {
   "landing": {
-    "nav": { "signIn": "Entrar", "getStarted": "Começar" },
-    "badge": "Voice AI para negócios de serviço",
+    "nav": {
+      "features": "Recursos",
+      "signIn": "Entrar",
+      "getStarted": "Começar"
+    },
+    "badge": "Recepcionista de voz com IA",
     "hero": {
-      "titleStart": "A recepcionista que",
-      "titleAccent": "não dorme",
-      "titleEnd": ".",
-      "description": "Um agente de voz com IA que atende ligações, qualifica leads e agenda consultas em tempo real, enquanto sua equipe vê tudo acontecer no dashboard.",
-      "ctaPrimary": "Criar conta grátis",
-      "ctaSecondary": "Já tenho conta"
+      "title": "A recepcionista que atende todas as ligações.",
+      "description": "A Relay é um agente de voz bilíngue que atende 24/7, qualifica quem liga e agenda consultas durante a chamada enquanto você acompanha cada conversa ao vivo.",
+      "ctaPrimary": "Começar",
+      "ctaSecondary": "Já tenho conta",
+      "note": "pt-BR & en-US. Agenda no Cal.com. Sem taxa de setup"
     },
     "features": {
       "alwaysOn": {
         "title": "Atende 24/7",
-        "body": "Cada ligação é atendida em segundos, com voz natural em português e inglês."
+        "body": "As ligações são atendidas na hora, de dia ou de noite, em português ou inglês."
       },
       "scheduling": {
         "title": "Agenda durante a chamada",
-        "body": "O agente conversa, qualifica e marca direto no calendário da sua equipe."
+        "body": "O agente consulta sua agenda e confirma a consulta antes de desligar."
       },
       "transcripts": {
         "title": "Transcrição ao vivo",
-        "body": "Veja cada palavra em tempo real no dashboard, e assuma a chamada se precisar."
+        "body": "Acompanhe a transcrição, as chamadas de ferramentas e a latência por etapa enquanto a ligação rola."
       },
       "analytics": {
         "title": "Analytics que importam",
-        "body": "Volume, conversão, latência p95 e custo por chamada. Sem ruído."
+        "body": "Conversão, comparecimento, custo por chamada e latência p95, nada de métrica de vaidade."
       }
     },
+    "liveCall": {
+      "phone": "+55 11 98472-1130",
+      "elapsed": "00:41",
+      "live": "Ao vivo",
+      "agent": "Agente",
+      "caller": "Cliente",
+      "turns": {
+        "greeting": "Clínica Lumen, boa tarde. Como posso ajudar?",
+        "request": "Queria marcar com a Dra. Martins esta semana.",
+        "offer": "Tenho terça às 14:30. Posso reservar?"
+      },
+      "metrics": {
+        "e2e": "e2e 812ms",
+        "tts": "tts 121ms",
+        "tool": "book_appointment ok"
+      }
+    },
+    "quote": {
+      "text": "Atende todas as ligações, mesmo às 3h da manhã, e agenda direto no nosso calendário. Nossa recepção finalmente respira."
+    },
     "footer": {
-      "copyright": "© {year} Relay. Feito para clínicas e times de atendimento.",
-      "login": "Login",
-      "signup": "Signup"
+      "copyright": "© {year} Relay. Privacidade. Termos"
     }
   },
   "auth": {
     "layout": {
-      "testimonialQuote": "Atende todas as ligações, mesmo às 3h da manhã. Nossa recepção dobrou de capacidade sem contratar ninguém.",
-      "testimonialAttribution": "Dra. Renata Martins, Clínica Lumen"
+      "testimonialQuote": "Atende todas as ligações, mesmo às 3h da manhã, e agenda direto no nosso calendário.",
+      "testimonialName": "Dra. Renata Martins",
+      "testimonialOrg": "Clínica Lumen",
+      "tagline": "Voice AI bilíngue. pt-BR & en-US"
     }
   },
   "login": {
     "metadataTitle": "Entrar",
-    "title": "Entrar",
-    "description": "Acesse seu painel de voice agents.",
+    "title": "Entrar na Relay",
+    "description": "Vamos te enviar um magic link por email. Sem senha.",
     "noAccountPrompt": "Não tem conta?",
     "createAccount": "Criar conta",
     "errors": {
-      "auth_failed": "Não foi possível autenticar. Tente novamente.",
-      "missing_code": "Sessão inválida. Tente fazer login novamente.",
+      "auth_failed": "Esse link de acesso expirou ou já foi usado. Solicite um novo.",
+      "missing_code": "Esse link de acesso é inválido. Solicite um novo.",
       "invalidEmail": "Email inválido.",
       "sendFailed": "Não foi possível enviar o link. Tente novamente em instantes."
     },
     "form": {
       "emailLabel": "Email",
-      "emailPlaceholder": "voce@empresa.com",
-      "submit": "Enviar link de acesso",
+      "emailPlaceholder": "voce@clinica.com",
+      "submit": "Enviar magic link",
       "submitting": "Enviando link",
-      "toastTitle": "Link de acesso enviado",
+      "toastTitle": "Magic link enviado",
       "toastDescription": "Se houver uma conta para esse email, você receberá um link."
     }
   },
   "signup": {
     "metadataTitle": "Criar conta",
-    "title": "Criar conta",
-    "description": "Comece a atender ligações com IA em minutos.",
+    "title": "Crie sua conta",
+    "description": "Comece a atender ligações em minutos.",
     "haveAccount": "Já tem conta?",
     "signIn": "Entrar",
     "errors": {
@@ -73,29 +96,30 @@
     },
     "form": {
       "nameLabel": "Nome",
-      "namePlaceholder": "Seu nome",
+      "namePlaceholder": "Renata Martins",
       "emailLabel": "Email",
-      "emailPlaceholder": "voce@empresa.com",
-      "submit": "Criar conta",
+      "emailPlaceholder": "voce@clinica.com",
+      "submit": "Enviar magic link",
       "submitting": "Enviando link",
       "tos": "Ao criar uma conta, você concorda com os Termos e a Política de Privacidade.",
-      "toastTitle": "Link de confirmação enviado"
+      "toastTitle": "Magic link enviado"
     }
   },
   "checkEmail": {
     "title": "Verifique seu email",
-    "descriptionHead": "Enviamos um link de acesso para",
-    "descriptionTail": ". Clique nele para entrar.",
+    "descriptionWithEmail": "Enviamos um magic link para <strong>{email}</strong>. Clique nele para concluir o login.",
+    "descriptionGeneric": "Enviamos um magic link para você. Abra-o neste dispositivo para concluir o login.",
+    "expiryNote": "O link expira em 15 minutos. Verifique o spam se não chegar.",
     "backToLogin": "Voltar para login"
   },
   "onboarding": {
-    "layout": { "signOut": "Sair" },
     "createOrg": {
       "title": "Crie sua organização",
-      "description": "Cada clínica, consultório ou prestador é uma organização. Você convida sua equipe depois.",
+      "description": "Este é seu workspace. Você será o primeiro admin.",
+      "signOut": "Sair",
       "form": {
         "nameLabel": "Nome da organização",
-        "namePlaceholder": "Ex: Clínica Lumen",
+        "namePlaceholder": "Clínica Lumen",
         "submit": "Criar organização",
         "toastCreated": "Organização criada"
       },
@@ -106,32 +130,37 @@
       }
     },
     "acceptInvite": {
-      "invalid": {
-        "title": "Convite inválido",
-        "description": "Esse link já expirou ou foi usado. Peça um novo convite pra quem te chamou."
+      "expired": {
+        "title": "Este convite expirou",
+        "description": "Links de convite valem por 7 dias. Peça a um admin para enviar um novo.",
+        "descriptionWithOrg": "Links de convite valem por 7 dias. Peça a um admin da {orgName} para enviar um novo.",
+        "backToLogin": "Voltar para login"
       },
       "anonymous": {
-        "title": "Você foi convidado pra {orgName}",
-        "description": "Primeiro entre com o email <strong>{email}</strong> pra aceitar.",
-        "signInWith": "Entrar com {email}"
+        "title": "Entre para aceitar",
+        "description": "Este convite é para <strong>{email}</strong>. Entre com esse email para fazer parte da {orgName}.",
+        "signIn": "Entrar com email"
       },
       "emailMismatch": {
-        "title": "Email não bate",
-        "description": "Esse convite é pra <strong>{inviteEmail}</strong>, mas você está logado como <strong>{currentEmail}</strong>.",
-        "signOutAndRetry": "Sair e entrar com o email correto"
+        "title": "Conta errada",
+        "description": "Este convite é para <strong>{inviteEmail}</strong>, mas você está logado como <strong>{currentEmail}</strong>.",
+        "signOutAndSwitch": "Sair e trocar de conta"
       },
       "valid": {
-        "title": "Entrar em {orgName}",
-        "description": "Você foi convidado como <strong>{role}</strong>."
+        "title": "Entre na {orgName} pela Relay",
+        "description": "<strong>{inviter}</strong> convidou você para entrar como <strong>{role}</strong>."
       },
-      "form": { "submit": "Aceitar convite", "toastWelcome": "Bem-vindo!" },
+      "form": {
+        "submit": "Aceitar convite",
+        "toastWelcome": "Bem-vindo!"
+      },
       "errors": {
         "missingToken": "Token ausente.",
         "signInFirst": "Faça login primeiro.",
         "inviteNotFound": "Convite não encontrado.",
         "inviteUsed": "Convite já usado.",
         "inviteExpired": "Convite expirado.",
-        "wrongEmail": "Esse convite é pra outro email."
+        "wrongEmail": "Esse convite é para outro email."
       }
     }
   },
@@ -214,7 +243,10 @@
       "languageHint": "Usado na interface do dashboard. O idioma do agente de voz é configurado por agente.",
       "save": "Salvar",
       "saved": "Preferências salvas",
-      "localeOption": { "en-US": "English (US)", "pt-BR": "Português (Brasil)" }
+      "localeOption": {
+        "en-US": "English (US)",
+        "pt-BR": "Português (Brasil)"
+      }
     },
     "members": {
       "title": "Membros",
@@ -291,7 +323,10 @@
         "apiKeyHint": "Gere em Cal.com em Settings → Security → API Keys.",
         "submit": "Conectar Cal.com",
         "toastConnected": "Cal.com conectado",
-        "errors": { "invalidKey": "API key inválida.", "rejected": "Cal.com rejeitou a API key." }
+        "errors": {
+          "invalidKey": "API key inválida.",
+          "rejected": "Cal.com rejeitou a API key."
+        }
       },
       "eventType": {
         "title": "Tipo de evento padrão",
@@ -335,7 +370,11 @@
     },
     "detail": {
       "agentFallback": "Agente",
-      "stat": { "duration": "Duração", "outcome": "Desfecho", "sentiment": "Sentimento" },
+      "stat": {
+        "duration": "Duração",
+        "outcome": "Desfecho",
+        "sentiment": "Sentimento"
+      },
       "aiSummary": "Resumo IA",
       "summaryUnavailable": "Sem resumo disponível.",
       "summaryProcessing": "Processando resumo no momento, atualize em alguns segundos.",
@@ -362,7 +401,10 @@
       "latencyPerLeg": "Latência por leg",
       "toolsUsed": "Ferramentas usadas",
       "liveTranscript": "Transcrição ao vivo",
-      "hangup": { "button": "Encerrar", "toastEnded": "Chamada encerrada" },
+      "hangup": {
+        "button": "Encerrar",
+        "toastEnded": "Chamada encerrada"
+      },
       "errors": {
         "invalidInput": "Entrada inválida.",
         "callNotFound": "Chamada não encontrada.",
@@ -403,7 +445,9 @@
         "submit": "Criar agente",
         "toastCreated": "Agente criado"
       },
-      "errors": { "invalidData": "Dados inválidos." }
+      "errors": {
+        "invalidData": "Dados inválidos."
+      }
     },
     "detail": {
       "viewCalls": "Ver chamadas",
@@ -608,7 +652,10 @@
       "NO_ANSWER": "Sem resposta",
       "VOICEMAIL": "Caixa postal"
     },
-    "callDirection": { "INBOUND": "Recebida", "OUTBOUND": "Realizada" },
+    "callDirection": {
+      "INBOUND": "Recebida",
+      "OUTBOUND": "Realizada"
+    },
     "outcome": {
       "SCHEDULED": "Agendou",
       "QUALIFIED": "Qualificou",
@@ -637,8 +684,15 @@
       "saturday": "Sábado",
       "sunday": "Domingo"
     },
-    "voiceGender": { "female": "Feminino", "male": "Masculino", "neutral": "Neutro" },
-    "membershipRole": { "ADMIN": "Admin", "MEMBER": "Membro" },
+    "voiceGender": {
+      "female": "Feminino",
+      "male": "Masculino",
+      "neutral": "Neutro"
+    },
+    "membershipRole": {
+      "ADMIN": "Admin",
+      "MEMBER": "Membro"
+    },
     "campaignStatus": {
       "DRAFT": "Rascunho",
       "RUNNING": "Rodando",

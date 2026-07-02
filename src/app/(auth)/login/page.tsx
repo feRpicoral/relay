@@ -28,21 +28,17 @@ export default async function LoginPage({
   const next = safeNextPath(params.next) ?? undefined;
   const t = await getTranslations("login");
   const tErrors = await getTranslations("login.errors");
-  // Avoid rendering arbitrary attacker-controlled error strings on the
-  // login page — only translate codes we recognize.
-  const initialError =
+  const linkError =
     params.error && isKnownErrorCode(params.error) ? tErrors(params.error) : undefined;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
-      </div>
-      <LoginForm next={next} initialError={initialError} />
-      <p className="text-muted-foreground text-center text-sm">
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+      <p className="text-muted-foreground mt-1.5 mb-6 text-sm">{t("description")}</p>
+      <LoginForm next={next} linkError={linkError} />
+      <p className="text-muted-foreground mt-[18px] text-center text-[12.5px]">
         {t("noAccountPrompt")}{" "}
-        <Link href="/signup" className="text-foreground underline-offset-4 hover:underline">
+        <Link href="/signup" className="text-primary font-medium hover:underline">
           {t("createAccount")}
         </Link>
       </p>
