@@ -255,14 +255,14 @@ yarn db:rls
 
 `yarn db:rls` runs `prisma/sql/setup.sql` over `DIRECT_URL`. Idempotent, safe to re-run.
 
-Optional demo data, "Clínica Lumen" with 60 fake calls across the last 30 days:
+Optional demo data, "Clínica Lumen": agents, knowledge docs, phone numbers, ~2 months of calls with transcripts, tool calls and latency metrics, plus campaigns, invites and audit entries. The seed prompts for a Supabase auth user, adds them to the demo org as admin, and points their `active_org_id` at it so the app opens straight into the populated org:
 
 ```bash
-yarn db:seed              # skips if the demo org exists
-yarn db:seed --reset      # wipes and re-creates
+yarn seed                        # interactive user picker
+DEMO_USER_ID=<uuid> yarn seed    # non-interactive
 ```
 
-The seed runs every insert inside one transaction, so a failed/interrupted run leaves nothing behind. Re-run with `--reset` to recover from a partial state.
+Sign up via the app first so there is a user to pick. Re-running wipes and regenerates the demo org's data (other orgs are untouched), and every insert runs inside one transaction, so a failed run leaves nothing behind. With `CARTESIA_API_KEY` set the agents get real pt-BR voices; with `ENCRYPTION_KEY` set the calendar page renders seeded bookings through a placeholder Cal.com connection.
 
 ### Daily
 
